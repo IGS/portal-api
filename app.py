@@ -88,13 +88,13 @@ def get_cases():
 
     # Processing autocomplete here as well as finding counts for the set category
     if(request.args.get('facets') and not request.args.get('expand')):
-        beg = "http://localhost:%s/ac_schema?query=%7Bpagination%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%7Daggregations%7B" % (be_port)
+        beg = "http://localhost:{0}/ac_schema?query=%7Bpagination%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%7Daggregations%7B".format(be_port)
         mid = request.args.get('facets')
         end = "%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        url = '%s%s%s' % (beg,mid,end)
+        url = '{0}{1}{2}'.format(beg,mid,end)
         response = urllib2.urlopen(url)
         r = response.read()
-        data = ('%s, "warnings": {}}' % r[:-1])
+        data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
 
     else:
@@ -103,7 +103,7 @@ def get_cases():
             size = 20
             from_num = 1
     #elif(request.args.get('expand') or request.args.get('filters')): # Here need to process simple/advanced queries, handling happens at GQL
-        p1 = "http://localhost:%s/ac_schema?query=%7Bpagination(cy%3A%22" % (be_port)
+        p1 = "http://localhost:{0}/ac_schema?query=%7Bpagination(cy%3A%22".format(be_port)
         p2 = "%22%2Cs%3A"
         p3 = "%2Cf%3A"
         p4 = ")%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits(cy%3A%22"
@@ -112,7 +112,7 @@ def get_cases():
         p7 = "%22%2Cf%3A"
         p8 = ")%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%2Ccase_id%7Daggregations%7BProject_name%7Bbuckets%7Bkey%2Cdoc_count%7D%7DSubject_gender%7Bbuckets%7Bkey%2Cdoc_count%7D%7DSample_fma_body_site%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
         if len(filters) < 3:
-            url = "%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,p2,size,p3,from_num,p4,p5,size,p6,p7,from_num,p8)
+            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}".format(p1,p2,size,p3,from_num,p4,p5,size,p6,p7,from_num,p8)
             if request.get_data():
                 f1 = request.get_data()
                 f2 = json.loads(f1)
@@ -122,49 +122,49 @@ def get_cases():
                 size = f2['size']
                 filters = json.dumps(filters)
                 filters = convert_gdc_to_osdf(filters)
-                url = "%s%s%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,p7,from_num,p8)
+                url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,p7,from_num,p8)
         else:
             filters = convert_gdc_to_osdf(filters)
-            url = "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
+            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
         response = urllib2.urlopen(url)
         r = response.read()
-        data = ('%s, "warnings": {}}' % r[:-1])
+        data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
 
 # Route for specific cases endpoints that associates with various files
 @application.route('/cases/<case_id>', methods=['GET','OPTIONS'])
 def get_case_files(case_id):
-    id = '"%s"' % case_id
+    id = '"{0}"'.format(case_id)
     if not request.args.get('expand'):
-        p1 = 'http://localhost:%s/files_schema?query=%7Bproject(id%3A' % (be_port)
+        p1 = 'http://localhost:{0}/files_schema?query=%7Bproject(id%3A'.format(be_port)
         p2 = ')%7Bproject_id%2Cname%7D%2Cfiles(id%3A'
         p3 = ')%7Bdata_type%2Cfile_name%2Cdata_format%2Caccess%2Cfile_id%2Cfile_size%7D%2Ccase_id(id%3A'
         p4 = ')%2Csubmitter_id%7D'
-        url = '%s%s%s%s%s%s%s' % (p1,id,p2,id,p3,id,p4) # inject ID into query
+        url = '{0}{1}{2}{3}{4}{5}{6}'.format(p1,id,p2,id,p3,id,p4) # inject ID into query
         response = urllib2.urlopen(url)
         r = response.read()
-        data = ('%s, "warnings": {}}' % r[:-1])
+        data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
     else:
-        p1 = 'http://localhost:%s/indiv_cases_schema?query=%7Bcase_id(id%3A' % (be_port)
+        p1 = 'http://localhost:{0}/indiv_cases_schema?query=%7Bcase_id(id%3A'.format(be_port)
         p2 = ')%2Cproject(id%3A'
         p3 = ')%7Bproject_id%7D%7D'
-        url = '%s%s%s%s%s' % (p1,id,p2,id,p3)
+        url = '{0}{1}{2}{3}{4}'.format(p1,id,p2,id,p3)
         response = urllib2.urlopen(url)
         r = response.read()
-        data = ('%s, "warnings": {}}' % r[:-1])
+        data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
 
 @application.route('/files/<file_id>', methods=['GET','OPTIONS'])
 def get_file_metadata(file_id):
-    beg = "http://localhost:%s/indiv_files_schema?query=%7BfileHit(id%3A%22" % (be_port)
+    beg = "http://localhost:{0}/indiv_files_schema?query=%7BfileHit(id%3A%22".format(be_port)
     end = "%22)%7Bdata_type%2Cfile_name%2Cfile_size%2Cdata_format%2Canalysis%7Bupdated_datetime%2Cworkflow_type%2Canalysis_id%2Cinput_files%7Bfile_id%7D%7D%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cassociated_entities%7Bentity_id%2Ccase_id%2Centity_type%7D%2Ccases%7Bproject%7Bproject_id%7D%2Ccase_id%7D%2Cexperimental_strategy%7D%7D"
-    url = "%s%s%s" % (beg,file_id,end)
+    url = "{0}{1}{2}".format(beg,file_id,end)
     response = urllib2.urlopen(url)
     r = response.read()
     trimmed_r = r.replace(':{"fileHit"',"") # HACK for formatting
     final_r = trimmed_r[:-1]
-    data = ('%s, "warnings": {}}' % final_r[:-1])
+    data = ('{0}, "warnings": {{}}}}'.format(final_r[:-1]))
     return make_json_response(data)
 
 @application.route('/status', methods=['GET','OPTIONS'])
@@ -198,7 +198,7 @@ def get_files():
     size = request.args.get('size')
     order = request.args.get('sort')
     if len(filters) < 3:
-        p1 = "http://localhost:%s/table_schema?query=%7Bpagination(cy%3A%22" % (be_port)
+        p1 = "http://localhost:{0}/table_schema?query=%7Bpagination(cy%3A%22".format(be_port)
         p2 = "%22%2Cs%3A"
         p3 = "%2Cf%3A"
         p4 = ")%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits(cy%3A%22"
@@ -206,7 +206,7 @@ def get_files():
         p6 = "%2Co%3A%22"
         p7 = "%22%2Cf%3A"
         p8 = ")%7Bdata_type%2Cfile_name%2Cdata_format%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cfile_size%2Ccases%7Bproject%7Bproject_id%2Cname%7D%2Ccase_id%7Dexperimental_strategy%7D%2Caggregations%7Bdata_type%7Bbuckets%7Bkey%2Cdoc_count%7D%7Ddata_format%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        url = "%s%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,p2,size,p3,from_num,p4,p5,size,p6,order,p7,from_num,p8)
+        url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}".format(p1,p2,size,p3,from_num,p4,p5,size,p6,order,p7,from_num,p8)
         if '"op"' in filters or "op" in filters:
             f1 = request.get_data()
             f2 = json.loads(f1)
@@ -215,10 +215,10 @@ def get_files():
             size = f2['size']
             filters = json.dumps(filters)
             filters = convert_gdc_to_osdf(filters)
-            url = "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
+            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
     else:
         filters = convert_gdc_to_osdf(filters)
-        p1 = "http://localhost:%s/table_schema?query=%7Bpagination(cy%3A%22" % (be_port)
+        p1 = "http://localhost:{0}/table_schema?query=%7Bpagination(cy%3A%22".format(be_port)
         p2 = "%22%2Cs%3A"
         p3 = "%2Cf%3A"
         p4 = ")%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits(cy%3A%22"
@@ -226,10 +226,10 @@ def get_files():
         p6 = "%2Co%3A%22"
         p7 = "%22%2Cf%3A"
         p8 = ")%7Bdata_type%2Cfile_name%2Cdata_format%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cfile_size%2Ccases%7Bproject%7Bproject_id%2Cname%7D%2Ccase_id%7Dexperimental_strategy%7D%2Caggregations%7Bdata_type%7Bbuckets%7Bkey%2Cdoc_count%7D%7Ddata_format%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        url = "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
+        url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
     response = urllib2.urlopen(url)
     r = response.read()
-    data = ('%s, "warnings": {}}' % r[:-1])
+    data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
     return make_json_response(data)
 
 @application.route('/projects', methods=['GET','POST'])
@@ -260,9 +260,9 @@ def get_project():
             proj_list.append({ "project_id": p["n"]["name"], "primary_site": "multiple", "disease_type": p["n"]["description"], "released": True, "name": p["n"]["description"] })
         np = len(proj_list)
 
-        p_str = "{ \"count\": %s, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": %s, \"pages\": 1, \"size\": 100 }" % (np, np)
+        p_str = "{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }".format(np, np)
         hit_str = json.dumps(proj_list)
-        data = ("{\"data\" : {\"hits\" : [ %s ], \"pagination\": %s}, \"warnings\": {}}" % (hit_str, p_str))
+        data = ("{\"data\" : {\"hits\" : [ {0} ], \"pagination\": {1}}, \"warnings\": {}}".format(hit_str, p_str))
         return make_json_response(data)
 
     # /projects request WITH facets parameter
@@ -286,7 +286,7 @@ def get_project():
         pd = get_all_proj_counts()
 
         npd = len(pd)
-        p_str = "{ \"count\": %d, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": %d, \"pages\": 1, \"size\": 100 }" % (npd, npd)
+        p_str = "{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }".format(npd, npd)
         counts = {}
         hit_list = []
 
@@ -310,9 +310,9 @@ def get_project():
 
         buckets_str = json.dumps(buckets_list)
         hit_str = json.dumps(hit_list)
-        agg_str = "{ \"primary_site\": { \"buckets\": %s }}" % (buckets_str)
+        agg_str = "{ \"primary_site\": { \"buckets\": {0} }}".format(buckets_str)
 
-        data = ("{\"data\" : {\"aggregations\": %s, \"hits\" : %s, \"pagination\": %s}, \"warnings\": {}}" % (agg_str, hit_str, p_str))
+        data = ("{\"data\" : {\"aggregations\": {0}, \"hits\" : {1}, \"pagination\": {0}}, \"warnings\": {}}".format(agg_str, hit_str, p_str))
         return make_json_response(data)
 
     # Enter here if going to the projects tab
@@ -326,9 +326,9 @@ def get_project():
             proj_list.append({ "project_id": p["Study.name"], "disease_type": p["Study.full_name"], "project_name": p["Project.subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
-        p_str = "{ \"count\": %s, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": %s, \"pages\": 1, \"size\": 100 }" % (np, np)
+        p_str = "{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }".format(np, np)
         hit_str = json.dumps(proj_list)
-        data = ("{\"data\" : {\"hits\" :  %s , \"pagination\": %s}, \"warnings\": {}}" % (hit_str, p_str))
+        data = ("{\"data\" : {\"hits\" :  {0} , \"pagination\": {1}}, \"warnings\": {}}".format(hit_str, p_str))
         return make_json_response(data)
 
 @application.route('/annotations', methods=['GET','OPTIONS'])
@@ -339,16 +339,16 @@ def get_annotation():
 # to populate the pie charts
 @application.route('/ui/search/summary', methods=['GET','OPTIONS','POST'])
 def get_ui_search_summary():
-    empty_cy = ("http://localhost:%s/sum_schema?query="
+    empty_cy = ("http://localhost:{0}/sum_schema?query="
         "%7BSampleFmabodysite(cy%3A%22%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7D"
         "ProjectName(cy%3A%22%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7D"
         "SubjectGender(cy%3A%22%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7D"
         "FileFormat(cy%3A%22%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7D"
         "FileSubtype(cy%3A%22%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7D"
         "StudyName(cy%3A%22%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7D"
-        "%2Cfs(cy%3A%22%22)%7Bvalue%7D%7D" % (be_port))
+        "%2Cfs(cy%3A%22%22)%7Bvalue%7D%7D".format(be_port))
          
-    p1 = "http://localhost:%s/sum_schema?query=%7BSampleFmabodysite(cy%3A%22" % (be_port)) # inject Cypher into ... body site query
+    p1 = "http://localhost:{0}/sum_schema?query=%7BSampleFmabodysite(cy%3A%22".format(be_port) # inject Cypher into ... body site query
     p2 = "%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7DProjectName(cy%3A%22" #     ... project name query
     p3 = "%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7DSubjectGender(cy%3A%22" #   ... subject gender query
     p4 = "%22)%7Bbuckets%7Bcase_count%2Cdoc_count%2Cfile_size%2Ckey%7D%7DFileFormat(cy%3A%22" #      ... file format query
@@ -363,7 +363,7 @@ def get_ui_search_summary():
         filters = filters[11:]
         filters = convert_gdc_to_osdf(filters)
         if len(filters) > 2: # need actual content in the JSON, not empty
-            url = "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s" % (p1,filters,p2,filters,p3,filters,p4,filters,p5,filters,p6,filters,p7,filters,p8) 
+            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,filters,p3,filters,p4,filters,p5,filters,p6,filters,p7,filters,p8) 
         else:
             url = empty_cy # no Cypher parameters entered
     else:
@@ -454,4 +454,4 @@ application.add_url_rule(
 )
 
 if __name__ == '__main__':
-    application.run(threaded=True)
+    application.run(host='0.0.0.0',port=int(be_port))

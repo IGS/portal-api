@@ -1,6 +1,6 @@
 import re, os, sys, socket
 import graphene
-import conf
+from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
 from py2neo import Graph # Using py2neo v3 not v2
 from query import match, build_cypher, build_adv_cypher, convert_gdc_to_osdf
 
@@ -124,6 +124,8 @@ class FileSize(graphene.ObjectType): # total aggregate file size of current set 
 ####################################
 
 # Get all these values from the conf
+neo4j_bolt = int(neo4j_bolt)
+neo4j_http = int(neo4j_http)
 
 # This section will have all the logic for populating the actual data in the schema (data from Neo4j)
 graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
