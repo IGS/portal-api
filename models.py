@@ -1,4 +1,4 @@
-import re, os, sys, socket
+import re, os, sys, socket, requests, ujson
 import graphene
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
 from py2neo import Graph # Using py2neo v3 not v2
@@ -128,7 +128,28 @@ neo4j_bolt = int(neo4j_bolt)
 neo4j_http = int(neo4j_http)
 
 # This section will have all the logic for populating the actual data in the schema (data from Neo4j)
-graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
+#graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
+
+def process_cquery_http(cquery):
+    headers = {'Content-Type': 'application/json'}
+    data = {'statements': [{'statement': cquery, 'includeStats': False}]}
+    rq_res = requests.post(url='http://localhost:7474/db/data/transaction/commit',headers=headers, data=ujson.dumps(data), auth=(neo4j_un,neo4j_pw))
+
+    query_res = []
+    jsResp = ujson.loads(rq_res.text)
+    column_names = jsResp['results'][0]['columns']
+
+    for result in jsResp["results"][0]["data"]:
+        res_dict = {}
+        for i in xrange(0, len(column_names)):
+            elem = result['row'][i]
+            if isinstance(elem, long):
+                res_dict[column_names[i]] = int(elem)
+            else:
+                res_dict[column_names[i]] = elem
+        query_res.append(res_dict)
+
+    return query_res
 
 # Base Cypher for traversing the entirety of the schema
 full_traversal = ("MATCH (Project:Case{node_type:'project'})"
@@ -169,7 +190,7 @@ def get_total_file_size(cy):
         cquery = build_cypher(match,cy,"null","null","null","size")
     else:
         cquery = build_adv_cypher(match,cy,"null","null","null","size")
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     return res[0]['tot']
 
 # Function for pagination calculations. Find the page, number of pages, and number of entries on a single page.
@@ -209,7 +230,7 @@ def get_pagination(cy,size,f,c_or_f):
             cquery = "MATCH (n:Case {node_type:'sample'}) RETURN count(n) AS tot"
         else:
             cquery = "MATCH (n:File) WHERE NOT n.node_type=~'.*prep' RETURN count(n) AS tot"
-        res = graph.data(cquery)
+        res = process_cquery_http(cquery)
         calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
         return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
     else:
@@ -223,7 +244,7 @@ def get_pagination(cy,size,f,c_or_f):
                 cquery = build_adv_cypher(match,cy,"null","null","null","c_pagination")
             else:
                 cquery = build_adv_cypher(match,cy,"null","null","null","f_pagination")
-        res = graph.data(cquery)
+        res = process_cquery_http(cquery)
         calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
         return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
 
@@ -241,10 +262,10 @@ def build_basic_query(attr, val, links):
         # since each unique originating node comes paired with a link. Thus, check for
         # unique-ness when appending to lists in the get_* functions below
         cquery = "MATCH (a:%s)<-[:%s]-(b:%s) RETURN a.name AS link, b" % (node, edge, val)
-        return graph.data(cquery)
+        return process_cquery_http(cquery)
     else:
         cquery = "MATCH (n {%s: '%s'}) RETURN n" % (attr, val)
-        return graph.data(cquery)
+        return process_cquery_http(cquery)
 
 # Retrieve ALL files associated with a given Subject ID.
 def get_files(sample_id):
@@ -257,7 +278,7 @@ def get_files(sample_id):
         "WHERE Sample.id=\"%s\" RETURN File"
         ) 
     cquery = cquery % (sample_id)
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
 
     for x in range(0,len(res)): # iterate over each unique path
         dt = res[x]['File']['subtype']
@@ -279,12 +300,12 @@ def get_proj_data(sample_id):
         "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'}) WHERE Sample.id=\"%s\" RETURN Project"
         ) 
     cquery = cquery % (sample_id)
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     return Project(name=res[0]['Project']['name'],projectId=res[0]['Project']['subtype'])
 
 def get_all_proj_data():
     cquery = "MATCH (n:Case{node_type:'study'}) RETURN DISTINCT n"
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     return res
 
 def get_all_study_data():
@@ -297,7 +318,7 @@ def get_all_study_data():
         "<-[:SHORTCUT]-(File)"
         " RETURN DISTINCT Study.name, Project.subtype, Study.full_name, COUNT(DISTINCT Sample) as case_count, (COUNT(DISTINCT File)) as file_count"
         )
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     return res
 
 # This function is a bit unique as it's only called to populate the bar chart on the home page
@@ -311,7 +332,7 @@ def get_all_proj_counts():
         "<-[:SHORTCUT]-(File)"
         " RETURN DISTINCT Study.id, Study.name, Sample.fma_body_site, COUNT(DISTINCT Sample) as case_count, (COUNT(DISTINCT File)) as file_count"
         )
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     return res
 
 # This populates the values in the side table of facet search. Want to let users
@@ -335,7 +356,7 @@ def count_props(node, prop, cy):
             cquery = "Match (n:File) WHERE NOT n.node_type=~'.*prep' RETURN n.%s as prop, count(n.%s) as counts" % (prop, prop)
     else:
         cquery = build_cypher(match,cy,"null","null","null",prop)
-    return graph.data(cquery)
+    return process_cquery_http(cquery)
 
 # Cypher query to count the amount of each distinct property
 def count_props_and_files(node, prop, cy):
@@ -362,7 +383,7 @@ def count_props_and_files(node, prop, cy):
         else:
             cquery = build_adv_cypher(match,cy,"null","null","null",prop_detailed)
 
-    return graph.data(cquery)
+    return process_cquery_http(cquery)
 
 # Formats the values from count_props & count_props_and_files functions above into GQL
 def get_buckets(inp,sum, cy):
@@ -410,7 +431,7 @@ def get_case_hits(size,order,f,cy):
         cquery = build_cypher(match,cy,order,f,size,"cases")
     else:
         cquery = build_adv_cypher(match,cy,order,f,size,"cases")
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     for x in range(0,len(res)):
         cur = CaseHits(project=Project(projectId=res[x]['Project.subtype'],primarySite=res[x]['Sample.fma_body_site'],name=res[x]['Project.name'],studyName=res[x]['Study.name'],studyFullName=res[x]['Study.full_name']),caseId=res[x]['Sample.id'])
         hits.append(cur)
@@ -431,7 +452,7 @@ def get_file_hits(size,order,f,cy):
         cquery = build_cypher(match,cy,order,f,size,"files")
     else:
         cquery = build_adv_cypher(match,cy,order,f,size,"files")
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     for x in range(0,len(res)):
         case_hits = [] # reinit each iteration
         cur_case = CaseHits(project=Project(projectId=res[x]['Project']['subtype'],name=res[x]['Project']['name']),caseId=res[x]['Sample.id'])
@@ -451,7 +472,7 @@ def get_file_data(file_id):
     retval = "WHERE File.id=\"%s\" RETURN Project,Subject,Sample,pf,File"
     cquery = "%s %s" % (full_traversal,retval)
     cquery = cquery % (file_id)
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     furl = extract_url(res[0]['File']) 
     sample_bs = res[0]['Sample']['fma_body_site']
     wf = "%s -> %s" % (sample_bs,res[0]['pf']['node_type'])
@@ -463,7 +484,7 @@ def get_file_data(file_id):
 
 def get_url_for_download(id):
     cquery = "MATCH (n:File) WHERE n.id=\"%s\" AND NOT n.node_type=~'.*prep' RETURN n" % (id)
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
     return extract_url(res[0]['n'])
 
 def get_manifest_data(id_list):
@@ -483,7 +504,7 @@ def get_manifest_data(id_list):
     # Surround in brackets to format list syntax
     ids = "[%s]" % ids
     cquery = "MATCH (n:File) WHERE n.id IN %s RETURN n" % ids
-    res = graph.data(cquery)
+    res = process_cquery_http(cquery)
 
     outlist = []
 
