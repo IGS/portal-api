@@ -1,5 +1,4 @@
 import urllib2, re, json
-from multiprocessing import Process, Queue, Pool
 
 ***REMOVED***The match var is the base query to prepend all queries. The idea is to traverse
 ***REMOVED***the graph entirely and use filters to return a subset of the total traversal. 
@@ -8,7 +7,7 @@ match = ("MATCH (Project:Case{node_type:'project'})<-[:PART_OF]-(Study:Case{node
     "<-[:BY]-(Visit:Case{node_type:'visit'})"
     "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'})"
     "<-[:PREPARED_FROM]-(pf)"
-    "<-[:SEQUENCED_FROM|DERIVED_FROM|COMPUTED_FROM*..4]-(File) WHERE "
+    "<-[:SHORTCUT]-(File) WHERE "
     )
 
 ***REMOVED***If the following return ends in "counts", then it is for a pie chart. The first two are for
