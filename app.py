@@ -122,10 +122,10 @@ def get_cases():
                 size = f2['size']
                 filters = json.dumps(filters)
                 filters = convert_gdc_to_osdf(filters)
-                url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,p7,from_num,p8)
+                url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,p7,from_num,p8)
         else:
             filters = convert_gdc_to_osdf(filters)
-            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
+            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
         response = urllib2.urlopen(url)
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
@@ -215,7 +215,7 @@ def get_files():
             size = f2['size']
             filters = json.dumps(filters)
             filters = convert_gdc_to_osdf(filters)
-            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}" % (p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
+            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
     else:
         filters = convert_gdc_to_osdf(filters)
         p1 = "http://localhost:{0}/table_schema?query=%7Bpagination(cy%3A%22".format(be_port)
@@ -260,9 +260,9 @@ def get_project():
             proj_list.append({ "project_id": p["n"]["name"], "primary_site": "multiple", "disease_type": p["n"]["description"], "released": True, "name": p["n"]["description"] })
         np = len(proj_list)
 
-        p_str = "{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }".format(np, np)
+        p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
         hit_str = json.dumps(proj_list)
-        data = ("{\"data\" : {\"hits\" : [ {0} ], \"pagination\": {1}}, \"warnings\": {}}".format(hit_str, p_str))
+        data = ("{{\"data\" : {{\"hits\" : [ {0} ], \"pagination\": {1}}}, \"warnings\": {{}}}}".format(hit_str, p_str))
         return make_json_response(data)
 
     # /projects request WITH facets parameter
@@ -286,7 +286,7 @@ def get_project():
         pd = get_all_proj_counts()
 
         npd = len(pd)
-        p_str = "{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }".format(npd, npd)
+        p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(npd, npd)
         counts = {}
         hit_list = []
 
@@ -310,9 +310,9 @@ def get_project():
 
         buckets_str = json.dumps(buckets_list)
         hit_str = json.dumps(hit_list)
-        agg_str = "{ \"primary_site\": { \"buckets\": {0} }}".format(buckets_str)
+        agg_str = "{{ \"primary_site\": {{ \"buckets\": {0} }}}}".format(buckets_str)
 
-        data = ("{\"data\" : {\"aggregations\": {0}, \"hits\" : {1}, \"pagination\": {0}}, \"warnings\": {}}".format(agg_str, hit_str, p_str))
+        data = ("{{\"data\" : {{\"aggregations\": {0}, \"hits\" : {1}, \"pagination\": {0}}}, \"warnings\": {{}}}}".format(agg_str, hit_str, p_str))
         return make_json_response(data)
 
     # Enter here if going to the projects tab
@@ -326,9 +326,9 @@ def get_project():
             proj_list.append({ "project_id": p["Study.name"], "disease_type": p["Study.full_name"], "project_name": p["Project.subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
-        p_str = "{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }".format(np, np)
+        p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
         hit_str = json.dumps(proj_list)
-        data = ("{\"data\" : {\"hits\" :  {0} , \"pagination\": {1}}, \"warnings\": {}}".format(hit_str, p_str))
+        data = ("{{\"data\" : {{\"hits\" :  {0} , \"pagination\": {1}}}, \"warnings\": {{}}}}".format(hit_str, p_str))
         return make_json_response(data)
 
 @application.route('/annotations', methods=['GET','OPTIONS'])
