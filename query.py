@@ -5,7 +5,7 @@ import urllib2, re, json
 # PSS = Project/Study/Subject
 # VS = Visit/Sample
 # File = File
-match = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(File:file) WHERE "
+match = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) WHERE "
 
 # If the following return ends in "counts", then it is for a pie chart. The first two are for
 # cases/files tabs and the last is for the total size. 
@@ -21,28 +21,28 @@ match = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(Fi
 # The detailed queries require specifics about both sample and file counts to be 
 # returned so they require some extra handling. 
 base_detailed_return = ("WITH COUNT(DISTINCT(VS)) as ccounts, "
-    "COUNT(File) AS dcounts, %s.%s AS prop "
-    "RETURN prop,ccounts,dcounts,SUM(toInt(File.size)) as tot"
+    "COUNT(F) AS dcounts, {0}.{1} AS prop "
+    "RETURN prop,ccounts,dcounts,SUM(toInt(F.size)) as tot"
     )
 
 returns = {
     'cases': "RETURN PSS.project_name, PSS.project_subtype, VS.fma_body_site, VS.id, PSS.study_subtype",
     'files': "RETURN PSS, VS.id, File",
     'name': "RETURN PSS.project_name AS prop, count(PSS.project_name) AS counts",
-    'name_detailed': base_detailed_return % ('PSS','PSS.project_name'),
+    'name_detailed': base_detailed_return.format('PSS','PSS.project_name'),
     'sname': "RETURN VS.name AS prop, count(VS.name) AS counts",
-    'sname_detailed': base_detailed_return % ('VS','name'),
+    'sname_detailed': base_detailed_return.format('VS','name'),
     'fma_body_site': "RETURN VS.fma_body_site AS prop, count(VS.fma_body_site) AS counts",
-    'fma_body_site_detailed': base_detailed_return % ('VS','fma_body_site'), 
+    'fma_body_site_detailed': base_detailed_return.format('VS','fma_body_site'), 
     'study': "RETURN PSS.study_name AS prop, count(PSS.study_name) AS counts",
     'gender': "RETURN PSS.gender AS prop, count(PSS.gender) AS counts",
-    'gender_detailed': base_detailed_return % ('PSS','gender'),
+    'gender_detailed': base_detailed_return.format('PSS','gender'),
     'race': "RETURN PSS.race AS prop, count(PSS.race) AS counts",
-    'format': "RETURN File.format AS prop, count(File.format) AS counts",
-    'format_detailed': base_detailed_return % ('File','format'),
-    'subtype_detailed': base_detailed_return % ('File','subtype'),
-    'size': "RETURN (SUM(toInt(File.size))) AS tot",
-    'f_pagination': "RETURN (count(File)) AS tot",
+    'format': "RETURN F.format AS prop, count(F.format) AS counts",
+    'format_detailed': base_detailed_return.format('F','format'),
+    'subtype_detailed': base_detailed_return.format('F','subtype'),
+    'size': "RETURN (SUM(toInt(F.size))) AS tot",
+    'f_pagination': "RETURN (count(F)) AS tot",
     'c_pagination': "RETURN (count(VS.id)) AS tot"
 }
 

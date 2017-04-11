@@ -18,7 +18,7 @@ visVN = get_buckets("VS.visit_visit_number","no","") ###
 visI = get_buckets("VS.visit_interval","no","") 
 visD = get_buckets("VS.visit_date","no","")
 samBP = get_buckets("VS.body_product","no","")
-samFMA = get_buckets("VS.fma_body_site","no","")
+samFMA = get_buckets("VS.body_site","no","")
 samGLN = get_buckets("VS.geo_loc_name","no","")
 samSCD = get_buckets("VS.samp_collect_device","no","")
 samEP = get_buckets("VS.env_package","no","")
@@ -26,9 +26,9 @@ samF = get_buckets("VS.feature","no","")
 samID = get_buckets("VS.id","no","")
 samM = get_buckets("VS.material","no","")
 samB = get_buckets("VS.biome","no","")
-fileF = get_buckets("File.format","no","")
-fileID = get_buckets("File.id","no","")
-fileNT = get_buckets("File.node_type","no","")
+fileF = get_buckets("F.format","no","")
+fileID = get_buckets("F.id","no","")
+fileNT = get_buckets("F.node_type","no","")
 
 class Query(graphene.ObjectType):
 
