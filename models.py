@@ -154,7 +154,7 @@ def process_cquery_http(cquery):
 ***REMOVED***PSS = Project/Study/Subject
 ***REMOVED***VS = Visit/Sample
 ***REMOVED***File = File
-full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(File:file)"
+full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file)"
 
 ***REMOVED***Function to extract a file name and an HTTP URL given values from a urls property from an OSDF node
 def extract_url(urls_node):
@@ -180,7 +180,7 @@ def extract_url(urls_node):
 def get_total_file_size(cy):
     cquery = ""
     if cy == "":
-        cquery = "MATCH (File) RETURN SUM(toInt(File.size)) AS tot"
+        cquery = "MATCH (F:file) RETURN SUM(toInt(F.size)) AS tot"
     elif '"op"' in cy:
         cquery = build_cypher(match,cy,"null","null","null","size")
     else:
@@ -222,9 +222,9 @@ def get_pagination(cy,size,f,c_or_f):
     cquery = ""
     if cy == "":
         if c_or_f == 'c':
-            cquery = "MATCH (n:Case {node_type:'sample'}) RETURN count(n) AS tot"
+            cquery = "MATCH (n:sample) RETURN count(n) AS tot"
         else:
-            cquery = "MATCH (n:File) WHERE NOT n.node_type=~'.*prep' RETURN count(n) AS tot"
+            cquery = "MATCH (n:file) RETURN count(n) AS tot"
         res = process_cquery_http(cquery)
         calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
         return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
@@ -243,36 +243,13 @@ def get_pagination(cy,size,f,c_or_f):
         calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
         return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
 
-***REMOVED***Function to build and run a basic Cypher query. Accepts the following parameters:
-***REMOVED***attr = property to match against, val = desired value of the property of attr,
-***REMOVED***links = an array with two elements [name of node to hit, name of edge].
-***REMOVED***For example, for Study object you want to use the following parameters:
-***REMOVED***buildQuery("node_type", "Study", ["Project","PART_OF"])
-***REMOVED***Note that this is a single-step query meaning 2 nodes and 1 edge
-def build_basic_query(attr, val, links):
-    if links:
-        node = links[0] ***REMOVED***parse links array as described earlier, don't need attr
-        edge = links[1]
-        ***REMOVED***Note that collecting distinct nodes connected by the edge doesn't help much
-        ***REMOVED***since each unique originating node comes paired with a link. Thus, check for
-        ***REMOVED***unique-ness when appending to lists in the get_* functions below
-        cquery = "MATCH (a:%s)<-[:%s]-(b:%s) RETURN a.name AS link, b" % (node, edge, val)
-        return process_cquery_http(cquery)
-    else:
-        cquery = "MATCH (n {%s: '%s'}) RETURN n" % (attr, val)
-        return process_cquery_http(cquery)
-
 ***REMOVED***Retrieve ALL files associated with a given Subject ID.
 def get_files(sample_id):
     fl = []
     dt, fn, df, ac, fi = ("" for i in range(5))
     fs = 0
     
-    cquery = ("MATCH (Sample:Case{node_type:'sample'})"
-        "<-[:PREPARED_FROM]-(p)<-[:SHORTCUT]-(File) "
-        "WHERE Sample.id=\"%s\" RETURN File"
-        ) 
-    cquery = cquery % (sample_id)
+    cquery = "{0} WHERE VS.id='{1}' RETURN File".format(full_traversal,sample_id)
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)): ***REMOVED***iterate over each unique path
@@ -288,53 +265,36 @@ def get_files(sample_id):
 
 ***REMOVED***Query to traverse top half of OSDF model (Project<-....-Sample). 
 def get_proj_data(sample_id):
-    cquery = ("MATCH (Project:Case{node_type:'project'})"
-        "<-[:PART_OF]-(Study:Case{node_type:'study'})"
-        "<-[:PARTICIPATES_IN]-(Subject:Case{node_type:'subject'})"
-        "<-[:BY]-(Visit:Case{node_type:'visit'})"
-        "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'}) WHERE Sample.id=\"%s\" RETURN Project"
-        ) 
-    cquery = cquery % (sample_id)
+    cquery = "{0} WHERE VS.id='{1}' RETURN PSS.project_name AS name,PSS.project_subtype AS subtype".format(full_traversal,sample_id)
     res = process_cquery_http(cquery)
-    return Project(name=res[0]['Project']['name'],projectId=res[0]['Project']['subtype'])
+    return Project(name=res[0]['name'],projectId=res[0]['subtype'])
 
 def get_all_proj_data():
-    cquery = "MATCH (n:Case{node_type:'study'}) RETURN DISTINCT n"
-    res = process_cquery_http(cquery)
-    return res
+    cquery = "MATCH (PSS:subject) RETURN DISTINCT PSS.study_name, PSS.study_description"
+    return process_cquery_http(cquery)
 
 def get_all_study_data():
-    cquery = ("MATCH (Project:Case{node_type:'project'})"
-        "<-[:PART_OF]-(Study:Case{node_type:'study'})"
-        "<-[:PARTICIPATES_IN]-(Subject:Case{node_type:'subject'})"
-        "<-[:BY]-(Visit:Case{node_type:'visit'})"
-        "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'})"
-        "<-[:PREPARED_FROM]-(pf)"
-        "<-[:SHORTCUT]-(File)"
-        " RETURN DISTINCT Study.name, Project.subtype, Study.full_name, COUNT(DISTINCT Sample) as case_count, (COUNT(DISTINCT File)) as file_count"
-        )
-    res = process_cquery_http(cquery)
-    return res
+    cquery = "{0} RETURN DISTINCT PSS.study_name, PSS.project_subtype, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    return process_cquery_http(cquery)
 
 ***REMOVED***This function is a bit unique as it's only called to populate the bar chart on the home page
 def get_all_proj_counts():
-    cquery = "{0} RETURN DISTINCT PSS.study_id, PSS.study_name, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(File) as file_count".format(full_traversal)
-    res = process_cquery_http(cquery)
-    return res
+    cquery = "{0} RETURN DISTINCT PSS.study_id, PSS.study_name, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    return process_cquery_http(cquery)
 
 ***REMOVED***This populates the values in the side table of facet search. Want to let users
 ***REMOVED***know how many samples per category in a given property. 
 count_props_dict = {
-    "PSS": "MATCH (n:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(File:file) RETURN n.%s AS prop, COUNT(DISTINCT(VS)) as counts",
-    "VS": "MATCH (PSS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(File:file) RETURN n.%s AS prop, COUNT(DISTINCT(n)) as counts",
-    "File": "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(n:file) RETURN n.%s AS prop, COUNT(DISTINCT(VS)) as counts"
+    "PSS": "MATCH (n:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VS)) as counts",
+    "VS": "MATCH (PSS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
+    "F": "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(n:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VS)) as counts"
 }
 
 ***REMOVED***Cypher query to count the amount of each distinct property
 def count_props(node, prop, cy):
     cquery = ""
     if cy == "":
-        cquery = count_props_dict[node] % (prop)
+        cquery = count_props_dict[node].format(prop)
     else:
         cquery = build_cypher(match,cy,"null","null","null",prop)
     return process_cquery_http(cquery)
@@ -345,7 +305,7 @@ def count_props_and_files(node, prop, cy):
     cquery,with_distinct = ("" for i in range (2))
     
     if cy == "":
-        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VS)) AS ccounts, COUNT(File) AS dcounts, SUM(toInt(File.size)) as tot"
+        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VS)) AS ccounts, COUNT(F) AS dcounts, SUM(toInt(F.size)) as tot"
 
         mod_retval = retval.format(node,prop)
         cquery = "{0} {1}".format(full_traversal,mod_retval)
@@ -460,9 +420,9 @@ def get_file_data(file_id):
     return FileHits(dataType=res[0]['File']['node_type'],fileName=furl,md5sum=res[0]['File']['checksums'],dataFormat=res[0]['File']['format'],submitterId="null",state="submitted",access="open",fileId=res[0]['File']['id'],dataCategory=res[0]['File']['node_type'],experimentalStrategy=res[0]['File']['study'],fileSize=res[0]['File']['size'],cases=cl,associatedEntities=al,analysis=a)
 
 def get_url_for_download(id):
-    cquery = "MATCH (n:File) WHERE n.id=\"%s\" AND NOT n.node_type=~'.*prep' RETURN n" % (id)
+    cquery = "MATCH (F:file) WHERE F.id='{0}' RETURN F".format(id)
     res = process_cquery_http(cquery)
-    return extract_url(res[0]['n'])
+    return extract_url(res[0]['F'])
 
 def get_manifest_data(id_list):
 
@@ -471,7 +431,7 @@ def get_manifest_data(id_list):
 
     ***REMOVED***Surround each value with quotes for Neo4j comparison
     for id in id_list:
-        mod_list.append("'%s'" % (id))
+        mod_list.append("'{0}'".format(id))
     ***REMOVED***Separate by commas to make a Neo4j list
     if len(mod_list) > 1:
         ids = ",".join(mod_list)
@@ -479,18 +439,18 @@ def get_manifest_data(id_list):
         ids = mod_list[0]
 
     ***REMOVED***Surround in brackets to format list syntax
-    ids = "[%s]" % ids
-    cquery = "MATCH (n:File) WHERE n.id IN %s RETURN n" % ids
+    ids = "[{0}]".format(ids)
+    cquery = "MATCH (F:file) WHERE F.id IN {0} RETURN F".format(ids)
     res = process_cquery_http(cquery)
 
     outlist = []
 
     ***REMOVED***Grab the ID, file URL, md5, and size
     for entry in res:
-        id = entry['n']['id']
-        url = extract_url(entry['n'])
-        md5 = entry['n']['md5']
-        size = entry['n']['size']
-        outlist.append("\n%s\t%s\t%s\t%s" % (id,url,md5,size))
+        id = entry['F']['id']
+        url = extract_url(entry['F'])
+        md5 = entry['F']['md5']
+        size = entry['F']['size']
+        outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,url,md5,size))
 
     return outlist

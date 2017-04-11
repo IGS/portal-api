@@ -256,7 +256,7 @@ def get_project():
         proj_list = []
 
         for p in pdata:
-            proj_list.append({ "project_id": p["n"]["name"], "primary_site": "multiple", "disease_type": p["n"]["description"], "released": True, "name": p["n"]["description"] })
+            proj_list.append({ "project_id": p["PSS.study_name"], "primary_site": "multiple", "disease_type": p["PSS.study_description"], "released": True, "name": p["PSS.study_description"] })
         np = len(proj_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
@@ -322,7 +322,7 @@ def get_project():
 
         for p in pdata:
             print p
-            proj_list.append({ "project_id": p["Study.name"], "disease_type": p["Study.full_name"], "project_name": p["Project.subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
+            proj_list.append({ "project_id": p["PSS.study_name"], "disease_type": p["PSS.study_name"], "project_name": p["PSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)

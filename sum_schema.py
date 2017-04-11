@@ -4,10 +4,10 @@ from models import SBucketCounter, FileSize, get_buckets, get_total_file_size
 ***REMOVED***Can preload default counts for fast loading, user interaction with facets or
 ***REMOVED***queries will then refine these counts.
 proName = get_buckets("PSS.project_name","yes","")
-samFMA = get_buckets("VS.fma_body_site","yes","")
+samFMA = get_buckets("VS.body_site","yes","")
 subGender = get_buckets("PSS.gender","yes","")
-fileFormat = get_buckets("File.format","yes","")
-fileSubtype = get_buckets("File.subtype","yes","")
+fileFormat = get_buckets("F.format","yes","")
+fileSubtype = get_buckets("F.subtype","yes","")
 studyName = get_buckets("PSS.study_name","yes","")
 fs = FileSize(value=get_total_file_size(""))
 
@@ -27,7 +27,7 @@ class Query(graphene.ObjectType):
         if cy == "":
             return samFMA
         else:
-            return get_buckets("VS.fma_body_site","yes",cy)
+            return get_buckets("VS.body_site","yes",cy)
 
     def resolve_ProjectName(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
@@ -48,14 +48,14 @@ class Query(graphene.ObjectType):
         if cy == "":
             return fileFormat
         else:
-            return get_buckets("File.format","yes",cy)
+            return get_buckets("F.format","yes",cy)
 
     def resolve_FileSubtype(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
             return fileSubtype
         else:
-            return get_buckets("File.subtype","yes",cy)
+            return get_buckets("F.subtype","yes",cy)
 
     def resolve_StudyName(self, args, context, info):
         cy = args['cy'].replace("|",'"') 

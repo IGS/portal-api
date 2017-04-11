@@ -5,8 +5,8 @@ from models import Pagination, FileHits, Aggregations, get_buckets, get_file_hit
 ***REMOVED***up a bit for files counts since it needs to pull ALL nodes that are tied to 
 ***REMOVED***some file and count those unique groups. Should be easy enough, just match by 
 ***REMOVED***the relevant edges. Simplified for now. 
-dt = get_buckets("File.node_type","no","")
-df = get_buckets("File.format","no","")
+dt = get_buckets("F.node_type","no","")
+df = get_buckets("F.format","no","")
 
 class Query(graphene.ObjectType):
 
@@ -20,10 +20,10 @@ class Query(graphene.ObjectType):
 
     def resolve_hits(self, args, context, info):
         cy = args['cy'].replace("|",'"') ***REMOVED***handle quotes for GQL
-        o = args['o'].replace("file_name","Sample.id") ***REMOVED***lose the portal ordering syntax
+        o = args['o'].replace("file_name","VS.id") ***REMOVED***lose the portal ordering syntax
         o = o.replace(".raw","")
         if args['cy'] == "":
-            return get_file_hits(args['s'],"Sample.id:asc",args['f'],"")
+            return get_file_hits(args['s'],"VS.id:asc",args['f'],"")
         else:
             return get_file_hits(args['s'],o,args['f'],cy)
 
