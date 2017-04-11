@@ -3,12 +3,12 @@ from models import SBucketCounter, FileSize, get_buckets, get_total_file_size
 
 # Can preload default counts for fast loading, user interaction with facets or
 # queries will then refine these counts.
-proName = get_buckets("Project.name","yes","")
-samFMA = get_buckets("Sample.fma_body_site","yes","")
-subGender = get_buckets("Subject.gender","yes","")
+proName = get_buckets("PSS.project_name","yes","")
+samFMA = get_buckets("VS.fma_body_site","yes","")
+subGender = get_buckets("PSS.gender","yes","")
 fileFormat = get_buckets("File.format","yes","")
 fileSubtype = get_buckets("File.subtype","yes","")
-studyName = get_buckets("Study.name","yes","")
+studyName = get_buckets("PSS.study_name","yes","")
 fs = FileSize(value=get_total_file_size(""))
 
 class Query(graphene.ObjectType):
@@ -27,21 +27,21 @@ class Query(graphene.ObjectType):
         if cy == "":
             return samFMA
         else:
-            return get_buckets("Sample.fma_body_site","yes",cy)
+            return get_buckets("VS.fma_body_site","yes",cy)
 
     def resolve_ProjectName(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
             return proName
         else:
-            return get_buckets("Project.name","yes",cy)
+            return get_buckets("PSS.project_name","yes",cy)
 
     def resolve_SubjectGender(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
             return subGender
         else:
-            return get_buckets("Subject.gender","yes",cy)
+            return get_buckets("PSS.gender","yes",cy)
 
     def resolve_FileFormat(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
@@ -62,7 +62,7 @@ class Query(graphene.ObjectType):
         if cy == "":
             return studyName
         else:
-            return get_buckets("Study.name","yes",cy)
+            return get_buckets("PSS.study_name","yes",cy)
 
     def resolve_fs(self, args, context, info):
         cy = args['cy'].replace("|",'"') 

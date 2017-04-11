@@ -93,7 +93,6 @@ class Aggregations(graphene.ObjectType): # Collecting lists of buckets (BucketCo
     Sample_geolocname = graphene.Field(BucketCounter, name="Sample_geo_loc_name")
     Sample_sampcollectdevice = graphene.Field(BucketCounter, name="Sample_samp_collect_device")
     Sample_envpackage = graphene.Field(BucketCounter, name="Sample_env_package")
-    Sample_supersite = graphene.Field(BucketCounter, name="Sample_supersite")
     Sample_feature = graphene.Field(BucketCounter, name="Sample_feature")
     Sample_material = graphene.Field(BucketCounter, name="Sample_material")
     Sample_biome = graphene.Field(BucketCounter, name="Sample_biome")
@@ -152,14 +151,10 @@ def process_cquery_http(cquery):
     return query_res
 
 # Base Cypher for traversing the entirety of the schema
-full_traversal = ("MATCH (Project:Case{node_type:'project'})"
-    "<-[:PART_OF]-(Study:Case{node_type:'study'})"
-    "<-[:PARTICIPATES_IN]-(Subject:Case{node_type:'subject'})"
-    "<-[:BY]-(Visit:Case{node_type:'visit'})"
-    "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'})"
-    "<-[:PREPARED_FROM]-(pf)"
-    "<-[:SHORTCUT]-(File)"
-)
+# PSS = Project/Study/Subject
+# VS = Visit/Sample
+# File = File
+full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(File:file)"
 
 # Function to extract a file name and an HTTP URL given values from a urls property from an OSDF node
 def extract_url(urls_node):
@@ -185,7 +180,7 @@ def extract_url(urls_node):
 def get_total_file_size(cy):
     cquery = ""
     if cy == "":
-        cquery = "MATCH (File) WHERE NOT File.node_type=~'.*prep' RETURN SUM(toInt(File.size)) AS tot"
+        cquery = "MATCH (File) RETURN SUM(toInt(File.size)) AS tot"
     elif '"op"' in cy:
         cquery = build_cypher(match,cy,"null","null","null","size")
     else:
@@ -323,37 +318,23 @@ def get_all_study_data():
 
 # This function is a bit unique as it's only called to populate the bar chart on the home page
 def get_all_proj_counts():
-    cquery = ("MATCH (Project:Case{node_type:'project'})"
-        "<-[:PART_OF]-(Study:Case{node_type:'study'})"
-        "<-[:PARTICIPATES_IN]-(Subject:Case{node_type:'subject'})"
-        "<-[:BY]-(Visit:Case{node_type:'visit'})"
-        "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'})"
-        "<-[:PREPARED_FROM]-(pf)"
-        "<-[:SHORTCUT]-(File)"
-        " RETURN DISTINCT Study.id, Study.name, Sample.fma_body_site, COUNT(DISTINCT Sample) as case_count, (COUNT(DISTINCT File)) as file_count"
-        )
+    cquery = "{0} RETURN DISTINCT PSS.study_id, PSS.study_name, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(File) as file_count".format(full_traversal)
     res = process_cquery_http(cquery)
     return res
 
 # This populates the values in the side table of facet search. Want to let users
 # know how many samples per category in a given property. 
 count_props_dict = {
-    "project": "MATCH (n:Case{node_type:'project'})<-[:PART_OF]-(study)<-[:PARTICIPATES_IN]-(subject)<-[:BY]-(visit)<-[:COLLECTED_DURING]-(sample)<-[:PREPARED_FROM]-(pf)<-[:SHORTCUT]-(File) WITH DISTINCT n,sample RETURN n.%s AS prop, count(sample) as counts",
-    "study": "MATCH (n:Case{node_type:'study'})<-[:PARTICIPATES_IN]-(subject)<-[:BY]-(visit)<-[:COLLECTED_DURING]-(sample)<-[:PREPARED_FROM]-(pf)<-[:SHORTCUT]-(File) WITH DISTINCT n,sample RETURN n.%s AS prop, count(sample) as counts",
-    "subject": "MATCH (n:Case{node_type:'subject'})<-[:BY]-(visit)<-[:COLLECTED_DURING]-(sample)<-[:PREPARED_FROM]-(pf)<-[:SHORTCUT]-(File) WITH DISTINCT n,sample RETURN n.%s AS prop, count(sample) as counts",
-    "visit": "MATCH (n:Case{node_type:'visit'})<-[:COLLECTED_DURING]-(sample)<-[:PREPARED_FROM]-(pf)<-[:SHORTCUT]-(File) WITH DISTINCT n,sample RETURN n.%s AS prop, count(sample) as counts",
+    "PSS": "MATCH (n:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(File:file) RETURN n.%s AS prop, COUNT(DISTINCT(VS)) as counts",
+    "VS": "MATCH (PSS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(File:file) RETURN n.%s AS prop, COUNT(DISTINCT(n)) as counts",
+    "File": "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(n:file) RETURN n.%s AS prop, COUNT(DISTINCT(VS)) as counts"
 }
 
 # Cypher query to count the amount of each distinct property
 def count_props(node, prop, cy):
     cquery = ""
     if cy == "":
-        if node in count_props_dict:
-            cquery = count_props_dict[node] % (prop)
-        elif node == 'sample':
-            cquery = "MATCH (n:Case{node_type:'sample'})<-[:PREPARED_FROM]-(pf)<-[:SHORTCUT]-(File) WITH DISTINCT n RETURN n.%s AS prop, COUNT(n.%s) as counts" % (prop,prop)
-        else:
-            cquery = "Match (n:File) WHERE NOT n.node_type=~'.*prep' RETURN n.%s as prop, count(n.%s) as counts" % (prop, prop)
+        cquery = count_props_dict[node] % (prop)
     else:
         cquery = build_cypher(match,cy,"null","null","null",prop)
     return process_cquery_http(cquery)
@@ -364,20 +345,16 @@ def count_props_and_files(node, prop, cy):
     cquery,with_distinct = ("" for i in range (2))
     
     if cy == "":
-        retval = ("WITH (COUNT(DISTINCT(Sample))) as ccounts, "
-            "COUNT(DISTINCT(File)) AS dcounts, %s.%s AS prop, "
-            "collect(DISTINCT File) AS f UNWIND f AS fs "
-            "RETURN prop,ccounts,dcounts,SUM(toInt(fs.size)) as tot"
-            )
+        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VS)) AS ccounts, COUNT(File) AS dcounts, SUM(toInt(File.size)) as tot"
 
-        mod_retval = retval % (node,prop)
-        cquery = "%s %s" % (full_traversal,mod_retval)
+        mod_retval = retval.format(node,prop)
+        cquery = "{0} {1}".format(full_traversal,mod_retval)
 
     else:
         if node == 'Study' and prop == 'name':
             prop = 'sname'
 
-        prop_detailed = "%s_detailed" % (prop)
+        prop_detailed = "{0}_detailed".format(prop)
         if "op" in cy:
             cquery = build_cypher(match,cy,"null","null","null",prop_detailed)
         else:
