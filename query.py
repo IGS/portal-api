@@ -2,13 +2,10 @@ import urllib2, re, json
 
 ***REMOVED***The match var is the base query to prepend all queries. The idea is to traverse
 ***REMOVED***the graph entirely and use filters to return a subset of the total traversal. 
-match = ("MATCH (Project:Case{node_type:'project'})<-[:PART_OF]-(Study:Case{node_type:'study'})"
-    "<-[:PARTICIPATES_IN]-(Subject:Case{node_type:'subject'})"
-    "<-[:BY]-(Visit:Case{node_type:'visit'})"
-    "<-[:COLLECTED_DURING]-(Sample:Case{node_type:'sample'})"
-    "<-[:PREPARED_FROM]-(pf)"
-    "<-[:SHORTCUT]-(File) WHERE "
-    )
+***REMOVED***PSS = Project/Study/Subject
+***REMOVED***VS = Visit/Sample
+***REMOVED***File = File
+match = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(File:file) WHERE "
 
 ***REMOVED***If the following return ends in "counts", then it is for a pie chart. The first two are for
 ***REMOVED***cases/files tabs and the last is for the total size. 
@@ -23,31 +20,30 @@ match = ("MATCH (Project:Case{node_type:'project'})<-[:PART_OF]-(Study:Case{node
 
 ***REMOVED***The detailed queries require specifics about both sample and file counts to be 
 ***REMOVED***returned so they require some extra handling. 
-base_detailed_return = ("WITH (COUNT(DISTINCT(Sample))) as ccounts, "
-    "COUNT(DISTINCT(File)) AS dcounts, %s.%s AS prop, "
-    "collect(DISTINCT File) AS f UNWIND f AS fs "
-    "RETURN prop,ccounts,dcounts,SUM(toInt(fs.size)) as tot"
+base_detailed_return = ("WITH COUNT(DISTINCT(VS)) as ccounts, "
+    "COUNT(File) AS dcounts, %s.%s AS prop "
+    "RETURN prop,ccounts,dcounts,SUM(toInt(File.size)) as tot"
     )
 
 returns = {
-    'cases': "WITH DISTINCT Project,Sample,Study RETURN Project.name, Project.subtype, Sample.fma_body_site, Sample.id, Study.subtype",
-    'files': "WITH DISTINCT File,Project,Sample RETURN Project, File, Sample.id",
-    'name': "WITH DISTINCT File,Project RETURN Project.name as prop, count(Project.name) as counts",
-    'name_detailed': base_detailed_return % ('Project','name'),
-    'sname': "WITH DISTINCT File,Study RETURN Study.name as prop, count(Study.name) as counts",
-    'sname_detailed': base_detailed_return % ('Study','name'),
-    'fma_body_site': "WITH DISTINCT File,Sample RETURN Sample.fma_body_site as prop, count(Sample.fma_body_site) as counts",
-    'fma_body_site_detailed': base_detailed_return % ('Sample','fma_body_site'), 
-    'study': "WITH DISTINCT File,Study RETURN Study.name as prop, count(Study.name) as counts",
-    'gender': "WITH DISTINCT File,Subject RETURN Subject.gender as prop, count(Subject.gender) as counts",
-    'gender_detailed': base_detailed_return % ('Subject','gender'),
-    'race': "WITH DISTINCT File,Subject RETURN Subject.race as prop, count(Subject.race) as counts",
-    'format': "WITH DISTINCT File RETURN File.format as prop, count(File.format) as counts",
+    'cases': "RETURN PSS.project_name, PSS.project_subtype, VS.fma_body_site, VS.id, PSS.study_subtype",
+    'files': "RETURN PSS, VS.id, File",
+    'name': "RETURN PSS.project_name AS prop, count(PSS.project_name) AS counts",
+    'name_detailed': base_detailed_return % ('PSS','PSS.project_name'),
+    'sname': "RETURN VS.name AS prop, count(VS.name) AS counts",
+    'sname_detailed': base_detailed_return % ('VS','name'),
+    'fma_body_site': "RETURN VS.fma_body_site AS prop, count(VS.fma_body_site) AS counts",
+    'fma_body_site_detailed': base_detailed_return % ('VS','fma_body_site'), 
+    'study': "RETURN PSS.study_name AS prop, count(PSS.study_name) AS counts",
+    'gender': "RETURN PSS.gender AS prop, count(PSS.gender) AS counts",
+    'gender_detailed': base_detailed_return % ('PSS','gender'),
+    'race': "RETURN PSS.race AS prop, count(PSS.race) AS counts",
+    'format': "RETURN File.format AS prop, count(File.format) AS counts",
     'format_detailed': base_detailed_return % ('File','format'),
     'subtype_detailed': base_detailed_return % ('File','subtype'),
-    'size': "WITH DISTINCT File RETURN (SUM(toInt(File.size))) as tot",
-    'f_pagination': "WITH DISTINCT File RETURN (count(File)) AS tot",
-    'c_pagination': "WITH DISTINCT Sample RETURN (count(Sample.id)) AS tot"
+    'size': "RETURN (SUM(toInt(File.size))) AS tot",
+    'f_pagination': "RETURN (count(File)) AS tot",
+    'c_pagination': "RETURN (count(VS.id)) AS tot"
 }
 
 ***REMOVED***Function to extract known GDC syntax and convert to OSDF. This is commonly needed for performing

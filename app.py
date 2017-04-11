@@ -34,7 +34,6 @@ application.after_request(add_cors_headers)
 
 @application.route('/gql/_mapping', methods=['GET'])
 def get_maps():
-    add_cors_headers
     res = jsonify({"sample.Project_name": gql_map['project_name'],
         "sample.Project_subtype": gql_map['project_subtype'],
         "sample.Study_center": gql_map['study_center'],
@@ -291,8 +290,8 @@ def get_project():
         hit_list = []
 
         for p in pd:
-            proj_id = p["Study.name"]
-            psite = p["Sample.fma_body_site"]
+            proj_id = p["PSS.study_name"]
+            psite = p["VS.body_site"]
             n_files = p["file_count"]
             n_cases = p["case_count"]
             if psite is None:
@@ -454,4 +453,4 @@ application.add_url_rule(
 )
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0',port=int(be_port))
+    application.run(threaded=True,host='0.0.0.0',port=int(be_port))
