@@ -158,19 +158,20 @@ full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_
 
 ***REMOVED***Function to extract a file name and an HTTP URL given values from a urls property from an OSDF node
 def extract_url(urls_node):
+   
     fn = ""
+
     if 'http' in urls_node:
         fn = urls_node['http']
     elif 'fasp' in urls_node:
-        fn = urls_node['fasp']
-        ***REMOVED***Do a replacement to just output http
-        fn = fn.replace("fasp://aspera","http://downloads")
+        fn = urls_node['fasp'].replace("fasp://aspera","http://downloads")
     elif 'ftp' in urls_node:
         fn = urls_node['ftp']
     elif 's3' in urls_node:
         fn = urls_node['s3']
     else:
-        fn = "No File Found."
+        fn = "No file found."
+
     return fn
 
 ***REMOVED***Function to get file size from Neo4j. 
@@ -359,18 +360,19 @@ def get_case_hits(size,order,f,cy):
     cquery = ""
     if cy == "":
         order = order.split(":")
-        retval = "RETURN DISTINCT Project.name,Study.name,Study.full_name,Sample.id,Project.subtype,Sample.fma_body_site ORDER BY %s %s SKIP %s LIMIT %s"
-        cquery = "%s %s" % (full_traversal,retval)
         if f != 0:
             f = f-1
-        cquery = cquery % (order[0],order[1].upper(),f,size)
+        retval = "RETURN DISTINCT PSS,VS ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
         cquery = build_cypher(match,cy,order,f,size,"cases")
     else:
         cquery = build_adv_cypher(match,cy,order,f,size,"cases")
+
     res = process_cquery_http(cquery)
+
     for x in range(0,len(res)):
-        cur = CaseHits(project=Project(projectId=res[x]['Project.subtype'],primarySite=res[x]['Sample.fma_body_site'],name=res[x]['Project.name'],studyName=res[x]['Study.name'],studyFullName=res[x]['Study.full_name']),caseId=res[x]['Sample.id'])
+        cur = CaseHits(project=Project(projectId=res[x]['PSS']['project_subtype'],primarySite=res[x]['VS']['body_site'],name=res[x]['PSS']['project_name'],studyName=res[x]['PSS']['study_name'],studyFullName=res[x]['PSS']['study_name']),caseId=res[x]['VS']['id'])
         hits.append(cur)
     return hits
 
@@ -380,11 +382,10 @@ def get_file_hits(size,order,f,cy):
     cquery = ""
     if cy == "":
         order = order.split(":")
-        retval = "RETURN DISTINCT Project,File,Sample.id ORDER BY %s %s SKIP %s LIMIT %s"
-        cquery = "%s %s" % (full_traversal,retval)
         if f != 0:
             f = f-1
-        cquery = cquery % (order[0],order[1].upper(),f,size)
+        retval = "RETURN DISTINCT PSS,VS,F ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
         cquery = build_cypher(match,cy,order,f,size,"files")
     else:
@@ -392,32 +393,33 @@ def get_file_hits(size,order,f,cy):
     res = process_cquery_http(cquery)
     for x in range(0,len(res)):
         case_hits = [] ***REMOVED***reinit each iteration
-        cur_case = CaseHits(project=Project(projectId=res[x]['Project']['subtype'],name=res[x]['Project']['name']),caseId=res[x]['Sample.id'])
+        cur_case = CaseHits(project=Project(projectId=res[x]['PSS']['project_subtype'],name=res[x]['PSS']['project_name']),caseId=res[x]['VS']['id'])
         case_hits.append(cur_case)
-        furl = extract_url(res[x]['File']) ***REMOVED***File name is our URL
+        
+        furl = extract_url(res[x]['F']) ***REMOVED***File name is our URL
         if '.hmpdacc' in furl: ***REMOVED***HMP endpoint
             furl = re.search(r'/data/(.*)',furl).group(1)
         elif '.ihmpdcc':
             furl = re.search(r'.org/(.*)',furl).group(1)
-        cur_file = FileHits(dataType=res[x]['File']['subtype'],fileName=furl,dataFormat=res[x]['File']['format'],submitterId="null",access="open",state="submitted",fileId=res[x]['File']['id'],dataCategory=res[x]['File']['node_type'],experimentalStrategy=res[x]['File']['subtype'],fileSize=res[x]['File']['size'],cases=case_hits)
+
+        cur_file = FileHits(dataType=res[x]['F']['subtype'],fileName=furl,dataFormat=res[x]['F']['format'],submitterId="null",access="open",state="submitted",fileId=res[x]['F']['id'],dataCategory=res[x]['F']['node_type'],experimentalStrategy=res[x]['F']['subtype'],fileSize=res[x]['F']['size'],cases=case_hits)
         hits.append(cur_file)    
     return hits
 
 ***REMOVED***Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):
     cl, al, fl = ([] for i in range(3))
-    retval = "WHERE File.id=\"%s\" RETURN Project,Subject,Sample,pf,File"
-    cquery = "%s %s" % (full_traversal,retval)
-    cquery = cquery % (file_id)
+    retval = "WHERE F.id='{0}' RETURN PSS,VS,F".format(file_id)
+    cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
-    furl = extract_url(res[0]['File']) 
-    sample_bs = res[0]['Sample']['fma_body_site']
-    wf = "%s -> %s" % (sample_bs,res[0]['pf']['node_type'])
-    cl.append(CaseHits(project=Project(projectId=res[0]['Project']['subtype']),caseId=res[0]['Subject']['id']))
-    al.append(AssociatedEntities(entityId=res[0]['pf']['id'],caseId=res[0]['Sample']['id'],entityType=res[0]['pf']['node_type']))
-    fl.append(IndivFiles(fileId=res[0]['File']['id']))
+    furl = extract_url(res[0]['F']) 
+    sample_bs = res[0]['VS.body_site']
+    wf = "{0} -> {1}".format(sample_bs,res[0]['F.prep_node_type'])
+    cl.append(CaseHits(project=Project(projectId=res[0]['PSS.project_subtype']),caseId=res[0]['VS.id']))
+    al.append(AssociatedEntities(entityId=res[0]['F.prep_id'],caseId=res[0]['VS.id'],entityType=res[0]['F.prep_node_type']))
+    fl.append(IndivFiles(fileId=res[0]['F.id']))
     a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) ***REMOVED***can add analysis ID once node is present or remove if deemed unnecessary
-    return FileHits(dataType=res[0]['File']['node_type'],fileName=furl,md5sum=res[0]['File']['checksums'],dataFormat=res[0]['File']['format'],submitterId="null",state="submitted",access="open",fileId=res[0]['File']['id'],dataCategory=res[0]['File']['node_type'],experimentalStrategy=res[0]['File']['study'],fileSize=res[0]['File']['size'],cases=cl,associatedEntities=al,analysis=a)
+    return FileHits(dataType=res[0]['F.node_type'],fileName=furl,md5sum=res[0]['F.md5'],dataFormat=res[0]['F.format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F.id'],dataCategory=res[0]['F.node_type'],experimentalStrategy=res[0]['F.study'],fileSize=res[0]['F.size'],cases=cl,associatedEntities=al,analysis=a)
 
 def get_url_for_download(id):
     cquery = "MATCH (F:file) WHERE F.id='{0}' RETURN F".format(id)
