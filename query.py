@@ -1,11 +1,15 @@
-import urllib2, re, json
+import re, json, requests, ujson
+from py2neo import Graph ***REMOVED***Using py2neo v3 not v2
+from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
+from models import Project,Pagination,CaseHits,IndivFiles,Analysis,AssociatedEntities
+from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCounter,FileSize
 
 ***REMOVED***The match var is the base query to prepend all queries. The idea is to traverse
 ***REMOVED***the graph entirely and use filters to return a subset of the total traversal. 
 ***REMOVED***PSS = Project/Study/Subject
 ***REMOVED***VS = Visit/Sample
 ***REMOVED***File = File
-match = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) WHERE "
+full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) "
 
 ***REMOVED***If the following return ends in "counts", then it is for a pie chart. The first two are for
 ***REMOVED***cases/files tabs and the last is for the total size. 
@@ -45,6 +49,341 @@ returns = {
     'f_pagination': "RETURN (count(F)) AS tot",
     'c_pagination': "RETURN (count(VS.id)) AS tot"
 }
+
+***REMOVED***This populates the values in the side table of facet search. Want to let users
+***REMOVED***know how many samples per category in a given property. 
+count_props_dict = {
+    "PSS": "MATCH (n:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VS)) as counts",
+    "VS": "MATCH (PSS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
+    "F": "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(n:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VS)) as counts"
+}
+
+####################################
+***REMOVED***FUNCTIONS FOR GETTING NEO4J DATA #
+####################################
+
+***REMOVED***Get all these values from the conf
+neo4j_bolt = int(neo4j_bolt)
+neo4j_http = int(neo4j_http)
+
+***REMOVED***This section will have all the logic for populating the actual data in the schema (data from Neo4j)
+#graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
+
+def process_cquery_http(cquery):
+    headers = {'Content-Type': 'application/json'}
+    data = {'statements': [{'statement': cquery, 'includeStats': False}]}
+    rq_res = requests.post(url='http://localhost:7474/db/data/transaction/commit',headers=headers, data=ujson.dumps(data), auth=(neo4j_un,neo4j_pw))
+
+    query_res = []
+    jsResp = ujson.loads(rq_res.text)
+    column_names = jsResp['results'][0]['columns']
+
+    for result in jsResp["results"][0]["data"]:
+        res_dict = {}
+        for i in xrange(0, len(column_names)):
+            elem = result['row'][i]
+            if isinstance(elem, long):
+                res_dict[column_names[i]] = int(elem)
+            else:
+                res_dict[column_names[i]] = elem
+        query_res.append(res_dict)
+
+    return query_res
+
+***REMOVED***Function to extract a file name and an HTTP URL given values from a urls property from an OSDF node
+def extract_url(urls_node):
+   
+    fn = ""
+
+    if 'http' in urls_node:
+        fn = urls_node['http']
+    elif 'fasp' in urls_node:
+        fn = urls_node['fasp'].replace("fasp://aspera","http://downloads")
+    elif 'ftp' in urls_node:
+        fn = urls_node['ftp']
+    elif 's3' in urls_node:
+        fn = urls_node['s3']
+    else:
+        fn = "No file found."
+
+    return fn
+
+***REMOVED***Function to get file size from Neo4j. 
+***REMOVED***This current iteration should catch all the file data types EXCEPT for the *omes and the multi-step/repeat
+***REMOVED***edges like the two "computed_from" edges between abundance matrix and 16s_raw_seq_set. Should be
+***REMOVED***rather easy to accommodate these oddities once they're loaded and I can test.
+def get_total_file_size(cy):
+    cquery = ""
+    if cy == "":
+        cquery = "MATCH (F:file) RETURN SUM(toInt(F.size)) AS tot"
+    elif '"op"' in cy:
+        cquery = build_cypher(full_traversal,cy,"null","null","null","size")
+    else:
+        cquery = build_adv_cypher(full_traversal,cy,"null","null","null","size")
+    res = process_cquery_http(cquery)
+    return res[0]['tot']
+
+***REMOVED***Function for pagination calculations. Find the page, number of pages, and number of entries on a single page.
+def pagination_calcs(total,start,size,c_or_f):
+    pg,pgs,cnt,tot = (0 for i in range(4))
+    sort = ""
+    if c_or_f == "c":
+        tot = int(total)
+        sort = "case_id.raw:asc"      
+    else:
+        tot = int(total)
+        sort = "file_name.raw:asc"
+    if size != 0: pgs = int(tot / size) + (tot % size > 0)
+    if size != 0: pg = int(start / size) + (start % size > 0)
+    if (start+size) < tot: ***REMOVED***less than full page, count must be page size
+        cnt = size
+    else: ***REMOVED***if less than a full page (only possible on last page), find the difference
+        cnt = tot-start
+    pagcalcs = []
+    pagcalcs.append(pgs)
+    pagcalcs.append(pg)
+    pagcalcs.append(cnt)
+    pagcalcs.append(tot)
+    pagcalcs.append(sort)
+    return pagcalcs
+
+***REMOVED***Function to determine how pagination is to work for the cases/files tabs. This will 
+***REMOVED***take a Cypher query and a given table size and determine how many pages are needed
+***REMOVED***to display all this data. 
+***REMOVED***cy = Cypher filters/ops
+***REMOVED***size = size of each page
+***REMOVED***f = from/start position
+def get_pagination(cy,size,f,c_or_f):
+    cquery = ""
+    if cy == "":
+        if c_or_f == 'c':
+            cquery = "MATCH (n:sample) RETURN count(n) AS tot"
+        else:
+            cquery = "MATCH (n:file) RETURN count(n) AS tot"
+        res = process_cquery_http(cquery)
+        calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
+        return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
+    else:
+        if '"op"' in cy:
+            if c_or_f == 'c':
+                cquery = build_cypher(full_traversal,cy,"null","null","null","c_pagination")
+            else:
+                cquery = build_cypher(full_traversal,cy,"null","null","null","f_pagination")
+        else:
+            if c_or_f == 'c':
+                cquery = build_adv_cypher(full_traversal,cy,"null","null","null","c_pagination")
+            else:
+                cquery = build_adv_cypher(full_traversal,cy,"null","null","null","f_pagination")
+        res = process_cquery_http(cquery)
+        calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
+        return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
+
+***REMOVED***Retrieve ALL files associated with a given Subject ID.
+def get_files(sample_id):
+    fl = []
+    dt, fn, df, ac, fi = ("" for i in range(5))
+    fs = 0
+    
+    cquery = "{0} WHERE VS.id='{1}' RETURN File".format(full_traversal,sample_id)
+    res = process_cquery_http(cquery)
+
+    for x in range(0,len(res)): ***REMOVED***iterate over each unique path
+        dt = res[x]['File']['subtype']
+        df = res[x]['File']['format']
+        ac = "open" ***REMOVED***need to change this once a new private/public property is added to OSDF
+        fs = res[x]['File']['size']
+        fi = res[x]['File']['id']
+        fn = extract_url(res[x]['File'])
+        fl.append(IndivFiles(dataType=dt,fileName=fn,dataFormat=df,access=ac,fileId=fi,fileSize=fs))
+
+    return fl
+
+***REMOVED***Query to traverse top half of OSDF model (Project<-....-Sample). 
+def get_proj_data(sample_id):
+    cquery = "{0} WHERE VS.id='{1}' RETURN PSS.project_name AS name,PSS.project_subtype AS subtype".format(full_traversal,sample_id)
+    res = process_cquery_http(cquery)
+    return Project(name=res[0]['name'],projectId=res[0]['subtype'])
+
+def get_all_proj_data():
+    cquery = "MATCH (PSS:subject) RETURN DISTINCT PSS.study_name, PSS.study_description"
+    return process_cquery_http(cquery)
+
+def get_all_study_data():
+    cquery = "{0} RETURN DISTINCT PSS.study_name, PSS.project_subtype, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    return process_cquery_http(cquery)
+
+***REMOVED***This function is a bit unique as it's only called to populate the bar chart on the home page
+def get_all_proj_counts():
+    cquery = "{0} RETURN DISTINCT PSS.study_id, PSS.study_name, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    return process_cquery_http(cquery)
+
+***REMOVED***Cypher query to count the amount of each distinct property
+def count_props(node, prop, cy):
+    cquery = ""
+    if cy == "":
+        cquery = count_props_dict[node].format(prop)
+    else:
+        cquery = build_cypher(full_traversal,cy,"null","null","null",prop)
+    return process_cquery_http(cquery)
+
+***REMOVED***Cypher query to count the amount of each distinct property
+def count_props_and_files(node, prop, cy):
+
+    cquery,with_distinct = ("" for i in range (2))
+    
+    if cy == "":
+        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VS)) AS ccounts, COUNT(F) AS dcounts, SUM(toInt(F.size)) as tot"
+
+        mod_retval = retval.format(node,prop)
+        cquery = "{0} {1}".format(full_traversal,mod_retval)
+
+    else:
+        if node == 'Study' and prop == 'name':
+            prop = 'sname'
+
+        prop_detailed = "{0}_detailed".format(prop)
+        if "op" in cy:
+            cquery = build_cypher(full_traversal,cy,"null","null","null",prop_detailed)
+        else:
+            cquery = build_adv_cypher(full_traversal,cy,"null","null","null",prop_detailed)
+
+    print(cquery)
+
+    return process_cquery_http(cquery)
+
+***REMOVED***Formats the values from count_props & count_props_and_files functions above into GQL
+def get_buckets(inp,sum, cy):
+
+    splits = inp.split('.') ***REMOVED***parse for node/prop values to be counted by
+    node = splits[0]
+    prop = splits[1]
+    bucketl,sortl = ([] for i in range(2)) ***REMOVED***need two lists to sort these buckets by size
+
+    if sum == "no": ***REMOVED***not a full summary, just key and doc count need to be returned
+        res = count_props(node, prop, cy)
+        for x in range(0,len(res)):
+            if res[x]['prop'] != "":
+                cur = Bucket(key=res[x]['prop'], docCount=res[x]['counts'])
+                sortl.append(int(res[x]['counts']))
+                bucketl.append(cur)
+
+        return BucketCounter(buckets=[bucket for(sort,bucket) in sorted(zip(sortl,bucketl),reverse=True)])
+
+    else: ***REMOVED***return full summary including case_count, doc_count, file_size, and key
+        res = count_props_and_files(node, prop, cy)
+        for x in range(0,len(res)):
+            if res[x]['prop'] != "":
+                cur = SBucket(key=res[x]['prop'], docCount=res[x]['dcounts'], fileSize=res[x]['tot'], caseCount=res[x]['ccounts'])
+                bucketl.append(cur)
+
+        return SBucketCounter(buckets=bucketl)
+
+***REMOVED***Function to return case values to populate the table, note that this will just return first 25 values arbitrarily for the moment
+***REMOVED***size = number of hits to return
+***REMOVED***order = what to ORDER BY in Cypher clause
+***REMOVED***f = position to star the return 'f'rom based on the ordering (python prevents using that word)
+***REMOVED***cy = filters/op sent from GDC portal
+def get_case_hits(size,order,f,cy):
+    hits = []
+    cquery = ""
+    if cy == "":
+        order = order.split(":")
+        if f != 0:
+            f = f-1
+        retval = "RETURN DISTINCT PSS,VS ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        cquery = "{0} {1}".format(full_traversal,retval)
+    elif '"op"' in cy:
+        cquery = build_cypher(full_traversal,cy,order,f,size,"cases")
+    else:
+        cquery = build_adv_cypher(full_traversal,cy,order,f,size,"cases")
+
+    res = process_cquery_http(cquery)
+
+    for x in range(0,len(res)):
+        cur = CaseHits(project=Project(projectId=res[x]['PSS']['project_subtype'],primarySite=res[x]['VS']['body_site'],name=res[x]['PSS']['project_name'],studyName=res[x]['PSS']['study_name'],studyFullName=res[x]['PSS']['study_name']),caseId=res[x]['VS']['id'])
+        hits.append(cur)
+    return hits
+
+***REMOVED***Function to return file values to populate the table.
+def get_file_hits(size,order,f,cy):
+    hits = []
+    cquery = ""
+    if cy == "":
+        order = order.split(":")
+        if f != 0:
+            f = f-1
+        retval = "RETURN DISTINCT PSS,VS,F ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        cquery = "{0} {1}".format(full_traversal,retval)
+    elif '"op"' in cy:
+        cquery = build_cypher(full_traversal,cy,order,f,size,"files")
+    else:
+        cquery = build_adv_cypher(full_traversal,cy,order,f,size,"files")
+    res = process_cquery_http(cquery)
+    for x in range(0,len(res)):
+        case_hits = [] ***REMOVED***reinit each iteration
+        cur_case = CaseHits(project=Project(projectId=res[x]['PSS']['project_subtype'],name=res[x]['PSS']['project_name']),caseId=res[x]['VS']['id'])
+        case_hits.append(cur_case)
+        
+        furl = extract_url(res[x]['F']) ***REMOVED***File name is our URL
+        if '.hmpdacc' in furl: ***REMOVED***HMP endpoint
+            furl = re.search(r'/data/(.*)',furl).group(1)
+        elif '.ihmpdcc':
+            furl = re.search(r'.org/(.*)',furl).group(1)
+
+        cur_file = FileHits(dataType=res[x]['F']['subtype'],fileName=furl,dataFormat=res[x]['F']['format'],submitterId="null",access="open",state="submitted",fileId=res[x]['F']['id'],dataCategory=res[x]['F']['node_type'],experimentalStrategy=res[x]['F']['subtype'],fileSize=res[x]['F']['size'],cases=case_hits)
+        hits.append(cur_file)    
+    return hits
+
+***REMOVED***Pull all the data associated with a particular file ID. 
+def get_file_data(file_id):
+    cl, al, fl = ([] for i in range(3))
+    retval = "WHERE F.id='{0}' RETURN PSS,VS,F".format(file_id)
+    cquery = "{0} {1}".format(full_traversal,retval)
+    res = process_cquery_http(cquery)
+    furl = extract_url(res[0]['F']) 
+    sample_bs = res[0]['VS.body_site']
+    wf = "{0} -> {1}".format(sample_bs,res[0]['F.prep_node_type'])
+    cl.append(CaseHits(project=Project(projectId=res[0]['PSS.project_subtype']),caseId=res[0]['VS.id']))
+    al.append(AssociatedEntities(entityId=res[0]['F.prep_id'],caseId=res[0]['VS.id'],entityType=res[0]['F.prep_node_type']))
+    fl.append(IndivFiles(fileId=res[0]['F.id']))
+    a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) ***REMOVED***can add analysis ID once node is present or remove if deemed unnecessary
+    return FileHits(dataType=res[0]['F.node_type'],fileName=furl,md5sum=res[0]['F.md5'],dataFormat=res[0]['F.format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F.id'],dataCategory=res[0]['F.node_type'],experimentalStrategy=res[0]['F.study'],fileSize=res[0]['F.size'],cases=cl,associatedEntities=al,analysis=a)
+
+def get_url_for_download(id):
+    cquery = "MATCH (F:file) WHERE F.id='{0}' RETURN F".format(id)
+    res = process_cquery_http(cquery)
+    return extract_url(res[0]['F'])
+
+def get_manifest_data(id_list):
+
+    ids = ""
+    mod_list = []
+
+    ***REMOVED***Surround each value with quotes for Neo4j comparison
+    for id in id_list:
+        mod_list.append("'{0}'".format(id))
+    ***REMOVED***Separate by commas to make a Neo4j list
+    if len(mod_list) > 1:
+        ids = ",".join(mod_list)
+    else: ***REMOVED***just a single ID
+        ids = mod_list[0]
+
+    ***REMOVED***Surround in brackets to format list syntax
+    ids = "[{0}]".format(ids)
+    cquery = "MATCH (F:file) WHERE F.id IN {0} RETURN F".format(ids)
+    res = process_cquery_http(cquery)
+
+    outlist = []
+
+    ***REMOVED***Grab the ID, file URL, md5, and size
+    for entry in res:
+        id = entry['F']['id']
+        url = extract_url(entry['F'])
+        md5 = entry['F']['md5']
+        size = entry['F']['size']
+        outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,url,md5,size))
+
+    return outlist
 
 ***REMOVED***Function to extract known GDC syntax and convert to OSDF. This is commonly needed for performing
 ***REMOVED***cypher queries while still being able to develop the front-end with the cases syntax.
@@ -154,9 +493,9 @@ def build_cypher(match,whereFilters,order,start,size,rtype):
         if start != 0:
             start = start - 1
         retval2 = "ORDER BY %s %s SKIP %s LIMIT %s" % (order[0],order[1].upper(),start,size) 
-        return "%s %s %s %s" % (match,where,retval1,retval2)
+        return "%s WHERE %s %s %s" % (match,where,retval1,retval2)
     else:
-        return "%s %s %s" % (match,where,retval1)
+        return "%s WHERE %s %s" % (match,where,retval1)
 
 ***REMOVED***First iteration, handling all regex individually
 regexForNotEqual = re.compile(r"<>\s([0-9]*[a-zA-Z_]+[a-zA-Z0-9_]*)\b") ***REMOVED***only want to add quotes to anything that's not solely numbers
@@ -208,6 +547,6 @@ def build_adv_cypher(match,whereFilters,order,start,size,rtype):
         retval2 = "ORDER BY %s %s SKIP %s LIMIT %s" % (order[0],order[1].upper(),start,size)
         if size == 0: ***REMOVED***accounting for inconsistency where front-end asks for a 0 size return
             retval2 = "ORDER BY %s %s" % (order[0],order[1].upper())
-        return "%s %s %s %s" % (match,where,retval1,retval2)
+        return "%s WHERE %s %s %s" % (match,where,retval1,retval2)
     else:
-        return "%s %s %s" % (match,where,retval1)
+        return "%s WHERE %s %s" % (match,where,retval1)

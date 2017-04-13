@@ -1,5 +1,6 @@
 import graphene
-from models import Pagination, FileHits, Aggregations, get_buckets, get_file_hits, get_pagination
+from models import Pagination, FileHits, Aggregations
+from query import get_buckets, get_file_hits, get_pagination
 
 ***REMOVED***Can preload aggregate. Note that the get_buckets function needs to be changed 
 ***REMOVED***up a bit for files counts since it needs to pull ALL nodes that are tied to 

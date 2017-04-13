@@ -1,5 +1,6 @@
 import graphene
-from models import Pagination, CaseHits, Aggregations, get_buckets, get_case_hits, get_pagination
+from models import Pagination, CaseHits, Aggregations
+from query import get_buckets, get_case_hits, get_pagination
 
 ***REMOVED***Can preload counts by declaring these in this next block. 
 ***REMOVED***These aggregations can remain stagnant so don't need to update

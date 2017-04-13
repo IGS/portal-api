@@ -1,6 +1,6 @@
 import graphene
-from graphene import relay
-from models import FileHits, get_file_data 
+from models import FileHits
+from query import get_file_data 
 
 ***REMOVED***Unlike the others, don't want to preload here. Load on call from each unique sample ID
 

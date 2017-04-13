@@ -1,6 +1,6 @@
 import graphene
-from graphene import relay
-from models import Project, get_proj_data
+from models import Project 
+from query import get_proj_data
 
 class Query(graphene.ObjectType):
 

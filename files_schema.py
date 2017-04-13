@@ -1,6 +1,6 @@
 import graphene
-from graphene import relay
-from models import Project, IndivFiles, get_proj_data, get_files
+from models import Project, IndivFiles
+from query import get_proj_data, get_files
 
 ***REMOVED***Unlike the others, don't want to preload here. Load on call from each unique sample ID
 
