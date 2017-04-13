@@ -247,8 +247,6 @@ def count_props_and_files(node, prop, cy):
         else:
             cquery = build_adv_cypher(full_traversal,cy,"null","null","null",prop_detailed)
 
-    print(cquery)
-
     return process_cquery_http(cquery)
 
 # Formats the values from count_props & count_props_and_files functions above into GQL
