@@ -1,5 +1,6 @@
 import graphene
-from models import SBucketCounter, FileSize, get_buckets, get_total_file_size
+from models import SBucketCounter, FileSize
+from query import get_buckets, get_total_file_size
 
 # Can preload default counts for fast loading, user interaction with facets or
 # queries will then refine these counts.

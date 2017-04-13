@@ -9,11 +9,11 @@ from files_schema import files_schema
 from table_schema import table_schema
 from indiv_files_schema import indiv_files_schema
 from indiv_cases_schema import indiv_cases_schema
-from models import get_url_for_download, convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data
+from query import get_url_for_download, convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 import graphene
-import urllib2, sys, json, re, os
+import urllib2, json
 
 application = Flask(__name__)
 application.debug = True
