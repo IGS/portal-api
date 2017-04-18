@@ -1,4 +1,5 @@
-import re, json, requests, ujson
+import re, json, requests
+import ujson
 from py2neo import Graph ***REMOVED***Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
 from models import Project,Pagination,CaseHits,IndivFiles,Analysis,AssociatedEntities
@@ -30,8 +31,8 @@ base_detailed_return = ("WITH COUNT(DISTINCT(VS)) as ccounts, "
     )
 
 returns = {
-    'cases': "RETURN PSS.project_name, PSS.project_subtype, VS.fma_body_site, VS.id, PSS.study_subtype",
-    'files': "RETURN PSS, VS.id, File",
+    'cases': "RETURN DISTINCT PSS.project_name, PSS.project_subtype, VS.fma_body_site, VS.id, PSS.study_subtype",
+    'files': "RETURN DISTINCT PSS, VS.id, File",
     'name': "RETURN PSS.project_name AS prop, count(PSS.project_name) AS counts",
     'name_detailed': base_detailed_return.format('PSS','PSS.project_name'),
     'sname': "RETURN VS.name AS prop, count(VS.name) AS counts",
@@ -47,7 +48,7 @@ returns = {
     'subtype_detailed': base_detailed_return.format('F','subtype'),
     'size': "RETURN (SUM(toInt(F.size))) AS tot",
     'f_pagination': "RETURN (count(F)) AS tot",
-    'c_pagination': "RETURN (count(VS.id)) AS tot"
+    'c_pagination': "RETURN (count(DISTINCT(VS.id))) AS tot"
 }
 
 ***REMOVED***This populates the values in the side table of facet search. Want to let users
@@ -80,9 +81,9 @@ def process_cquery_http(cquery):
 
     for result in jsResp["results"][0]["data"]:
         res_dict = {}
-        for i in xrange(0, len(column_names)):
+        for i in range(0, len(column_names)):
             elem = result['row'][i]
-            if isinstance(elem, long):
+            if isinstance(elem, float):
                 res_dict[column_names[i]] = int(elem)
             else:
                 res_dict[column_names[i]] = elem
@@ -388,31 +389,31 @@ def get_manifest_data(id_list):
 def convert_gdc_to_osdf(inp_str):
     ***REMOVED***Errors in Graphene mapping prevent the syntax I want, so ProjectName is converted to 
     ***REMOVED***Cypher ready Project.name here (as are the other possible query parameters).
-    inp_str = inp_str.replace("cases.ProjectName","Project.name")
-    inp_str = inp_str.replace("cases.SampleFmabodysite","Sample.fma_body_site")
-    inp_str = inp_str.replace("cases.SubjectGender","Subject.gender")
-    inp_str = inp_str.replace("project.primary_site","Sample.fma_body_site")
-    inp_str = inp_str.replace("subject.gender","Subject.gender")
-    inp_str = inp_str.replace("study.name","Study.name")
-    inp_str = inp_str.replace("file.format","File.format")
-    inp_str = inp_str.replace("file.category","File.subtype") ***REMOVED***note the conversion
-    inp_str = inp_str.replace("files.file_id","File.id")
+    inp_str = inp_str.replace("cases.ProjectName","PSS.project_name")
+    inp_str = inp_str.replace("cases.SampleFmabodysite","VS.body_site")
+    inp_str = inp_str.replace("cases.SubjectGender","PSS.gender")
+    inp_str = inp_str.replace("project.primary_site","VS.body_site")
+    inp_str = inp_str.replace("subject.gender","PSS.gender")
+    inp_str = inp_str.replace("study.name","PSS.study_name")
+    inp_str = inp_str.replace("file.format","F.format")
+    inp_str = inp_str.replace("file.category","F.subtype") ***REMOVED***note the conversion
+    inp_str = inp_str.replace("files.file_id","F.id")
     inp_str = inp_str.replace("cases.","") ***REMOVED***these replaces have to be catch alls to replace all instances throughout
     inp_str = inp_str.replace("file.","")
     inp_str = inp_str.replace("sample.","")
-    inp_str = inp_str.replace("Project_","Project.")
-    inp_str = inp_str.replace("Sample_","Sample.")
-    inp_str = inp_str.replace("SampleAttr_","SampleAttr.")
-    inp_str = inp_str.replace("Study_","Study.")
-    inp_str = inp_str.replace("Subject_","Subject.")
-    inp_str = inp_str.replace("SubjectAttr_","SubjectAttr.")
-    inp_str = inp_str.replace("Visit_","Visit.")
-    inp_str = inp_str.replace("VisitAttr_","VisitAttr.")
-    inp_str = inp_str.replace("File_","File.")
+    inp_str = inp_str.replace("Project_","PSS.project_")
+    inp_str = inp_str.replace("Sample_","VS.")
+    inp_str = inp_str.replace("SampleAttr_","VS.")
+    inp_str = inp_str.replace("Study_","PSS.study_")
+    inp_str = inp_str.replace("Subject_","PSS.")
+    inp_str = inp_str.replace("SubjectAttr_","PSS.")
+    inp_str = inp_str.replace("Visit_","VS.visit_")
+    inp_str = inp_str.replace("VisitAttr_","VS.visit_")
+    inp_str = inp_str.replace("File_","F.")
 
     ***REMOVED***Handle facet searches from panel on left side
-    inp_str = inp_str.replace("data_type","File.node_type")
-    inp_str = inp_str.replace("data_format","File.format")
+    inp_str = inp_str.replace("data_type","F.node_type")
+    inp_str = inp_str.replace("data_format","F.format")
 
     ***REMOVED***Next two lines guarantee URL encoding (seeing errors with urllib)
     inp_str = inp_str.replace('"','|')

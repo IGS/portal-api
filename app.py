@@ -13,7 +13,7 @@ from query import get_url_for_download, convert_gdc_to_osdf,get_all_proj_data,ge
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 import graphene
-import urllib2, json
+import json, urllib2
 
 application = Flask(__name__)
 application.debug = True
@@ -318,10 +318,8 @@ def get_project():
     else:
         pdata = get_all_study_data()
         proj_list = []
-        print pdata
 
         for p in pdata:
-            print p
             proj_list.append({ "project_id": p["PSS.study_name"], "disease_type": p["PSS.study_name"], "project_name": p["PSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
