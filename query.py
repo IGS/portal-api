@@ -102,9 +102,7 @@ def extract_url(urls_node):
     elif 's3' in urls_node:
         fn = urls_node['s3']
     else:
-        ***REMOVED***The portal is going to crash whenever someone looks for a case with 
-        ***REMOVED***multiple files marked as private, need to assign it an ID to keep it unique
-        fn = "Private file ({0})".format(urls_node['id']) 
+        fn = "No file attached to ID ({0})".format(urls_node['id'])
 
     return fn
 
