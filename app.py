@@ -373,7 +373,7 @@ def get_ui_search_summary():
 
 @application.route('/status/api/manifest', methods=['GET','OPTIONS','POST'])
 def get_manifest():
-    string = 'id\tfilename\tmd5\tsize' # header
+    string = 'id\tmd5\tsize\turls' # header
     ids = request.form.getlist('ids')
     data = get_manifest_data(ids) # get all the relevant properties for this file
     
@@ -386,7 +386,7 @@ def get_manifest():
     cookie = request.form.get('downloadCookieKey')
     response.set_cookie(cookie,'',expires=0)
     
-    response.headers["Content-Disposition"] = "attachment; filename=result.tsv"
+    response.headers["Content-Disposition"] = "attachment; filename=hmp_cart_{0}.tsv".format(cookie)
     return response
 
 # Function to add a JSON content type to the response, takes in the data that 

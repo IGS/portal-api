@@ -88,7 +88,10 @@ def process_cquery_http(cquery):
 
     return query_res
 
-# Function to extract a file name and an HTTP URL given values from a urls property from an OSDF node
+# Function to extract a file name and an HTTP URL given values from a urls 
+# property from an OSDF node. Note that this prioritizes http>fasp>ftp>s3
+# and that it only returns a single one of the endpoints. This is in an effort
+# to communicate a base URL in the result tables in the portal. 
 def extract_url(urls_node):
    
     fn = ""
@@ -105,6 +108,26 @@ def extract_url(urls_node):
         fn = "No file attached to ID ({0})".format(urls_node['id'])
 
     return fn
+
+# Function to return all present URLs for the manifest file
+def extract_manifest_urls(urls_node):
+
+    urls = []
+
+    # Note that these are all individual ifs in order to grab all endpoints present
+    if 'http' in urls_node:
+        urls.append(urls_node['http'])
+    if 'fasp' in urls_node:
+        urls.append(urls_node['fasp'])
+    if 'ftp' in urls_node:
+        urls.append(urls_node['ftp'])
+    if 's3' in urls_node:
+        urls.append(urls_node['s3'])
+
+    if len(urls) == 0: # if here, there is no downloadable file
+        urls.append('private: Data not accessible via the HMP DACC.')
+
+    return ",".join(urls)
 
 # Function to get file size from Neo4j. 
 # This current iteration should catch all the file data types EXCEPT for the *omes and the multi-step/repeat
@@ -376,10 +399,10 @@ def get_manifest_data(id_list):
     # Grab the ID, file URL, md5, and size
     for entry in res:
         id = entry['F']['id']
-        url = extract_url(entry['F'])
+        urls = extract_manifest_urls(entry['F'])
         md5 = entry['F']['md5']
         size = entry['F']['size']
-        outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,url,md5,size))
+        outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,md5,size,urls))
 
     return outlist
 
