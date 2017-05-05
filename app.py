@@ -389,6 +389,12 @@ def get_manifest():
     response.headers["Content-Disposition"] = "attachment; filename=hmp_cart_{0}.tsv".format(cookie)
     return response
 
+@application.route('/status/api/token', methods=['GET','OPTIONS','POST'])
+def get_token():
+    ids = request.form.getlist('ids')
+    token = get_manifest_token(ids) # get all the relevant properties for this file
+    return token # need to decide how to communicate the token to the user
+
 # Function to add a JSON content type to the response, takes in the data that 
 # is to be returned
 def make_json_response(data):
