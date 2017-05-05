@@ -413,18 +413,46 @@ def get_manifest_data(id_list):
 
     return outlist
 
+***REMOVED***Makes sure we generate a unique token
+def check_token(token,ids):
+
+    subset_token = ""
+
+    for j in range(0,len(token)-6):
+        subset_token = token[j:j+6]
+        token_check = process_cquery_http("MATCH (t:token{id:'{0}'}) RETURN t".format(subset_token))
+        if len(token_check) == 0:
+            cquery = "CREATE (t:token{{id:'{0}',id_list:{1}}})".format(subset_token,ids)
+            process_cquery_http(cquery)
+            return subset_token
+        else:
+            if str(token_check[0]['t']['id_list']) == ids:
+                return subset_token
+
+    return subset_token
+
 def get_manifest_token(id_list):
 
-    id_list.sort() ***REMOVED***ensure no wonky ordering ruins the MD5 creation
+    id_list.sort() ***REMOVED***ensure ordering doesn't affect the token creation
 
     ids = build_neo4j_list(id_list)
 
-    token = hashlib.md5(ids).hexdigest()
+    ***REMOVED***overkill, but should suffice
+    original_token = hashlib.sha256(ids).hexdigest()
+    original_token += hashlib.sha224(ids).hexdigest()
     ids = "[{0}]".format(ids)
-    cquery = "MERGE (t:token{{id:'{0}',id_list:{1}}})".format(token,ids)
-    res = process_cquery_http(cquery)
 
-    return token
+    token = check_token(original_token,ids)
+
+    if token != "":
+        return token
+    else:
+        token = check_token(original_token[::-1],ids) ***REMOVED***try the reverse
+
+    if token != "":
+        return token
+    else:
+        return "ERROR generating token."
 
 ***REMOVED***Function to extract known GDC syntax and convert to OSDF. This is commonly needed for performing
 ***REMOVED***cypher queries while still being able to develop the front-end with the cases syntax.
