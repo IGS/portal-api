@@ -1,4 +1,4 @@
-import re, json, requests
+import re, json, requests, hashlib
 import ujson
 from py2neo import Graph ***REMOVED***Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
@@ -375,11 +375,12 @@ def get_url_for_download(id):
     res = process_cquery_http(cquery)
     return extract_url(res[0]['F'])
 
-def get_manifest_data(id_list):
+***REMOVED***Function to place a list into a string format that Neo4j understands
+def build_neo4j_list(id_list):
 
     ids = ""
     mod_list = []
-
+    
     ***REMOVED***Surround each value with quotes for Neo4j comparison
     for id in id_list:
         mod_list.append("'{0}'".format(id))
@@ -388,6 +389,12 @@ def get_manifest_data(id_list):
         ids = ",".join(mod_list)
     else: ***REMOVED***just a single ID
         ids = mod_list[0]
+
+    return ids
+
+def get_manifest_data(id_list):
+
+    ids = build_neo4j_list(id_list)
 
     ***REMOVED***Surround in brackets to format list syntax
     ids = "[{0}]".format(ids)
@@ -405,6 +412,19 @@ def get_manifest_data(id_list):
         outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,md5,size,urls))
 
     return outlist
+
+def get_manifest_token(id_list):
+
+    id_list.sort() ***REMOVED***ensure no wonky ordering ruins the MD5 creation
+
+    ids = build_neo4j_list(id_list)
+
+    token = hashlib.md5(ids).hexdigest()
+    ids = "[{0}]".format(ids)
+    cquery = "MERGE (t:token{{id:'{0}',id_list:{1}}})".format(token,ids)
+    res = process_cquery_http(cquery)
+
+    return token
 
 ***REMOVED***Function to extract known GDC syntax and convert to OSDF. This is commonly needed for performing
 ***REMOVED***cypher queries while still being able to develop the front-end with the cases syntax.
