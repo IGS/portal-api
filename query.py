@@ -520,6 +520,12 @@ def build_cypher(match,whereFilters,order,start,size,rtype):
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
     if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
         order = order.split(":")
+
+        ***REMOVED***When adding all files to cart, a special case happens where there is
+        ***REMOVED***no order specified so have to return a more basic query.
+        if len(order) < 2:
+            return "{0} WHERE {1} {2}".format(match,where,retval1)
+
         if start != 0:
             start = start - 1
         retval2 = "ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),start,size) 
