@@ -454,6 +454,27 @@ def get_manifest_token(id_list):
     else:
         return "ERROR generating token."
 
+***REMOVED***Takes in a token and hits the Neo4j server to create a manifest on the fly
+***REMOVED***using all the IDs noted within the particular token. 
+def token_to_manifest(token):
+
+    ids = process_cquery_http("MATCH (t:token{{id:'{0}'}}) RETURN t.id_list AS id_list".format(token))[0]['id_list']
+    urls = ['http','ftp','fasp','s3']
+    manifest = ""
+    for id in ids:
+        file = process_cquery_http("MATCH (f:file{{id:'{0}'}}) RETURN f".format(id))[0]['f']
+        url_list = []
+        for url in urls:
+            if url in file:
+                url_list.append(file[url])
+
+        if manifest != "":
+            manifest += "\n"
+
+        manifest += "{0}\t{1}\t{2}".format(id,file['md5'],','.join(url_list))
+
+    return manifest
+
 ***REMOVED***Function to extract known GDC syntax and convert to OSDF. This is commonly needed for performing
 ***REMOVED***cypher queries while still being able to develop the front-end with the cases syntax.
 def convert_gdc_to_osdf(inp_str):
