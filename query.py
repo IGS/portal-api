@@ -458,6 +458,12 @@ def get_manifest_token(id_list):
 # using all the IDs noted within the particular token. 
 def token_to_manifest(token):
 
+    # Leave early if the token is obviously corrupt
+    if len(token) != 6:
+        return 'Error -- Invalid token length.'
+    if not re.match(r"^[a-zA-Z0-9]+$",token):
+        return 'Error -- Invalid characters detected.'
+
     ids = process_cquery_http("MATCH (t:token{{id:'{0}'}}) RETURN t.id_list AS id_list".format(token))[0]['id_list']
     urls = ['http','ftp','fasp','s3']
     manifest = ""
