@@ -9,7 +9,7 @@ from files_schema import files_schema
 from table_schema import table_schema
 from indiv_files_schema import indiv_files_schema
 from indiv_cases_schema import indiv_cases_schema
-from query import get_url_for_download, convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data
+from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data,token_to_manifest
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 import graphene
@@ -394,6 +394,13 @@ def get_token():
     ids = request.form.getlist('ids')
     token = get_manifest_token(ids) # get all the relevant properties for this file
     return token # need to decide how to communicate the token to the user
+
+@application.route('/client/token', methods=['GET','POST','OPTIONS'])
+def handle_client_token():
+
+    cart = token_to_manifest(request.form.get('token'))
+    response = make_json_response(cart)
+    return response
 
 # Function to add a JSON content type to the response, takes in the data that 
 # is to be returned
