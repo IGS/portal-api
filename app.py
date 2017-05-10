@@ -9,11 +9,11 @@ from files_schema import files_schema
 from table_schema import table_schema
 from indiv_files_schema import indiv_files_schema
 from indiv_cases_schema import indiv_cases_schema
-from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data,token_to_manifest
+from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data,token_to_manifest,convert_portal_to_neo4j
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 import graphene
-import json, urllib2, urllib, ast
+import json, urllib2, urllib, re
 
 application = Flask(__name__)
 application.debug = True
@@ -36,40 +36,40 @@ application.after_request(add_cors_headers)
 def get_maps():
     res = jsonify({"project.name": gql_map['project_name'],
         "project.subtype": gql_map['project_subtype'],
-        "sample.Study_center": gql_map['study_center'],
-        "sample.Study_contact": gql_map['study_contact'],
-        "sample.Study_description": gql_map['study_description'],
-        "sample.Study_name": gql_map['study_name'],
-        "sample.Study_srp_id": gql_map['study_srp_id'],
-        "sample.Study_subtype": gql_map['study_subtype'],
-        "sample.Subject_gender": gql_map['subject_gender'],
-        "sample.Subject_race": gql_map['subject_race'],
-        "sample.Subject_subtype": gql_map['subject_subtype'],
-        "sample.Visit_date": gql_map['visit_date'],
-        "sample.Visit_id": gql_map['visit_id'],
-        "sample.Visit_interval": gql_map['visit_interval'],
-        "sample.Visit_number": gql_map['visit_number'],
-        "sample.Visit_subtype": gql_map['visit_subtype'],
-        "sample.Sample_id": gql_map['sample_id'], 
-        "sample.Sample_fma_body_site": gql_map['sample_fma_body_site'], 
-        "sample.Sample_biome": gql_map['sample_biome'],
-        "sample.Sample_body_product": gql_map['sample_body_product'],
-        "sample.Sample_collection_date": gql_map['sample_collection_date'],
-        "sample.Sample_env_package": gql_map['sample_env_package'],
-        "sample.Sample_feature": gql_map['sample_feature'],
-        "sample.Sample_geo_loc_name": gql_map['sample_geo_loc_name'],
-        "sample.Sample_lat_lon": gql_map['sample_lat_lon'],
-        "sample.Sample_material": gql_map['sample_material'],
-        "sample.Sample_project_name": gql_map['sample_project_name'],
-        "sample.Sample_rel_to_oxygen": gql_map['sample_rel_to_oxygen'],
-        "sample.Sample_samp_collect_device": gql_map['sample_samp_collect_device'],
-        "sample.Sample_samp_mat_process": gql_map['sample_samp_mat_process'],
-        "sample.Sample_size": gql_map['sample_size'],
-        "sample.Sample_subtype": gql_map['sample_subtype'],
-        "sample.Sample_supersite": gql_map['sample_supersite'], 
-        "file.File_format": gql_map['file_format'],
-        "file.File_node_type": gql_map['file_node_type'],
-        "file.File_id": gql_map['file_id']
+        "study.center": gql_map['study_center'],
+        "study.contact": gql_map['study_contact'],
+        "study.description": gql_map['study_description'],
+        "study.name": gql_map['study_name'],
+        "study.srp_id": gql_map['study_srp_id'],
+        "study.subtype": gql_map['study_subtype'],
+        "subject.gender": gql_map['subject_gender'],
+        "subject.race": gql_map['subject_race'],
+        "subject.subtype": gql_map['subject_subtype'],
+        "visit.date": gql_map['visit_date'],
+        "visit.id": gql_map['visit_id'],
+        "visit.interval": gql_map['visit_interval'],
+        "visit.number": gql_map['visit_number'],
+        "visit.subtype": gql_map['visit_subtype'],
+        "sample.id": gql_map['sample_id'], 
+        "sample.fma_body_site": gql_map['sample_fma_body_site'], 
+        "sample.biome": gql_map['sample_biome'],
+        "sample.body_product": gql_map['sample_body_product'],
+        "sample.collection_date": gql_map['sample_collection_date'],
+        "sample.env_package": gql_map['sample_env_package'],
+        "sample.feature": gql_map['sample_feature'],
+        "sample.geo_loc_name": gql_map['sample_geo_loc_name'],
+        "sample.lat_lon": gql_map['sample_lat_lon'],
+        "sample.material": gql_map['sample_material'],
+        "sample.project_name": gql_map['sample_project_name'],
+        "sample.rel_to_oxygen": gql_map['sample_rel_to_oxygen'],
+        "sample.samp_collect_device": gql_map['sample_samp_collect_device'],
+        "sample.samp_mat_process": gql_map['sample_samp_mat_process'],
+        "sample.size": gql_map['sample_size'],
+        "sample.subtype": gql_map['sample_subtype'],
+        "sample.supersite": gql_map['sample_supersite'], 
+        "file.format": gql_map['file_format'],
+        "file.node_type": gql_map['file_node_type'],
+        "file.id": gql_map['file_id']
         })
     return res
 
@@ -370,8 +370,7 @@ def get_ui_search_summary():
 
         if f2['filters']:
 
-            filters = str(f2['filters'])
-
+            filters = json.dumps(f2['filters'])
             filters = convert_gdc_to_osdf(filters)
 
             query['query'] = '''
