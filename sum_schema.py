@@ -4,64 +4,64 @@ from query import get_buckets, get_total_file_size
 
 # Can preload default counts for fast loading, user interaction with facets or
 # queries will then refine these counts.
-proName = get_buckets("PSS.project_name","yes","")
-samFMA = get_buckets("VS.body_site","yes","")
-subGender = get_buckets("PSS.gender","yes","")
-fileFormat = get_buckets("F.format","yes","")
-fileSubtype = get_buckets("F.subtype","yes","")
-studyName = get_buckets("PSS.study_name","yes","")
+proN = get_buckets("PSS.project_name","yes","")
+samBS = get_buckets("VS.body_site","yes","")
+subG = get_buckets("PSS.gender","yes","")
+fileF = get_buckets("F.format","yes","")
+fileS = get_buckets("F.subtype","yes","")
+stuN = get_buckets("PSS.study_name","yes","")
 fs = FileSize(value=get_total_file_size(""))
 
 class Query(graphene.ObjectType):
 
-    SampleFmabodysite = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'))
-    ProjectName = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'))
-    SubjectGender = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'))
-    FileFormat = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'))
-    FileSubtype = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'))
-    StudyName = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'))
+    sample_body_site = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="sample_body_site")
+    project_name = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="project_name")
+    subject_gender = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="subject_gender")
+    file_format = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="file_format")
+    file_subtype = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="file_subtype")
+    study_name = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="study_name")
     fs = graphene.Field(FileSize, cy=graphene.String(description='Cypher WHERE parameters'))
 
-    def resolve_SampleFmabodysite(self, args, context, info):
+    def resolve_sample_body_site(self, args, context, info):
         # accept the pipes and convert to quotes again now that it's been passed across the URL
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return samFMA
+            return samBS
         else:
             return get_buckets("VS.body_site","yes",cy)
 
-    def resolve_ProjectName(self, args, context, info):
+    def resolve_project_name(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return proName
+            return proN
         else:
             return get_buckets("PSS.project_name","yes",cy)
 
-    def resolve_SubjectGender(self, args, context, info):
+    def resolve_subject_gender(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return subGender
+            return subG
         else:
             return get_buckets("PSS.gender","yes",cy)
 
-    def resolve_FileFormat(self, args, context, info):
+    def resolve_file_format(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return fileFormat
+            return fileF
         else:
             return get_buckets("F.format","yes",cy)
 
-    def resolve_FileSubtype(self, args, context, info):
+    def resolve_file_subtype(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return fileSubtype
+            return fileS
         else:
             return get_buckets("F.subtype","yes",cy)
 
-    def resolve_StudyName(self, args, context, info):
+    def resolve_study_name(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return studyName
+            return stuN
         else:
             return get_buckets("PSS.study_name","yes",cy)
 
