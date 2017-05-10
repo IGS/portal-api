@@ -13,7 +13,7 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 import graphene
-import json, urllib2
+import json, urllib2, urllib
 
 application = Flask(__name__)
 application.debug = True
@@ -34,7 +34,7 @@ application.after_request(add_cors_headers)
 
 @application.route('/gql/_mapping', methods=['GET'])
 def get_maps():
-    res = jsonify({"sample.Project_name": gql_map['project_name'],
+    res = jsonify({"project.name": gql_map['project_name'],
         "sample.Project_subtype": gql_map['project_subtype'],
         "sample.Study_center": gql_map['study_center'],
         "sample.Study_contact": gql_map['study_contact'],
@@ -87,13 +87,30 @@ def get_cases():
 
     ***REMOVED***Processing autocomplete here as well as finding counts for the set category
     if(request.args.get('facets') and not request.args.get('expand')):
-        beg = "http://localhost:{0}/ac_schema?query=%7Bpagination%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%7Daggregations%7B".format(be_port)
-        mid = request.args.get('facets')
-        end = "%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        url = '{0}{1}{2}'.format(beg,mid,end)
-        response = urllib2.urlopen(url)
+
+        original_facet = request.args.get('facets') ***REMOVED***original facet
+        gql_facet = original_facet.replace('.','_')
+
+        url = "http://localhost:{0}/ac_schema".format(be_port)
+
+        gql = '''
+            {{
+                aggregations {{
+                    {0} {{
+                        buckets {{
+                            key
+                            doc_count
+                        }}
+                    }}     
+                }}
+            }}
+        '''.format(gql_facet)
+
+        query = {'query':gql}
+
+        response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
-        data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
+        data = ('{0}, "warnings": {{}}}}'.format(r[:-1]).replace(gql_facet,original_facet))
         return make_json_response(data)
 
     else:
@@ -109,7 +126,7 @@ def get_cases():
         p5 = "%22%2Cs%3A"
         p6 = "%2Co%3A%22"
         p7 = "%22%2Cf%3A"
-        p8 = ")%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%2Ccase_id%7Daggregations%7BProject_name%7Bbuckets%7Bkey%2Cdoc_count%7D%7DSubject_gender%7Bbuckets%7Bkey%2Cdoc_count%7D%7DSample_fma_body_site%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
+        p8 = ")%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%2Ccase_id%7Daggregations%7Bproject_name%7Bbuckets%7Bkey%2Cdoc_count%7D%7Dsubject_gender%7Bbuckets%7Bkey%2Cdoc_count%7D%7Dsample_fma_body_site%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
         if len(filters) < 3:
             url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}".format(p1,p2,size,p3,from_num,p4,p5,size,p6,p7,from_num,p8)
             if request.get_data():
@@ -235,21 +252,6 @@ def get_files():
 def get_project():
     facets = request.args.get('facets')
 
-    ***REMOVED***/projects request WITHOUT facets parameter
-    ***REMOVED***
-    ***REMOVED***e.g., like this one from the portal home page: 
-    ***REMOVED*** https://gdc-api.nci.nih.gov/v0/projects?filters=%7B%7D&from=1&size=100&sort=summary.case_count:desc
-    #
-    ***REMOVED***which expects a response like the following (with one hit per project and a 1-1 mapping between Project and primary_site):
-    #
-    ***REMOVED***{"data": {
-    ***REMOVED***   "hits": [
-    ***REMOVED***             {"dbgap_accession_number": "phs000467", "disease_type": "Neuroblastoma", "released": true, 
-    ***REMOVED***              "state": "legacy", "primary_site": "Nervous System", "project_id": "TARGET-NBL", "name": "Neuroblastoma"},
-    ***REMOVED***    ... 
-    ***REMOVED***   "pagination": {"count": 39, "sort": "summary.case_count:desc", "from": 1, "page": 1, "total": 39, "pages": 1, "size": 100}}, 
-    ***REMOVED***   "warnings": {}}
-    #
     if facets is None:
         ***REMOVED***HACK - should go through GQL endpoint
         pdata = get_all_proj_data()
@@ -263,22 +265,6 @@ def get_project():
         hit_str = json.dumps(proj_list)
         data = ("{{\"data\" : {{\"hits\" : [ {0} ], \"pagination\": {1}}}, \"warnings\": {{}}}}".format(hit_str, p_str))
         return make_json_response(data)
-
-    ***REMOVED***/projects request WITH facets parameter
-    ***REMOVED***
-    ***REMOVED***e.g., like this one from the portal home page: 
-    ***REMOVED*** https://gdc-api.nci.nih.gov/v0/projects?facets=primary_site&fields=primary_site,project_id,summary.case_count,summary.file_count&filters=%7B%7D&from=1&size=1000&sort=summary.case_count:desc
-    #
-    ***REMOVED***which expects a response like the following (with one hit per project and an 'aggregations' field that gives
-    ***REMOVED***   the number of _projects_ associated with each primary_site):
-    #
-    ***REMOVED***{"data": {
-    ***REMOVED*** "pagination": {"count": 39, "sort": "summary.case_count:desc", "from": 1, "page": 1, "total": 39, "pages": 1, "size": 1000}, 
-    ***REMOVED*** "hits": [
-    ***REMOVED***    {"project_id": "TARGET-NBL", "primary_site": "Nervous System", "summary": {"case_count": 1120, "file_count": 2803}}, 
-    ***REMOVED***    ...
-    ***REMOVED***"aggregations": {"primary_site": {"buckets": [{"key": "Kidney", "doc_count": 6}, {"key": "Adrenal Gland", "doc_count": 2}, ... ]}}}, 
-    ***REMOVED***"warnings": {}}
 
     ***REMOVED***HACK - should go through GQL endpoint
     if facets == 'primary_site':
