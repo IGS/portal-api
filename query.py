@@ -572,7 +572,7 @@ def build_facet_where(inp):
 # on the portal itself as we want users to be able to do something like search
 # for Project name as Project.name or something similar instead of PSS.project_name.
 def convert_portal_to_neo4j(inp_str):
-    inp_str = inp_str.replace("Project.","PSS.project_")
+    inp_str = inp_str.replace("project_","PSS.project_")
     return inp_str
 
 # Final function needed to build the entirety of the Cypher query taken from facet search. Accepts the following:

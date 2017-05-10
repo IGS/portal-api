@@ -5,8 +5,8 @@
 gql_map = {}
 
 # Project props
-gql_map['project_name'] = {"description": "The name of the project within which the sequencing was organized", "doc_type": "cases", "field": "Project_name", "full": "sample.Project_name", "type": "string"}
-gql_map['project_subtype'] = {"description": "The subtype of the project: healthy_human, ihmp, or demo", "doc_type": "cases", "field": "Project_subtype", "full": "sample.Project_subtype", "type": "string"}
+gql_map['project_name'] = {"description": "The name of the project within which the sequencing was organized", "doc_type": "cases", "field": "project name", "full": "project.name", "type": "string"}
+gql_map['project_subtype'] = {"description": "The subtype of the project", "doc_type": "cases", "field": "project subtype", "full": "project.subtype", "type": "string"}
 
 # Study props
 gql_map['study_center'] = {"description": "The study's sequencing center", "doc_type": "cases", "field": "Study_center", "full": "sample.Study_center", "type": "string"}

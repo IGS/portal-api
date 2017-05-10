@@ -5,17 +5,14 @@ from query import get_buckets, get_case_hits, get_pagination
 # Can preload counts by declaring these in this next block. 
 # These aggregations can remain stagnant so don't need to update
 # based on filters as these are used to give a total count of the data.
-# Any properties with a "###" following it mean that the property being
-# grabbed isn't exactly what the user sees on the site. For instance,
-# 'Project name' on the site actually searches for 'Project.project_name'.
-# This is to provide a more succint search parameter. 
-proN = get_buckets("PSS.project_name","no","") ###
+proN = get_buckets("PSS.project_name","no","")
+proS = get_buckets("PSS.project_subtype","no","")
 stuS = get_buckets("PSS.study_subtype","no","")
 stuC = get_buckets("PSS.study_center","no","")
 stuN = get_buckets("PSS.study_name","no","")
 subG = get_buckets("PSS.gender","no","")
 subR = get_buckets("PSS.race","no","")
-visVN = get_buckets("VS.visit_visit_number","no","") ### 
+visVN = get_buckets("VS.visit_visit_number","no","") 
 visI = get_buckets("VS.visit_interval","no","") 
 visD = get_buckets("VS.visit_date","no","")
 samBP = get_buckets("VS.body_product","no","")
@@ -51,11 +48,29 @@ class Query(graphene.ObjectType):
             return get_case_hits(args['s'],o,args['f'],cy)
 
     def resolve_aggregations(self, args, context, info):
-        return Aggregations(Project_name=proN,Study_subtype=stuS,Study_center=stuC,Study_name=stuN,
-            Subject_gender=subG,Subject_race=subR,Visit_number=visVN,Visit_interval=visI,Visit_date=visD,
-            Sample_bodyproduct=samBP,Sample_fmabodysite=samFMA,Sample_geolocname=samGLN,Sample_sampcollectdevice=samSCD,
-            Sample_envpackage=samEP,Sample_feature=samF,Sample_material=samM,
-            Sample_id=samID,Sample_biome=samB,File_format=fileF,File_node_type=fileNT,File_id=fileID
+        return Aggregations(
+            project_name=proN,
+            project_subtype=proS,
+            study_subtype=stuS,
+            study_center=stuC,
+            study_name=stuN,
+            subject_gender=subG,
+            subject_race=subR,
+            visit_number=visVN,
+            visit_interval=visI,
+            visit_date=visD,
+            sample_bodyproduct=samBP,
+            sample_fmabodysite=samFMA,
+            sample_geolocname=samGLN,
+            sample_sampcollectdevice=samSCD,
+            sample_envpackage=samEP,
+            sample_feature=samF,
+            sample_material=samM,
+            sample_id=samID,
+            sample_biome=samB,
+            file_format=fileF,
+            file_node_type=fileNT,
+            file_id=fileID
             )
         
 ac_schema = graphene.Schema(query=Query)
