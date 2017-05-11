@@ -173,10 +173,43 @@ def get_case_files(case_id):
 
 @application.route('/files/<file_id>', methods=['GET','OPTIONS'])
 def get_file_metadata(file_id):
-    beg = "http://localhost:{0}/indiv_files_schema?query=%7BfileHit(id%3A%22".format(be_port)
-    end = "%22)%7Bdata_type%2Cfile_name%2Cfile_size%2Cdata_format%2Canalysis%7Bupdated_datetime%2Cworkflow_type%2Canalysis_id%2Cinput_files%7Bfile_id%7D%7D%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cassociated_entities%7Bentity_id%2Ccase_id%2Centity_type%7D%2Ccases%7Bproject%7Bproject_id%7D%2Ccase_id%7D%2Cexperimental_strategy%7D%7D"
-    url = "{0}{1}{2}".format(beg,file_id,end)
-    response = urllib2.urlopen(url)
+
+    url = "http://localhost:{0}/indiv_files_schema".format(be_port)
+
+    idv_file_gql = '''
+        {{
+            fileHit(id:"{0}") {{
+            data_type,
+            file_name,
+            data_format,
+            file_id,
+            file_size,
+            submitter_id,
+            access,
+            state,
+            data_category,
+            experimental_strategy,
+                analysis {{
+                    updated_datetime
+                    workflow_type
+                    analysis_id
+                }},
+                associated_entities {{
+                    entity_id,
+                    entity_type
+                }},
+                cases {{
+                        project{{
+                            project_id
+                        }}
+                        case_id
+                    }}
+            }}
+        }}
+    '''
+
+    query = {'query':idv_file_gql.format(file_id)}
+    response = urllib2.urlopen(url,data=urllib.urlencode(query))
     r = response.read()
     trimmed_r = r.replace(':{"fileHit"',"") # HACK for formatting
     final_r = trimmed_r[:-1]
@@ -337,9 +370,9 @@ def get_ui_search_summary():
     '''  
 
     file_size_gql = '''
-        fs(cy:"") {
+        fs(cy:"{0}") {{
             value
-        }
+        }}
     ''' 
 
     empty_cy_gql = '''
@@ -359,7 +392,7 @@ def get_ui_search_summary():
         sum_gql.format("file_format",""),
         sum_gql.format("file_subtype",""),
         sum_gql.format("study_name",""),
-        file_size_gql
+        file_size_gql.format("")
     )
 
     query = {'query':""}
@@ -390,7 +423,7 @@ def get_ui_search_summary():
                 sum_gql.format("file_format",filters),
                 sum_gql.format("file_subtype",filters),
                 sum_gql.format("study_name",filters),
-                file_size_gql
+                file_size_gql.format(filters)
             )
 
         else:
