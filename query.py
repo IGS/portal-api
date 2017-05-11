@@ -141,6 +141,7 @@ def get_total_file_size(cy):
         cquery = build_cypher(full_traversal,cy,"null","null","null","size")
     else:
         cquery = build_adv_cypher(full_traversal,cy,"null","null","null","size")
+        cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
     res = process_cquery_http(cquery)
     return res[0]['tot']
 
@@ -193,8 +194,11 @@ def get_pagination(cy,size,f,c_or_f):
         else:
             if c_or_f == 'c':
                 cquery = build_adv_cypher(full_traversal,cy,"null","null","null","c_pagination")
+                cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
             else:
                 cquery = build_adv_cypher(full_traversal,cy,"null","null","null","f_pagination")
+                cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
+                
         res = process_cquery_http(cquery)
         calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
         return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
@@ -311,6 +315,7 @@ def get_case_hits(size,order,f,cy):
         cquery = build_cypher(full_traversal,cy,order,f,size,"cases")
     else:
         cquery = build_adv_cypher(full_traversal,cy,order,f,size,"cases")
+        cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
 
     res = process_cquery_http(cquery)
 
@@ -333,6 +338,7 @@ def get_file_hits(size,order,f,cy):
         cquery = build_cypher(full_traversal,cy,order,f,size,"files")
     else:
         cquery = build_adv_cypher(full_traversal,cy,order,f,size,"files")
+        cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
 
     res = process_cquery_http(cquery)
 
@@ -363,13 +369,13 @@ def get_file_data(file_id):
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
     furl = extract_url(res[0]['F']) 
-    sample_bs = res[0]['VS.body_site']
-    wf = "{0} -> {1}".format(sample_bs,res[0]['F.prep_node_type'])
-    cl.append(CaseHits(project=Project(projectId=res[0]['PSS.project_subtype']),caseId=res[0]['VS.id']))
-    al.append(AssociatedEntities(entityId=res[0]['F.prep_id'],caseId=res[0]['VS.id'],entityType=res[0]['F.prep_node_type']))
-    fl.append(IndivFiles(fileId=res[0]['F.id']))
+    sample_bs = res[0]['VS']['body_site']
+    wf = "{0} -> {1}".format(sample_bs,res[0]['F']['prep_node_type'])
+    cl.append(CaseHits(project=Project(projectId=res[0]['PSS']['project_subtype']),caseId=res[0]['VS']['id']))
+    al.append(AssociatedEntities(entityId=res[0]['F']['prep_id'],caseId=res[0]['VS']['id'],entityType=res[0]['F']['prep_node_type']))
+    fl.append(IndivFiles(fileId=res[0]['F']['id']))
     a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) ***REMOVED***can add analysis ID once node is present or remove if deemed unnecessary
-    return FileHits(dataType=res[0]['F.node_type'],fileName=furl,md5sum=res[0]['F.md5'],dataFormat=res[0]['F.format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F.id'],dataCategory=res[0]['F.node_type'],experimentalStrategy=res[0]['F.study'],fileSize=res[0]['F.size'],cases=cl,associatedEntities=al,analysis=a)
+    return FileHits(dataType=res[0]['F']['node_type'],fileName=furl,md5sum=res[0]['F']['md5'],dataFormat=res[0]['F']['format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F']['id'],dataCategory=res[0]['F']['node_type'],experimentalStrategy=res[0]['F']['study'],fileSize=res[0]['F']['size'],cases=cl,associatedEntities=al,analysis=a)
 
 def get_url_for_download(id):
     cquery = "MATCH (F:file) WHERE F.id='{0}' RETURN F".format(id)
