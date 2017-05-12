@@ -83,15 +83,13 @@ def get_cases():
     from_num = request.args.get('from')
     size = request.args.get('size')
     order = request.args.get('sort')
-    url = ""
+    url = "http://localhost:{0}/ac_schema".format(be_port)
 
     ***REMOVED***Processing autocomplete here as well as finding counts for the set category
     if(request.args.get('facets') and not request.args.get('expand')):
 
         original_facet = request.args.get('facets') ***REMOVED***original facet
         gql_facet = original_facet.replace('.','_')
-
-        url = "http://localhost:{0}/ac_schema".format(be_port)
 
         gql = '''
             {{
@@ -114,21 +112,58 @@ def get_cases():
         return make_json_response(data)
 
     else:
-        if not filters:
+
+        if filters == "{}":
             filters = ""
-            size = 20
-            from_num = 1
-    #elif(request.args.get('expand') or request.args.get('filters')): ***REMOVED***Here need to process simple/advanced queries, handling happens at GQL
-        p1 = "http://localhost:{0}/ac_schema?query=%7Bpagination(cy%3A%22".format(be_port)
-        p2 = "%22%2Cs%3A"
-        p3 = "%2Cf%3A"
-        p4 = ")%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits(cy%3A%22"
-        p5 = "%22%2Cs%3A"
-        p6 = "%2Co%3A%22"
-        p7 = "%22%2Cf%3A"
-        p8 = ")%7Bproject%7Bproject_id%2Cstudy_name%2Cstudy_full_name%2Cprimary_site%7D%2Ccase_id%7Daggregations%7Bproject_name%7Bbuckets%7Bkey%2Cdoc_count%7D%7Dsubject_gender%7Bbuckets%7Bkey%2Cdoc_count%7D%7Dsample_fma_body_site%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        if len(filters) < 3:
-            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}".format(p1,p2,size,p3,from_num,p4,p5,size,p6,p7,from_num,p8)
+            if not size:
+                size = 20
+            if not from_num:
+                from_num = 1
+
+        ac_gql = '''
+            {{
+                pagination(cy:"{0}",s:{1},f:{2}) {{
+                    count
+                    total
+                    page
+                    pages
+                    from
+                    sort
+                    size
+                }}
+                hits(cy:"{0}",s:{1},f:{2},o:"{3}"){{
+                    case_id
+                    project{{
+                    project_id
+                    study_name
+                    study_full_name
+                    primary_site
+                    }}
+                }}
+                aggregations{{
+                    project_name{{
+                        buckets{{
+                            key
+                            doc_count
+                        }}
+                    }}
+                    sample_fma_body_site{{
+                        buckets{{
+                            key
+                            doc_count
+                        }}
+                    }}
+                    subject_gender{{
+                        buckets{{
+                            key
+                            doc_count
+                        }}
+                    }}
+                }}
+            }}         
+        '''
+        
+        if filters and len(filters) < 3:
             if request.get_data():
                 f1 = request.get_data()
                 f2 = json.loads(f1)
@@ -137,12 +172,10 @@ def get_cases():
                 order = f2['sort']
                 size = f2['size']
                 filters = json.dumps(filters)
-                filters = convert_gdc_to_osdf(filters)
-                url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,p7,from_num,p8)
-        else:
-            filters = convert_gdc_to_osdf(filters)
-            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
-        response = urllib2.urlopen(url)
+
+        filters = convert_gdc_to_osdf(filters)
+        query = {'query':ac_gql.format(filters,size,from_num,order)}
+        response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
@@ -179,11 +212,16 @@ def get_case_files(case_id):
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
     else:
-        p1 = 'http://localhost:{0}/indiv_cases_schema?query=%7Bcase_id(id%3A'.format(be_port)
-        p2 = ')%2Cproject(id%3A'
-        p3 = ')%7Bproject_id%7D%7D'
-        url = '{0}{1}{2}{3}{4}'.format(p1,id,p2,id,p3)
-        response = urllib2.urlopen(url)
+        url = "http://localhost:{0}/indiv_cases_schema".format(be_port)
+
+        cases_gql = '''
+            {{
+                case_id(id:"{0}")
+            }}
+        '''
+
+        query = {'query':cases_gql.format(case_id)}
+        response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
@@ -196,23 +234,23 @@ def get_file_metadata(file_id):
     idv_file_gql = '''
         {{
             fileHit(id:"{0}") {{
-            data_type,
-            file_name,
-            data_format,
-            file_id,
-            file_size,
-            submitter_id,
-            access,
-            state,
-            data_category,
-            experimental_strategy,
+            data_type
+            file_name
+            data_format
+            file_id
+            file_size
+            submitter_id
+            access
+            state
+            data_category
+            experimental_strategy
                 analysis {{
                     updated_datetime
                     workflow_type
                     analysis_id
                 }},
                 associated_entities {{
-                    entity_id,
+                    entity_id
                     entity_type
                 }},
                 cases {{
@@ -293,6 +331,7 @@ def get_files():
         p7 = "%22%2Cf%3A"
         p8 = ")%7Bdata_type%2Cfile_name%2Cdata_format%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cfile_size%2Ccases%7Bproject%7Bproject_id%2Cname%7D%2Ccase_id%7Dexperimental_strategy%7D%2Caggregations%7Bdata_type%7Bbuckets%7Bkey%2Cdoc_count%7D%7Ddata_format%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
         url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
+        
     response = urllib2.urlopen(url)
     r = response.read()
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))

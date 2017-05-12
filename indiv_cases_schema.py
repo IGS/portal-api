@@ -13,6 +13,4 @@ class Query(graphene.ObjectType):
     def resolve_project(self, args, context, info):
         return get_proj_data(args['id'])
 
-***REMOVED***As noted above, going to hit Neo4j once and get everything then let GQL 
-***REMOVED***do its magic client side to return the values that the user wants. 
 indiv_cases_schema = graphene.Schema(query=Query)
