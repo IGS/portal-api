@@ -581,6 +581,12 @@ def build_facet_where(inp):
 # on the portal itself as we want users to be able to do something like search
 # for Project name as Project.name or something similar instead of PSS.project_name.
 def convert_portal_to_neo4j(inp_str):
+
+    if inp_str[0].isupper():
+        inp_str = inp_str[0].lower() + inp_str[1:]
+
+    inp_str = inp_str.replace("Project.","project.")
+
     # Project -> Study -> Subject
     inp_str = inp_str.replace("project.","PSS.project_")
     inp_str = inp_str.replace("study.","PSS.study_")
@@ -590,6 +596,8 @@ def convert_portal_to_neo4j(inp_str):
     inp_str = inp_str.replace("sample.","VS.")
     # File
     inp_str = inp_str.replace("file.","F.")
+
+    inp_str = inp_str.replace("%20"," ")
     return inp_str
 
 # Final function needed to build the entirety of the Cypher query taken from facet search. Accepts the following:
@@ -601,10 +609,10 @@ def convert_portal_to_neo4j(inp_str):
 # rtype = return type, want to be able to hit this for both cases, files, and aggregation counts.
 def build_cypher(match,whereFilters,order,start,size,rtype):
     arr = []
+    whereFilters = convert_portal_to_neo4j(whereFilters)
     q = json.loads(whereFilters) # parse filters input into JSON (yields hashes of arrays)
     w1 = get_depth(q, arr) # first step of building where clause is the array of individual comparison elements
     where = build_facet_where(w1)
-    where = convert_portal_to_neo4j(where)
     where = where.replace("cases.","") # trim the GDC syntax, hack until we refactor cases/files syntax
     where = where.replace("files.","")
     order = order.replace("cases.","")
