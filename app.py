@@ -286,7 +286,61 @@ def get_status_api_data():
 
 @application.route('/files', methods=['GET','OPTIONS','POST'])
 def get_files():
-    filters, url = ("" for i in range(2))
+
+    filters = ""
+    url = "http://localhost:{0}/table_schema".format(be_port)
+
+    table_schema_gql = '''
+        {{
+            pagination(cy:"{0}",s:{1},f:{2}) {{
+                count
+                sort
+                from
+                page
+                total
+                pages
+                size
+            }}
+            hits(cy:"{0}",s:{1},f:{2},o:"{3}") {{
+                data_type
+                file_name
+                data_format
+                submitter_id
+                access
+                state
+                file_id
+                data_category
+                file_size
+                experimental_strategy
+                cases {{
+                    project {{
+                        project_id
+                        name
+                    }}
+                    case_id
+                }}
+            }}
+            aggregations {{
+                data_type {{
+                    buckets {{
+                        key
+                        doc_count
+                    }}
+                }}
+                data_format {{
+                    buckets {{
+                        key
+                        doc_count
+                    }}
+                }}
+            }}
+        }}  
+    '''
+
+    from_num = request.args.get('from')
+    size = request.args.get('size')
+    order = request.args.get('sort')
+
     if request.args.get('filters'):
         filters = request.args.get('filters')
     elif request.get_data():
@@ -298,19 +352,9 @@ def get_files():
             return 'OK'
         elif request.method == 'OPTIONS':
             return 'OK'
-    from_num = request.args.get('from')
-    size = request.args.get('size')
-    order = request.args.get('sort')
+
     if len(filters) < 3:
-        p1 = "http://localhost:{0}/table_schema?query=%7Bpagination(cy%3A%22".format(be_port)
-        p2 = "%22%2Cs%3A"
-        p3 = "%2Cf%3A"
-        p4 = ")%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits(cy%3A%22"
-        p5 = "%22%2Cs%3A"
-        p6 = "%2Co%3A%22"
-        p7 = "%22%2Cf%3A"
-        p8 = ")%7Bdata_type%2Cfile_name%2Cdata_format%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cfile_size%2Ccases%7Bproject%7Bproject_id%2Cname%7D%2Ccase_id%7Dexperimental_strategy%7D%2Caggregations%7Bdata_type%7Bbuckets%7Bkey%2Cdoc_count%7D%7Ddata_format%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}".format(p1,p2,size,p3,from_num,p4,p5,size,p6,order,p7,from_num,p8)
+        filters = ""
         if '"op"' in filters or "op" in filters:
             f1 = request.get_data()
             f2 = json.loads(f1)
@@ -318,21 +362,10 @@ def get_files():
             order = f2['sort']
             size = f2['size']
             filters = json.dumps(filters)
-            filters = convert_gdc_to_osdf(filters)
-            url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
-    else:
-        filters = convert_gdc_to_osdf(filters)
-        p1 = "http://localhost:{0}/table_schema?query=%7Bpagination(cy%3A%22".format(be_port)
-        p2 = "%22%2Cs%3A"
-        p3 = "%2Cf%3A"
-        p4 = ")%7Bcount%2Csort%2Cfrom%2Cpage%2Ctotal%2Cpages%2Csize%7D%2Chits(cy%3A%22"
-        p5 = "%22%2Cs%3A"
-        p6 = "%2Co%3A%22"
-        p7 = "%22%2Cf%3A"
-        p8 = ")%7Bdata_type%2Cfile_name%2Cdata_format%2Csubmitter_id%2Caccess%2Cstate%2Cfile_id%2Cdata_category%2Cfile_size%2Ccases%7Bproject%7Bproject_id%2Cname%7D%2Ccase_id%7Dexperimental_strategy%7D%2Caggregations%7Bdata_type%7Bbuckets%7Bkey%2Cdoc_count%7D%7Ddata_format%7Bbuckets%7Bkey%2Cdoc_count%7D%7D%7D%7D"
-        url = "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}{12}{13}{14}".format(p1,filters,p2,size,p3,from_num,p4,filters,p5,size,p6,order,p7,from_num,p8)
-        
-    response = urllib2.urlopen(url)
+
+    filters = convert_gdc_to_osdf(filters)
+    query = {'query':table_schema_gql.format(filters,size,from_num,order)}
+    response = urllib2.urlopen(url,data=urllib.urlencode(query))
     r = response.read()
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
     return make_json_response(data)
