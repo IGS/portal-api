@@ -150,14 +150,31 @@ def get_cases():
 # Route for specific cases endpoints that associates with various files
 @application.route('/cases/<case_id>', methods=['GET','OPTIONS'])
 def get_case_files(case_id):
-    id = '"{0}"'.format(case_id)
+
     if not request.args.get('expand'):
-        p1 = 'http://localhost:{0}/files_schema?query=%7Bproject(id%3A'.format(be_port)
-        p2 = ')%7Bproject_id%2Cname%7D%2Cfiles(id%3A'
-        p3 = ')%7Bdata_type%2Cfile_name%2Cdata_format%2Caccess%2Cfile_id%2Cfile_size%7D%2Ccase_id(id%3A'
-        p4 = ')%2Csubmitter_id%7D'
-        url = '{0}{1}{2}{3}{4}{5}{6}'.format(p1,id,p2,id,p3,id,p4) # inject ID into query
-        response = urllib2.urlopen(url)
+        url = "http://localhost:{0}/files_schema".format(be_port)
+
+        files_gql = '''
+            {{
+                project(id:"{0}") {{
+                    project_id
+                    name
+                }}
+                files(id:"{0}") {{
+                    data_type
+                    file_name
+                    data_format
+                    access
+                    file_id
+                    file_size
+                }}
+                case_id(id:"{0}")
+                submitter_id
+            }}
+        '''
+
+        query = {'query':files_gql.format(case_id)}
+        response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
