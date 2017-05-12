@@ -503,7 +503,6 @@ def convert_gdc_to_osdf(inp_str):
     inp_str = inp_str.replace("file.category","F.subtype") ***REMOVED***note the conversion
     inp_str = inp_str.replace("files.file_id","F.id")
     inp_str = inp_str.replace("cases.","") ***REMOVED***these replaces have to be catch alls to replace all instances throughout
-    inp_str = inp_str.replace("file.","")
     inp_str = inp_str.replace("sample.","")
     inp_str = inp_str.replace("Project_","PSS.project_")
     inp_str = inp_str.replace("Sample_","VS.")
@@ -514,6 +513,8 @@ def convert_gdc_to_osdf(inp_str):
     inp_str = inp_str.replace("Visit_","VS.visit_")
     inp_str = inp_str.replace("VisitAttr_","VS.visit_")
     inp_str = inp_str.replace("File_","F.")
+
+    inp_str = inp_str.replace("file.","F.")
 
     ***REMOVED***Handle facet searches from panel on left side
     inp_str = inp_str.replace("data_type","F.node_type")
