@@ -184,6 +184,12 @@ def get_cases():
 @application.route('/cases/<case_id>', methods=['GET','OPTIONS'])
 def get_case_files(case_id):
 
+    print('hi')
+    print('hi')
+    print('hi')
+    print('hi')
+    print('hi')
+
     if not request.args.get('expand'):
         url = "http://localhost:{0}/files_schema".format(be_port)
 
