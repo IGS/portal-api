@@ -8,7 +8,7 @@ from ac_schema import ac_schema
 from files_schema import files_schema
 from table_schema import table_schema
 from indiv_files_schema import indiv_files_schema
-from indiv_cases_schema import indiv_cases_schema
+from indiv_sample_schema import indiv_sample_schema
 from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data,token_to_manifest,convert_portal_to_neo4j
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
@@ -212,11 +212,11 @@ def get_case_files(case_id):
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
     else:
-        url = "http://localhost:{0}/indiv_cases_schema".format(be_port)
+        url = "http://localhost:{0}/indiv_sample_schema".format(be_port)
 
-        cases_gql = '''
+        sample_gql = '''
             {{
-                caseId(id: "{0}") {{
+                sample(id: "{0}") {{
                     sample_id
                     study_center
                     subject_gender
@@ -224,7 +224,7 @@ def get_case_files(case_id):
             }}
         '''
 
-        query = {'query':cases_gql.format(case_id)}
+        query = {'query':sample_gql.format(case_id)}
         response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
@@ -613,10 +613,10 @@ application.add_url_rule(
 )
 
 application.add_url_rule(
-    '/indiv_cases_schema',
+    '/indiv_sample_schema',
     view_func=GraphQLView.as_view(
-        'indiv_cases_graphql',
-        schema=indiv_cases_schema,
+        'indiv_sample_graphql',
+        schema=indiv_sample_schema,
         graphiql=True
     )
 )
