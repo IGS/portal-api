@@ -2,7 +2,7 @@ import re, json, requests, hashlib
 import ujson, urllib
 from py2neo import Graph ***REMOVED***Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
-from models import Project,Pagination,CaseHits,IndivFiles,IndivCase,Analysis,AssociatedEntities
+from models import Project,Pagination,CaseHits,IndivFiles,IndivSample,Analysis,AssociatedEntities
 from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCounter,FileSize
 
 ***REMOVED***The match var is the base query to prepend all queries. The idea is to traverse
@@ -363,11 +363,11 @@ def get_file_hits(size,order,f,cy):
     return hits
 
 ***REMOVED***Pull all the data associated with a particular case (sample) ID. 
-def get_case_data(case_id):
-    retval = "WHERE VS.id='{0}' RETURN PSS,VS,F".format(case_id)
+def get_sample_data(sample_id):
+    retval = "WHERE VS.id='{0}' RETURN PSS,VS,F".format(sample_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
-    return IndivCase(sample_id=case_id,subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'])
+    return IndivSample(sample_id=sample_id,subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'])
 
 ***REMOVED***Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):

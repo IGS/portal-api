@@ -114,7 +114,7 @@ class SBucketCounter(graphene.ObjectType): ***REMOVED***List of SBuckets
 class FileSize(graphene.ObjectType): ***REMOVED***total aggregate file size of current set of chosen data
     value = graphene.Float()
 
-class IndivCase(graphene.ObjectType): ***REMOVED***individual case models for populating the particular case/sample page
+class IndivSample(graphene.ObjectType): ***REMOVED***individual sample model for populating the particular sample page
     sample_id = graphene.String(name="sample_id")
     subject_gender = graphene.String(name="subject_gender")
     study_center = graphene.String(name="study_center")
