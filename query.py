@@ -234,7 +234,7 @@ def get_all_proj_data():
     return process_cquery_http(cquery)
 
 def get_all_study_data():
-    cquery = "{0} RETURN DISTINCT PSS.study_name, PSS.project_subtype, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    cquery = "{0} RETURN DISTINCT PSS.study_name, PSS.project_subtype, PSS.study_subtype, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
     return process_cquery_http(cquery)
 
 ***REMOVED***This function is a bit unique as it's only called to populate the bar chart on the home page
@@ -367,7 +367,7 @@ def get_sample_data(sample_id):
     retval = "WHERE VS.id='{0}' RETURN PSS,VS,F".format(sample_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
-    return IndivSample(sample_id=sample_id,subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'])
+    return IndivSample(sample_id=sample_id,body_site=res[0]['VS']['body_site'],subject_id=res[0]['PSS']['id'],subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'],project_name=res[0]['PSS']['project_name'])
 
 ***REMOVED***Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):

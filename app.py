@@ -218,8 +218,11 @@ def get_case_files(case_id):
             {{
                 sample(id: "{0}") {{
                     sample_id
-                    study_center
+                    body_site
+                    subject_id
                     subject_gender
+                    study_center
+                    project_name
                 }}
             }}
         '''
@@ -432,7 +435,7 @@ def get_project():
         proj_list = []
 
         for p in pdata:
-            proj_list.append({ "project_id": p["PSS.study_name"], "disease_type": p["PSS.study_name"], "project_name": p["PSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
+            proj_list.append({ "project_id": p["PSS.study_name"], "disease_type": p["PSS.study_subtype"], "project_name": p["PSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
