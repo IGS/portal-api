@@ -393,6 +393,9 @@ def get_files():
         else:
             filters = ""
 
+    if not size: ***REMOVED***handle sample page cart loading
+        size = 10000
+
     filters = convert_gdc_to_osdf(filters)
     query = {'query':table_schema_gql.format(filters,size,from_num,order)}
     response = urllib2.urlopen(url,data=urllib.urlencode(query))

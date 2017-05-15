@@ -367,7 +367,10 @@ def get_sample_data(sample_id):
     retval = "WHERE VS.id='{0}' RETURN PSS,VS,F".format(sample_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
-    return IndivSample(sample_id=sample_id,body_site=res[0]['VS']['body_site'],subject_id=res[0]['PSS']['id'],subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'],project_name=res[0]['PSS']['project_name'])
+    fl = []
+    for x in range(0,len(res)):
+        fl.append(IndivFiles(fileId=res[x]['F']['id']))
+    return IndivSample(sample_id=sample_id,body_site=res[0]['VS']['body_site'],subject_id=res[0]['PSS']['id'],subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'],project_name=res[0]['PSS']['project_name'],files=fl)
 
 ***REMOVED***Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):

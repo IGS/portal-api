@@ -121,3 +121,4 @@ class IndivSample(graphene.ObjectType): ***REMOVED***individual sample model for
     subject_gender = graphene.String(name="subject_gender")
     study_center = graphene.String(name="study_center")
     project_name = graphene.String(name="project_name")
+    files = graphene.List(IndivFiles, name="files")
