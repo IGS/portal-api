@@ -593,6 +593,7 @@ def convert_portal_to_neo4j(inp_str):
         inp_str = inp_str[0].lower() + inp_str[1:]
 
     inp_str = inp_str.replace("cases.","")
+    inp_str = inp_str.replace("files.","")
 
     inp_str = inp_str.replace("Project.","project.")
 
@@ -629,10 +630,6 @@ def build_cypher(match,whereFilters,order,start,size,rtype):
     q = json.loads(whereFilters) ***REMOVED***parse filters input into JSON (yields hashes of arrays)
     w1 = get_depth(q, arr) ***REMOVED***first step of building where clause is the array of individual comparison elements
     where = build_facet_where(w1)
-    print(where)
-    print(where)
-    where = where.replace("cases.","") ***REMOVED***trim the GDC syntax, hack until we refactor cases/files syntax
-    where = where.replace("files.","")
     order = order.replace("cases.","")
     order = order.replace("files.","")
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
