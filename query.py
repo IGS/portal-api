@@ -513,7 +513,6 @@ def convert_gdc_to_osdf(inp_str):
     inp_str = inp_str.replace("file.category","F.subtype") ***REMOVED***note the conversion
     inp_str = inp_str.replace("files.file_id","F.id")
     inp_str = inp_str.replace("cases.","") ***REMOVED***these replaces have to be catch alls to replace all instances throughout
-    inp_str = inp_str.replace("sample.","")
     inp_str = inp_str.replace("Project_","PSS.project_")
     inp_str = inp_str.replace("Sample_","VS.")
     inp_str = inp_str.replace("SampleAttr_","VS.")
@@ -700,7 +699,7 @@ def build_adv_cypher(match,whereFilters,order,start,size,rtype):
     order = order.replace("files.","")
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
     where = convert_portal_to_neo4j(where)
-
+    
     if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
         order = order.split(":")
         if start != 0:
