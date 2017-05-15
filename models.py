@@ -121,3 +121,4 @@ class IndivSample(graphene.ObjectType): # individual sample model for populating
     subject_gender = graphene.String(name="subject_gender")
     study_center = graphene.String(name="study_center")
     project_name = graphene.String(name="project_name")
+    files = graphene.List(IndivFiles, name="files")
