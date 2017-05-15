@@ -592,17 +592,26 @@ def convert_portal_to_neo4j(inp_str):
     if inp_str[0].isupper():
         inp_str = inp_str[0].lower() + inp_str[1:]
 
+    inp_str = inp_str.replace("cases.","")
+
     inp_str = inp_str.replace("Project.","project.")
 
-    ***REMOVED***Project -> Study -> Subject
-    inp_str = inp_str.replace("project.","PSS.project_")
-    inp_str = inp_str.replace("study.","PSS.study_")
-    inp_str = inp_str.replace("subject.","PSS.")
-    ***REMOVED***Visit -> Sample
-    inp_str = inp_str.replace("visit.","VS.visit_")
-    inp_str = inp_str.replace("sample.","VS.")
-    ***REMOVED***File
-    inp_str = inp_str.replace("file.","F.")
+    if 'PSS.' not in inp_str and 'VS.' not in inp_str and "F." not in inp_str:
+        
+        inp_str = inp_str.replace("project_","project.")
+        inp_str = inp_str.replace("study_","study.")
+        inp_str = inp_str.replace("subject_","subject.")
+        inp_str = inp_str.replace("visit_","visit.")
+        inp_str = inp_str.replace("sample_","sample.")
+        ***REMOVED***Project -> Study -> Subject
+        inp_str = inp_str.replace("project.","PSS.project_")
+        inp_str = inp_str.replace("study.","PSS.study_")
+        inp_str = inp_str.replace("subject.","PSS.")
+        ***REMOVED***Visit -> Sample
+        inp_str = inp_str.replace("visit.","VS.visit_")
+        inp_str = inp_str.replace("sample.","VS.")
+        ***REMOVED***File
+        inp_str = inp_str.replace("file.","F.")
 
     inp_str = inp_str.replace("%20"," ")
     return inp_str
@@ -620,6 +629,8 @@ def build_cypher(match,whereFilters,order,start,size,rtype):
     q = json.loads(whereFilters) ***REMOVED***parse filters input into JSON (yields hashes of arrays)
     w1 = get_depth(q, arr) ***REMOVED***first step of building where clause is the array of individual comparison elements
     where = build_facet_where(w1)
+    print(where)
+    print(where)
     where = where.replace("cases.","") ***REMOVED***trim the GDC syntax, hack until we refactor cases/files syntax
     where = where.replace("files.","")
     order = order.replace("cases.","")
