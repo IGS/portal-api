@@ -12,6 +12,7 @@ from indiv_sample_schema import indiv_sample_schema
 from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data,token_to_manifest,convert_portal_to_neo4j
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
+from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
 import graphene
 import json, urllib2, urllib, re
 
@@ -84,6 +85,13 @@ def get_cases():
     size = request.args.get('size')
     order = request.args.get('sort')
     url = "http://localhost:{0}/ac_schema".format(be_port)
+
+    if filters == q1_query: ***REMOVED***return the front page data without hitting neo4j
+        return make_json_response(q1_cases)
+    elif filters == q2_query:  
+        return make_json_response(q2_cases)
+    elif filters == q3_query:
+        return make_json_response(q3_cases)
 
     ***REMOVED***Processing autocomplete here as well as finding counts for the set category
     if(request.args.get('facets') and not request.args.get('expand')):
@@ -356,6 +364,14 @@ def get_files():
 
     if request.args.get('filters'):
         filters = request.args.get('filters')
+
+        if filters == q1_query: ***REMOVED***return the front page data without hitting neo4j
+            return make_json_response(q1_files)
+        elif filters == q2_query:  
+            return make_json_response(q2_files)
+        elif filters == q3_query:
+            return make_json_response(q3_files)
+
     elif request.get_data():
         f1 = request.get_data().decode('utf-8')
         f2 = json.loads(f1)
