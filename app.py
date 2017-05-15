@@ -163,17 +163,23 @@ def get_cases():
             }}         
         '''
         
-        if filters and len(filters) < 3:
-            if request.get_data():
-                f1 = request.get_data()
-                f2 = json.loads(f1)
-                filters = f2['filters']
-                from_num = f2['from']
-                order = f2['sort']
-                size = f2['size']
-                filters = json.dumps(filters)
+        if request.get_data():      
+            f1 = request.get_data()
+            f2 = json.loads(f1)
+            filters = f2['filters']
+            from_num = f2['from']
+            order = f2['sort']
+            size = f2['size']
+            filters = json.dumps(filters)
 
-        filters = convert_gdc_to_osdf(filters)
+        if filters:
+            filters = convert_gdc_to_osdf(filters)
+        else:
+            size = 20
+            from_num = 1
+            order = "case_id.raw:asc"
+            filters = ""
+
         query = {'query':ac_gql.format(filters,size,from_num,order)}
         response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
@@ -361,7 +367,6 @@ def get_files():
             return 'OK'
 
     if len(filters) < 3:
-        filters = ""
         if '"op"' in filters or "op" in filters:
             f1 = request.get_data()
             f2 = json.loads(f1)
@@ -369,6 +374,8 @@ def get_files():
             order = f2['sort']
             size = f2['size']
             filters = json.dumps(filters)
+        else:
+            filters = ""
 
     filters = convert_gdc_to_osdf(filters)
     query = {'query':table_schema_gql.format(filters,size,from_num,order)}
