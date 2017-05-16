@@ -591,32 +591,36 @@ def build_facet_where(inp):
 # for Project name as Project.name or something similar instead of PSS.project_name.
 def convert_portal_to_neo4j(inp_str):
 
-    if inp_str[0].isupper():
-        inp_str = inp_str[0].lower() + inp_str[1:]
-
     inp_str = inp_str.replace("cases.","")
     inp_str = inp_str.replace("files.","")
 
     inp_str = inp_str.replace("Project.","project.")
 
-    if 'PSS.' not in inp_str and 'VS.' not in inp_str and "F." not in inp_str:
-        
+    if 'PSS.' not in inp_str:
+        # Project -> Study -> Subject
         inp_str = inp_str.replace("project_","project.")
         inp_str = inp_str.replace("study_","study.")
         inp_str = inp_str.replace("subject_","subject.")
-        inp_str = inp_str.replace("visit_","visit.")
-        inp_str = inp_str.replace("sample_","sample.")
-        # Project -> Study -> Subject
-        inp_str = inp_str.replace("project.","PSS.project_")
+        inp_str = inp_str.replace("project."," PSS.project_")
         inp_str = inp_str.replace("study.","PSS.study_")
         inp_str = inp_str.replace("subject.","PSS.")
-        # Visit -> Sample
+
+    if 'VS.' not in inp_str:
+         # Visit -> Sample
         inp_str = inp_str.replace("visit.","VS.visit_")
-        inp_str = inp_str.replace("sample.","VS.")
+        inp_str = inp_str.replace("sample.","VS.")   
+        inp_str = inp_str.replace("visit_","visit.")
+        inp_str = inp_str.replace("sample_","sample.")    
+
+    if "F." not in inp_str:
         # File
         inp_str = inp_str.replace("file.","F.")
 
     inp_str = inp_str.replace("%20"," ")
+
+    if inp_str.startswith('"'):
+        inp_str = inp_str[1:]
+
     return inp_str
 
 # Final function needed to build the entirety of the Cypher query taken from facet search. Accepts the following:
@@ -699,7 +703,7 @@ def build_adv_cypher(match,whereFilters,order,start,size,rtype):
     order = order.replace("files.","")
     retval1 = returns[rtype] # actual RETURN portion of statement
     where = convert_portal_to_neo4j(where)
-    
+
     if rtype in ["cases","files"]: # pagination handling needed for these returns
         order = order.split(":")
         if start != 0:
