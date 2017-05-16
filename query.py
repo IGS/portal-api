@@ -207,16 +207,17 @@ def get_pagination(cy,size,f,c_or_f):
 def get_files(sample_id):
     fl = []
     dt, fn, df, ac, fi = ("" for i in range(5))
-    fs = 0
-    
+
     cquery = "{0} WHERE VS.id='{1}' RETURN F".format(full_traversal,sample_id)
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)): # iterate over each unique path
+        fs = 0
         dt = res[x]['F']['subtype']
         df = res[x]['F']['format']
         ac = "open" # need to change this once a new private/public property is added to OSDF
-        fs = res[x]['F']['size']
+        if 'size' in res[x]['F']:
+            fs = res[x]['F']['size']
         fi = res[x]['F']['id']
         fn = extract_url(res[x]['F'])
         fl.append(IndivFiles(dataType=dt,fileName=fn,dataFormat=df,access=ac,fileId=fi,fileSize=fs))
@@ -507,9 +508,6 @@ def convert_gdc_to_osdf(inp_str):
     inp_str = inp_str.replace("cases.SampleFmabodysite","VS.body_site")
     inp_str = inp_str.replace("cases.SubjectGender","PSS.gender")
     inp_str = inp_str.replace("project.primary_site","VS.body_site")
-    inp_str = inp_str.replace("subject.gender","PSS.gender")
-    inp_str = inp_str.replace("study.name","PSS.study_name")
-    inp_str = inp_str.replace("file.format","F.format")
     inp_str = inp_str.replace("file.category","F.subtype") # note the conversion
     inp_str = inp_str.replace("files.file_id","F.id")
     inp_str = inp_str.replace("cases.","") # these replaces have to be catch alls to replace all instances throughout
@@ -521,9 +519,6 @@ def convert_gdc_to_osdf(inp_str):
     inp_str = inp_str.replace("SubjectAttr_","PSS.")
     inp_str = inp_str.replace("Visit_","VS.visit_")
     inp_str = inp_str.replace("VisitAttr_","VS.visit_")
-    inp_str = inp_str.replace("File_","F.")
-
-    inp_str = inp_str.replace("file.","F.")
 
     # Handle facet searches from panel on left side
     inp_str = inp_str.replace("data_type","F.node_type")
@@ -615,6 +610,7 @@ def convert_portal_to_neo4j(inp_str):
     if "F." not in inp_str:
         # File
         inp_str = inp_str.replace("file.","F.")
+        inp_str = inp_str.replace("File_","F.")
 
     inp_str = inp_str.replace("%20"," ")
 
