@@ -423,10 +423,13 @@ def get_manifest_data(id_list):
 
     ***REMOVED***Grab the ID, file URL, md5, and size
     for entry in res:
+        md5,size = ("" for i in range(2)) ***REMOVED***private node data won't have these properties
         id = entry['F']['id']
         urls = extract_manifest_urls(entry['F'])
-        md5 = entry['F']['md5']
-        size = entry['F']['size']
+        if 'md5' in entry['F']:
+            md5 = entry['F']['md5']
+        if 'size' in entry['F']:
+            size = entry['F']['size']
         outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,md5,size,urls))
 
     return outlist
