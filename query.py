@@ -590,6 +590,7 @@ def convert_portal_to_neo4j(inp_str):
     inp_str = inp_str.replace("files.","")
 
     inp_str = inp_str.replace("Project.","project.")
+    inp_str = inp_str.replace("fma_body_site","body_site")
 
     if 'PSS.' not in inp_str:
         # Project -> Study -> Subject
@@ -602,10 +603,11 @@ def convert_portal_to_neo4j(inp_str):
 
     if 'VS.' not in inp_str:
          # Visit -> Sample
+        inp_str = inp_str.replace("visit_","visit.")
+        inp_str = inp_str.replace("sample_","sample.")  
         inp_str = inp_str.replace("visit.","VS.visit_")
         inp_str = inp_str.replace("sample.","VS.")   
-        inp_str = inp_str.replace("visit_","visit.")
-        inp_str = inp_str.replace("sample_","sample.")    
+  
 
     if "F." not in inp_str:
         # File
