@@ -4,12 +4,12 @@ from query import get_buckets, get_total_file_size
 
 # Can preload default counts for fast loading, user interaction with facets or
 # queries will then refine these counts.
-proN = get_buckets("PSS.project_name","yes","")
-samBS = get_buckets("VS.body_site","yes","")
-subG = get_buckets("PSS.gender","yes","")
+proN = get_buckets("PS.project_name","yes","")
+samBS = get_buckets("VSS.body_site","yes","")
+subG = get_buckets("PS.gender","yes","")
 fileF = get_buckets("F.format","yes","")
 fileS = get_buckets("F.subtype","yes","")
-stuN = get_buckets("PSS.study_name","yes","")
+stuN = get_buckets("VSS.study_name","yes","")
 fs = FileSize(value=get_total_file_size(""))
 
 class Query(graphene.ObjectType):
@@ -28,21 +28,21 @@ class Query(graphene.ObjectType):
         if cy == "":
             return samBS
         else:
-            return get_buckets("VS.body_site","yes",cy)
+            return get_buckets("VSS.body_site","yes",cy)
 
     def resolve_project_name(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
             return proN
         else:
-            return get_buckets("PSS.project_name","yes",cy)
+            return get_buckets("PS.project_name","yes",cy)
 
     def resolve_subject_gender(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
             return subG
         else:
-            return get_buckets("PSS.gender","yes",cy)
+            return get_buckets("PS.gender","yes",cy)
 
     def resolve_file_format(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
@@ -63,7 +63,7 @@ class Query(graphene.ObjectType):
         if cy == "":
             return stuN
         else:
-            return get_buckets("PSS.study_name","yes",cy)
+            return get_buckets("VSS.study_name","yes",cy)
 
     def resolve_fs(self, args, context, info):
         cy = args['cy'].replace("|",'"') 

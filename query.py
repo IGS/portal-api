@@ -7,10 +7,12 @@ from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCou
 
 # The match var is the base query to prepend all queries. The idea is to traverse
 # the graph entirely and use filters to return a subset of the total traversal. 
-# PSS = Project/Study/Subject
-# VS = Visit/Sample
+# PS = Project/Subject
+# VSS = Visit/Sample/Study
 # File = File
-full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) "
+full_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file) "
+
+tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(T:tag) "
 
 # If the following return ends in "counts", then it is for a pie chart. The first two are for
 # cases/files tabs and the last is for the total size. 
@@ -25,38 +27,39 @@ full_traversal = "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_
 
 # The detailed queries require specifics about both sample and file counts to be 
 # returned so they require some extra handling. 
-base_detailed_return = ("WITH COUNT(DISTINCT(VS)) as ccounts, "
+base_detailed_return = ("WITH COUNT(DISTINCT(VSS)) as ccounts, "
     "COUNT(F) AS dcounts, {0} AS prop, SUM(toInt(F.size)) as tot "
     "RETURN prop,ccounts,dcounts,tot"
     )
 
 returns = {
-    'cases': "RETURN DISTINCT PSS, VS",
-    'files': "RETURN PSS, VS, F",
-    'project_name': "RETURN PSS.project_name AS prop, count(PSS.project_name) AS counts",
-    'project_name_detailed': base_detailed_return.format('PSS.project_name'),
-    'study_name': "RETURN PSS.study_name AS prop, count(PSS.study_name) AS counts",
-    'study_name_detailed': base_detailed_return.format('PSS.study_name'),
-    'body_site': "RETURN VS.body_site AS prop, count(VS.body_site) AS counts",
-    'body_site_detailed': base_detailed_return.format('VS.body_site'), 
-    'study': "RETURN PSS.study_name AS prop, count(PSS.study_name) AS counts",
-    'gender': "RETURN PSS.gender AS prop, count(PSS.gender) AS counts",
-    'gender_detailed': base_detailed_return.format('PSS.gender'),
-    'race': "RETURN PSS.race AS prop, count(PSS.race) AS counts",
+    'cases': "RETURN DISTINCT PS, VSS",
+    'files': "RETURN PS, VSS, F",
+    'project_name': "RETURN PS.project_name AS prop, count(PS.project_name) AS counts",
+    'project_name_detailed': base_detailed_return.format('PS.project_name'),
+    'study_name': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
+    'study_name_detailed': base_detailed_return.format('VSS.study_name'),
+    'body_site': "RETURN VSS.body_site AS prop, count(VSS.body_site) AS counts",
+    'body_site_detailed': base_detailed_return.format('VSS.body_site'), 
+    'study': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
+    'gender': "RETURN PS.gender AS prop, count(PS.gender) AS counts",
+    'gender_detailed': base_detailed_return.format('PS.gender'),
+    'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
     'format': "RETURN F.format AS prop, count(F.format) AS counts",
     'format_detailed': base_detailed_return.format('F.format'),
     'subtype_detailed': base_detailed_return.format('F.subtype'),
     'size': "RETURN (SUM(toInt(F.size))) AS tot",
     'f_pagination': "RETURN (count(F)) AS tot",
-    'c_pagination': "RETURN (count(DISTINCT(VS.id))) AS tot"
+    'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot"
 }
 
 # This populates the values in the side table of facet search. Want to let users
 # know how many samples per category in a given property. 
 count_props_dict = {
-    "PSS": "MATCH (n:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VS)) as counts",
-    "VS": "MATCH (PSS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
-    "F": "MATCH (PSS:subject)<-[:extracted_from]-(VS:sample)<-[:derived_from]-(n:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VS)) as counts"
+    "PS": "MATCH (n:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
+    "VSS": "MATCH (PS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
+    "F": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(n:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
+    "T": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(n:tag) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts"
 }
 
 ####################################
@@ -138,9 +141,9 @@ def get_total_file_size(cy):
     if cy == "":
         cquery = "MATCH (F:file) RETURN SUM(toInt(F.size)) AS tot"
     elif '"op"' in cy:
-        cquery = build_cypher(full_traversal,cy,"null","null","null","size")
+        cquery = build_cypher(cy,"null","null","null","size")
     else:
-        cquery = build_adv_cypher(full_traversal,cy,"null","null","null","size")
+        cquery = build_adv_cypher(cy,"null","null","null","size")
         cquery = cquery.replace('WHERE "',"WHERE ") # where does this phantom quote come from?!
     res = process_cquery_http(cquery)
     return res[0]['tot']
@@ -188,15 +191,15 @@ def get_pagination(cy,size,f,c_or_f):
     else:
         if '"op"' in cy:
             if c_or_f == 'c':
-                cquery = build_cypher(full_traversal,cy,"null","null","null","c_pagination")
+                cquery = build_cypher(cy,"null","null","null","c_pagination")
             else:
-                cquery = build_cypher(full_traversal,cy,"null","null","null","f_pagination")
+                cquery = build_cypher(cy,"null","null","null","f_pagination")
         else:
             if c_or_f == 'c':
-                cquery = build_adv_cypher(full_traversal,cy,"null","null","null","c_pagination")
+                cquery = build_adv_cypher(cy,"null","null","null","c_pagination")
                 cquery = cquery.replace('WHERE "',"WHERE ") # where does this phantom quote come from?!
             else:
-                cquery = build_adv_cypher(full_traversal,cy,"null","null","null","f_pagination")
+                cquery = build_adv_cypher(cy,"null","null","null","f_pagination")
                 cquery = cquery.replace('WHERE "',"WHERE ") # where does this phantom quote come from?!
                 
         res = process_cquery_http(cquery)
@@ -208,7 +211,7 @@ def get_files(sample_id):
     fl = []
     dt, fn, df, ac, fi = ("" for i in range(5))
 
-    cquery = "{0} WHERE VS.id='{1}' RETURN F".format(full_traversal,sample_id)
+    cquery = "{0} WHERE VSS.id='{1}' RETURN F".format(full_traversal,sample_id)
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)): # iterate over each unique path
@@ -226,21 +229,21 @@ def get_files(sample_id):
 
 # Query to traverse top half of OSDF model (Project<-....-Sample). 
 def get_proj_data(sample_id):
-    cquery = "{0} WHERE VS.id='{1}' RETURN PSS.project_name AS name,PSS.project_subtype AS subtype".format(full_traversal,sample_id)
+    cquery = "{0} WHERE VSS.id='{1}' RETURN PS.project_name AS name,PS.project_subtype AS subtype".format(full_traversal,sample_id)
     res = process_cquery_http(cquery)
     return Project(name=res[0]['name'],projectId=res[0]['subtype'])
 
 def get_all_proj_data():
-    cquery = "MATCH (PSS:subject) RETURN DISTINCT PSS.study_name, PSS.study_description"
+    cquery = "MATCH (VSS:subject) RETURN DISTINCT VSS.study_name, VSS.study_description"
     return process_cquery_http(cquery)
 
 def get_all_study_data():
-    cquery = "{0} RETURN DISTINCT PSS.study_name, PSS.project_subtype, PSS.study_subtype, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    cquery = "{0} RETURN DISTINCT VSS.study_name, PS.project_subtype, VSS.study_subtype, COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count".format(full_traversal)
     return process_cquery_http(cquery)
 
 # This function is a bit unique as it's only called to populate the bar chart on the home page
 def get_all_proj_counts():
-    cquery = "{0} RETURN DISTINCT PSS.study_id, PSS.study_name, VS.body_site, COUNT(DISTINCT(VS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    cquery = "{0} RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count".format(full_traversal)
     return process_cquery_http(cquery)
 
 # Cypher query to count the amount of each distinct property
@@ -249,7 +252,7 @@ def count_props(node, prop, cy):
     if cy == "":
         cquery = count_props_dict[node].format(prop)
     else:
-        cquery = build_cypher(full_traversal,cy,"null","null","null",prop)
+        cquery = build_cypher(cy,"null","null","null",prop)
     return process_cquery_http(cquery)
 
 # Cypher query to count the amount of each distinct property
@@ -258,15 +261,15 @@ def count_props_and_files(node, prop, cy):
     cquery,with_distinct = ("" for i in range (2))
     
     if cy == "":
-        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VS)) AS ccounts, COUNT(F) AS dcounts, SUM(toInt(F.size)) as tot".format(node,prop)
+        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VSS)) AS ccounts, COUNT(F) AS dcounts, SUM(toInt(F.size)) as tot".format(node,prop)
         cquery = "{0} {1}".format(full_traversal,retval)
 
     else:
         prop_detailed = "{0}_detailed".format(prop)
         if "op" in cy:
-            cquery = build_cypher(full_traversal,cy,"null","null","null",prop_detailed)
+            cquery = build_cypher(cy,"null","null","null",prop_detailed)
         else:
-            cquery = build_adv_cypher(full_traversal,cy,"null","null","null",prop_detailed)
+            cquery = build_adv_cypher(cy,"null","null","null",prop_detailed)
             cquery = cquery.replace('WHERE "',"WHERE ") # where does this phantom quote come from?!
 
     return process_cquery_http(cquery)
@@ -310,18 +313,18 @@ def get_case_hits(size,order,f,cy):
         order = order.split(":")
         if f != 0:
             f = f-1
-        retval = "RETURN DISTINCT PSS,VS ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        retval = "RETURN DISTINCT PS,VSS ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
         cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
-        cquery = build_cypher(full_traversal,cy,order,f,size,"cases")
+        cquery = build_cypher(cy,order,f,size,"cases")
     else:
-        cquery = build_adv_cypher(full_traversal,cy,order,f,size,"cases")
+        cquery = build_adv_cypher(cy,order,f,size,"cases")
         cquery = cquery.replace('WHERE "',"WHERE ") # where does this phantom quote come from?!
 
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)):
-        cur = CaseHits(project=Project(projectId=res[x]['PSS']['project_subtype'],primarySite=res[x]['VS']['body_site'],name=res[x]['PSS']['project_name'],studyName=res[x]['PSS']['study_name'],studyFullName=res[x]['PSS']['study_name']),caseId=res[x]['VS']['id'])
+        cur = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],primarySite=res[x]['VSS']['body_site'],name=res[x]['PS']['project_name'],studyName=res[x]['VSS']['study_name'],studyFullName=res[x]['VSS']['study_name']),caseId=res[x]['VSS']['id'])
         hits.append(cur)
     return hits
 
@@ -333,19 +336,19 @@ def get_file_hits(size,order,f,cy):
         order = order.split(":")
         if f != 0:
             f = f-1
-        retval = "RETURN DISTINCT PSS,VS,F ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        retval = "RETURN DISTINCT PS,VSS,F ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
         cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
-        cquery = build_cypher(full_traversal,cy,order,f,size,"files")
+        cquery = build_cypher(cy,order,f,size,"files")
     else:
-        cquery = build_adv_cypher(full_traversal,cy,order,f,size,"files")
+        cquery = build_adv_cypher(cy,order,f,size,"files")
         cquery = cquery.replace('WHERE "',"WHERE ") # where does this phantom quote come from?!
 
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)):
         case_hits = [] # reinit each iteration
-        cur_case = CaseHits(project=Project(projectId=res[x]['PSS']['project_subtype'],name=res[x]['PSS']['project_name']),caseId=res[x]['VS']['id'])
+        cur_case = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],name=res[x]['PS']['project_name']),caseId=res[x]['VSS']['id'])
         case_hits.append(cur_case)
 
         furl = extract_url(res[x]['F']) # File name is our URL
@@ -365,25 +368,25 @@ def get_file_hits(size,order,f,cy):
 
 # Pull all the data associated with a particular case (sample) ID. 
 def get_sample_data(sample_id):
-    retval = "WHERE VS.id='{0}' RETURN PSS,VS,F".format(sample_id)
+    retval = "WHERE VSS.id='{0}' RETURN PS,VSS,F".format(sample_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
     fl = []
     for x in range(0,len(res)):
         fl.append(IndivFiles(fileId=res[x]['F']['id']))
-    return IndivSample(sample_id=sample_id,body_site=res[0]['VS']['body_site'],subject_id=res[0]['PSS']['id'],subject_gender=res[0]['PSS']['gender'],study_center=res[0]['PSS']['study_center'],project_name=res[0]['PSS']['project_name'],files=fl)
+    return IndivSample(sample_id=sample_id,body_site=res[0]['VSS']['body_site'],subject_id=res[0]['PS']['id'],subject_gender=res[0]['PS']['gender'],study_center=res[0]['VSS']['study_center'],project_name=res[0]['PS']['project_name'],files=fl)
 
 # Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):
     cl, al, fl = ([] for i in range(3))
-    retval = "WHERE F.id='{0}' RETURN PSS,VS,F".format(file_id)
+    retval = "WHERE F.id='{0}' RETURN PS,VSS,F".format(file_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
     furl = extract_url(res[0]['F']) 
-    sample_bs = res[0]['VS']['body_site']
+    sample_bs = res[0]['VSS']['body_site']
     wf = "{0} -> {1}".format(sample_bs,res[0]['F']['prep_node_type'])
-    cl.append(CaseHits(project=Project(projectId=res[0]['PSS']['project_subtype']),caseId=res[0]['VS']['id']))
-    al.append(AssociatedEntities(entityId=res[0]['F']['prep_id'],caseId=res[0]['VS']['id'],entityType=res[0]['F']['prep_node_type']))
+    cl.append(CaseHits(project=Project(projectId=res[0]['PS']['project_subtype']),caseId=res[0]['VSS']['id']))
+    al.append(AssociatedEntities(entityId=res[0]['F']['prep_id'],caseId=res[0]['VSS']['id'],entityType=res[0]['F']['prep_node_type']))
     fl.append(IndivFiles(fileId=res[0]['F']['id']))
     a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) # can add analysis ID once node is present or remove if deemed unnecessary
     return FileHits(dataType=res[0]['F']['node_type'],fileName=furl,md5sum=res[0]['F']['md5'],dataFormat=res[0]['F']['format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F']['id'],dataCategory=res[0]['F']['node_type'],experimentalStrategy=res[0]['F']['study'],fileSize=res[0]['F']['size'],cases=cl,associatedEntities=al,analysis=a)
@@ -507,21 +510,21 @@ def token_to_manifest(token):
 def convert_gdc_to_osdf(inp_str):
     # Errors in Graphene mapping prevent the syntax I want, so ProjectName is converted to 
     # Cypher ready Project.name here (as are the other possible query parameters).
-    inp_str = inp_str.replace("cases.ProjectName","PSS.project_name")
-    inp_str = inp_str.replace("cases.SampleFmabodysite","VS.body_site")
-    inp_str = inp_str.replace("cases.SubjectGender","PSS.gender")
-    inp_str = inp_str.replace("project.primary_site","VS.body_site")
+    inp_str = inp_str.replace("cases.ProjectName","PS.project_name")
+    inp_str = inp_str.replace("cases.SampleFmabodysite","VSS.body_site")
+    inp_str = inp_str.replace("cases.SubjectGender","PS.gender")
+    inp_str = inp_str.replace("project.primary_site","VSS.body_site")
     inp_str = inp_str.replace("file.category","F.subtype") # note the conversion
     inp_str = inp_str.replace("files.file_id","F.id")
     inp_str = inp_str.replace("cases.","") # these replaces have to be catch alls to replace all instances throughout
-    inp_str = inp_str.replace("Project_","PSS.project_")
-    inp_str = inp_str.replace("Sample_","VS.")
-    inp_str = inp_str.replace("SampleAttr_","VS.")
-    inp_str = inp_str.replace("Study_","PSS.study_")
-    inp_str = inp_str.replace("Subject_","PSS.")
-    inp_str = inp_str.replace("SubjectAttr_","PSS.")
-    inp_str = inp_str.replace("Visit_","VS.visit_")
-    inp_str = inp_str.replace("VisitAttr_","VS.visit_")
+    inp_str = inp_str.replace("Project_","PS.project_")
+    inp_str = inp_str.replace("Sample_","VSS.")
+    inp_str = inp_str.replace("SampleAttr_","VSS.")
+    inp_str = inp_str.replace("Study_","VSS.study_")
+    inp_str = inp_str.replace("Subject_","PS.")
+    inp_str = inp_str.replace("SubjectAttr_","PS.")
+    inp_str = inp_str.replace("Visit_","VSS.visit_")
+    inp_str = inp_str.replace("VisitAttr_","VSS.visit_")
 
     # Handle facet searches from panel on left side
     inp_str = inp_str.replace("data_type","F.node_type")
@@ -586,7 +589,7 @@ def build_facet_where(inp):
 # Function to convert syntax from facet/advanced search pages and move it into 
 # the new Neo4j schema's format. This is a step we likely cannot account for 
 # on the portal itself as we want users to be able to do something like search
-# for Project name as Project.name or something similar instead of PSS.project_name.
+# for Project name as Project.name or something similar instead of PS.project_name.
 def convert_portal_to_neo4j(inp_str):
 
     inp_str = inp_str.replace("cases.","")
@@ -595,27 +598,31 @@ def convert_portal_to_neo4j(inp_str):
     inp_str = inp_str.replace("Project.","project.")
     inp_str = inp_str.replace("fma_body_site","body_site")
 
-    if 'PSS.' not in inp_str:
+    if 'PS.' not in inp_str:
         # Project -> Study -> Subject
         inp_str = inp_str.replace("project_","project.")
         inp_str = inp_str.replace("study_","study.")
         inp_str = inp_str.replace("subject_","subject.")
-        inp_str = inp_str.replace("project."," PSS.project_")
-        inp_str = inp_str.replace("study.","PSS.study_")
-        inp_str = inp_str.replace("subject.","PSS.")
+        inp_str = inp_str.replace("project."," PS.project_")
+        inp_str = inp_str.replace("study.","VSS.study_")
+        inp_str = inp_str.replace("subject.","PS.")
 
-    if 'VS.' not in inp_str:
+    if 'VSS.' not in inp_str:
          # Visit -> Sample
         inp_str = inp_str.replace("visit_","visit.")
         inp_str = inp_str.replace("sample_","sample.")  
-        inp_str = inp_str.replace("visit.","VS.visit_")
-        inp_str = inp_str.replace("sample.","VS.")   
+        inp_str = inp_str.replace("visit.","VSS.visit_")
+        inp_str = inp_str.replace("sample.","VSS.")   
   
 
     if "F." not in inp_str:
         # File
         inp_str = inp_str.replace("file.","F.")
         inp_str = inp_str.replace("File_","F.")
+
+    if "T." not in inp_str:
+        # Tag
+        inp_str = inp_str.replace("tag.","T.")
 
     inp_str = inp_str.replace("%20"," ")
 
@@ -624,6 +631,16 @@ def convert_portal_to_neo4j(inp_str):
 
     return inp_str
 
+# Whether or not to traverse to the tag level, only required when a tag is 
+# being searched
+def which_traversal(where):
+    traversal = ""
+    if "T.term" in where:
+        traversal = tag_traversal
+    else:
+        traversal = full_traversal
+    return traversal
+
 # Final function needed to build the entirety of the Cypher query taken from facet search. Accepts the following:
 # match = base MATCH query for Cypher
 # whereFilters = filters string passed from GDC portal
@@ -631,9 +648,12 @@ def convert_portal_to_neo4j(inp_str):
 # start = index of sort to start at
 # size = number of results to return
 # rtype = return type, want to be able to hit this for both cases, files, and aggregation counts.
-def build_cypher(match,whereFilters,order,start,size,rtype):
+def build_cypher(whereFilters,order,start,size,rtype):
     arr = []
+
     whereFilters = convert_portal_to_neo4j(whereFilters)
+    traversal = which_traversal(whereFilters)
+
     q = json.loads(whereFilters) # parse filters input into JSON (yields hashes of arrays)
     w1 = get_depth(q, arr) # first step of building where clause is the array of individual comparison elements
     where = build_facet_where(w1)
@@ -646,14 +666,14 @@ def build_cypher(match,whereFilters,order,start,size,rtype):
         # When adding all files to cart, a special case happens where there is
         # no order specified so have to return a more basic query.
         if len(order) < 2:
-            return "{0} WHERE {1} {2}".format(match,where,retval1)
+            return "{0} WHERE {1} {2}".format(traversal,where,retval1)
 
         if start != 0:
             start = start - 1
         retval2 = "ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),start,size) 
-        return "{0} WHERE {1} {2} {3}".format(match,where,retval1,retval2)
+        return "{0} WHERE {1} {2} {3}".format(traversal,where,retval1,retval2)
     else:
-        return "{0} WHERE {1} {2}".format(match,where,retval1)
+        return "{0} WHERE {1} {2}".format(traversal,where,retval1)
 
 # First iteration, handling all regex individually
 regexForNotEqual = re.compile(r"<>\s([0-9]*[a-zA-Z_]+[a-zA-Z0-9_]*)\b") # only want to add quotes to anything that's not solely numbers
@@ -662,7 +682,7 @@ regexForIn = re.compile(r"(\[[a-zA-Z\'\"\s\,\(\)]+\])") # catch anything that sh
 
 # This advanced Cypher builder expects the string generated by any of the advanced queries. 
 # Parameters are described above before build_cypher()
-def build_adv_cypher(match,whereFilters,order,start,size,rtype):
+def build_adv_cypher(whereFilters,order,start,size,rtype):
 
     if '%20' in whereFilters:
         whereFilters = urllib.unquote(whereFilters).decode('utf-8')
@@ -704,6 +724,7 @@ def build_adv_cypher(match,whereFilters,order,start,size,rtype):
     order = order.replace("files.","")
     retval1 = returns[rtype] # actual RETURN portion of statement
     where = convert_portal_to_neo4j(where)
+    traversal = which_traversal(where)
 
     if rtype in ["cases","files"]: # pagination handling needed for these returns
         order = order.split(":")
@@ -712,6 +733,6 @@ def build_adv_cypher(match,whereFilters,order,start,size,rtype):
         retval2 = "ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),start,size)
         if size == 0: # accounting for inconsistency where front-end asks for a 0 size return
             retval2 = "ORDER BY {0} {1}".format(order[0],order[1].upper())
-        return "{0} WHERE {1} {2} {3}".format(match,where,retval1,retval2)
+        return "{0} WHERE {1} {2} {3}".format(traversal,where,retval1,retval2)
     else:
-        return "{0} WHERE {1} {2}".format(match,where,retval1)
+        return "{0} WHERE {1} {2}".format(traversal,where,retval1)
