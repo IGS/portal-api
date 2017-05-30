@@ -47,7 +47,7 @@ returns = {
     'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
     'format': "RETURN F.format AS prop, count(F.format) AS counts",
     'format_detailed': base_detailed_return.format('F.format'),
-    'subtype_detailed': base_detailed_return.format('F.subtype'),
+    'node_type_detailed': base_detailed_return.format('F.subtype'),
     'size': "RETURN (SUM(toInt(F.size))) AS tot",
     'f_pagination': "RETURN (count(F)) AS tot",
     'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot"
@@ -527,8 +527,8 @@ def convert_gdc_to_osdf(inp_str):
     inp_str = inp_str.replace("VisitAttr_","VSS.visit_")
 
     # Handle facet searches from panel on left side
-    inp_str = inp_str.replace("data_type","F.node_type")
-    inp_str = inp_str.replace("data_format","F.format")
+    inp_str = inp_str.replace("file_type","F.node_type")
+    inp_str = inp_str.replace("file_format","F.format")
 
     # Next two lines guarantee URL encoding (seeing errors with urllib)
     inp_str = inp_str.replace('"','|')

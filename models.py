@@ -86,7 +86,7 @@ class Aggregations(graphene.ObjectType): # Collecting lists of buckets (BucketCo
     visit_date = graphene.Field(BucketCounter, name="visit_date")
 
     sample_bodyproduct = graphene.Field(BucketCounter, name="sample_body_product")
-    sample_fmabodysite = graphene.Field(BucketCounter, name="sample_fma_body_site")
+    sample_bodysite = graphene.Field(BucketCounter, name="sample_body_site")
     sample_geolocname = graphene.Field(BucketCounter, name="sample_geo_loc_name")
     sample_sampcollectdevice = graphene.Field(BucketCounter, name="sample_samp_collect_device")
     sample_envpackage = graphene.Field(BucketCounter, name="sample_env_package")
@@ -97,10 +97,7 @@ class Aggregations(graphene.ObjectType): # Collecting lists of buckets (BucketCo
     
     file_id = graphene.Field(BucketCounter, name="file_id")
     file_format = graphene.Field(BucketCounter, name="file_format")
-    file_node_type = graphene.Field(BucketCounter, name="file_node_type")
-
-    dataType = graphene.Field(BucketCounter, name="data_type")
-    dataFormat = graphene.Field(BucketCounter, name="data_format")
+    file_type = graphene.Field(BucketCounter, name="file_type")
 
     tag_term = graphene.Field(BucketCounter, name="tag_term")
 
