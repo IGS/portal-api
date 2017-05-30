@@ -69,7 +69,7 @@ def get_maps():
         "sample.subtype": gql_map['sample_subtype'],
         "sample.supersite": gql_map['sample_supersite'], 
         "file.format": gql_map['file_format'],
-        "file.node_type": gql_map['file_node_type'],
+        "file.type": gql_map['file_node_type'],
         "file.id": gql_map['file_id'],
         "tag": gql_map['tag']
         })
@@ -156,7 +156,7 @@ def get_cases():
                             doc_count
                         }}
                     }}
-                    sample_fma_body_site{{
+                    sample_body_site{{
                         buckets{{
                             key
                             doc_count
@@ -344,13 +344,13 @@ def get_files():
                 }}
             }}
             aggregations {{
-                data_type {{
+                file_type {{
                     buckets {{
                         key
                         doc_count
                     }}
                 }}
-                data_format {{
+                file_format {{
                     buckets {{
                         key
                         doc_count
@@ -514,7 +514,7 @@ def get_ui_search_summary():
         sum_gql.format("project_name",""),
         sum_gql.format("subject_gender",""),
         sum_gql.format("file_format",""),
-        sum_gql.format("file_subtype",""),
+        sum_gql.format("file_type",""),
         sum_gql.format("study_name",""),
         file_size_gql.format("")
     )
@@ -545,7 +545,7 @@ def get_ui_search_summary():
                 sum_gql.format("project_name",filters),
                 sum_gql.format("subject_gender",filters),
                 sum_gql.format("file_format",filters),
-                sum_gql.format("file_subtype",filters),
+                sum_gql.format("file_type",filters),
                 sum_gql.format("study_name",filters),
                 file_size_gql.format(filters)
             )

@@ -61,7 +61,7 @@ class Query(graphene.ObjectType):
             visit_interval=visI,
             visit_date=visD,
             sample_bodyproduct=samBP,
-            sample_fmabodysite=samFMA,
+            sample_bodysite=samFMA,
             sample_geolocname=samGLN,
             sample_sampcollectdevice=samSCD,
             sample_envpackage=samEP,
@@ -70,7 +70,7 @@ class Query(graphene.ObjectType):
             sample_id=samID,
             sample_biome=samB,
             file_format=fileF,
-            file_node_type=fileNT,
+            file_type=fileNT,
             file_id=fileID,
             tag_term=tagT
             )

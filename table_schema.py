@@ -6,8 +6,8 @@ from query import get_buckets, get_file_hits, get_pagination
 ***REMOVED***up a bit for files counts since it needs to pull ALL nodes that are tied to 
 ***REMOVED***some file and count those unique groups. Should be easy enough, just match by 
 ***REMOVED***the relevant edges. Simplified for now. 
-dt = get_buckets("F.node_type","no","")
-df = get_buckets("F.format","no","")
+ft = get_buckets("F.node_type","no","")
+ff = get_buckets("F.format","no","")
 
 class Query(graphene.ObjectType):
 
@@ -29,7 +29,7 @@ class Query(graphene.ObjectType):
             return get_file_hits(args['s'],o,args['f'],cy)
 
     def resolve_aggregations(self, args, context, info):
-        return Aggregations(dataType=dt, dataFormat=df)
+        return Aggregations(file_type=ft, file_format=ff)
 
 ***REMOVED***As noted above, going to hit Neo4j once and get everything then let GQL 
 ***REMOVED***do its magic client side to return the values that the user wants. 

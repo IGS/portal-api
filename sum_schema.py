@@ -8,7 +8,7 @@ proN = get_buckets("PS.project_name","yes","")
 samBS = get_buckets("VSS.body_site","yes","")
 subG = get_buckets("PS.gender","yes","")
 fileF = get_buckets("F.format","yes","")
-fileS = get_buckets("F.subtype","yes","")
+fileT = get_buckets("F.node_type","yes","")
 stuN = get_buckets("VSS.study_name","yes","")
 fs = FileSize(value=get_total_file_size(""))
 
@@ -18,7 +18,7 @@ class Query(graphene.ObjectType):
     project_name = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="project_name")
     subject_gender = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="subject_gender")
     file_format = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="file_format")
-    file_subtype = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="file_subtype")
+    file_type = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="file_type")
     study_name = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="study_name")
     fs = graphene.Field(FileSize, cy=graphene.String(description='Cypher WHERE parameters'))
 
@@ -51,12 +51,12 @@ class Query(graphene.ObjectType):
         else:
             return get_buckets("F.format","yes",cy)
 
-    def resolve_file_subtype(self, args, context, info):
+    def resolve_file_type(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
         if cy == "":
-            return fileS
+            return fileT
         else:
-            return get_buckets("F.subtype","yes",cy)
+            return get_buckets("F.node_type","yes",cy)
 
     def resolve_study_name(self, args, context, info):
         cy = args['cy'].replace("|",'"') 
