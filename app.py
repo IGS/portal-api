@@ -70,7 +70,8 @@ def get_maps():
         "sample.supersite": gql_map['sample_supersite'], 
         "file.format": gql_map['file_format'],
         "file.node_type": gql_map['file_node_type'],
-        "file.id": gql_map['file_id']
+        "file.id": gql_map['file_id'],
+        "tag": gql_map['tag']
         })
     return res
 
@@ -303,6 +304,7 @@ def get_status_user_unauthorized():
 @application.route('/status/api/data', methods=['GET','OPTIONS','POST'])
 def get_status_api_data():
     id = request.form.get('ids')
+    #ids = request.form.getlist('ids') ***REMOVED***need to figure out how to bundle
     return redirect(get_url_for_download(id))
 
 @application.route('/files', methods=['GET','OPTIONS','POST'])
@@ -413,7 +415,7 @@ def get_project():
         proj_list = []
 
         for p in pdata:
-            proj_list.append({ "project_id": p["PSS.study_name"], "primary_site": "multiple", "disease_type": p["PSS.study_description"], "released": True, "name": p["PSS.study_description"] })
+            proj_list.append({ "project_id": p["VSS.study_name"], "primary_site": "multiple", "disease_type": p["VSS.study_description"], "released": True, "name": p["VSS.study_description"] })
         np = len(proj_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
@@ -431,8 +433,8 @@ def get_project():
         hit_list = []
 
         for p in pd:
-            proj_id = p["PSS.study_name"]
-            psite = p["VS.body_site"]
+            proj_id = p["VSS.study_name"]
+            psite = p["VSS.body_site"]
             n_files = p["file_count"]
             n_cases = p["case_count"]
             if psite is None:
@@ -461,7 +463,7 @@ def get_project():
         proj_list = []
 
         for p in pdata:
-            proj_list.append({ "project_id": p["PSS.study_name"], "disease_type": p["PSS.study_subtype"], "project_name": p["PSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
+            proj_list.append({ "project_id": p["VSS.study_name"], "disease_type": p["VSS.study_subtype"], "project_name": p["VSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)

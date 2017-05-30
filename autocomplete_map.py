@@ -140,3 +140,5 @@ gql_map['meta_sequencing_contact'] = {"description": "metadata - Name and email 
 gql_map['meta_srs_id'] = {"description": "metadata - NCBI Sequence Read Archive sample ID of the form SRS012345", "doc_type": "cases", "field": "File_srs_id", "full": "file.srs_id", "type": "string"}
 gql_map['meta_storage_duration'] = {"description": "metadata - Duration for which sample was stored in days", "doc_type": "cases", "field": "File_storage_duration", "full": "file.storage_duration", "type": "string"}
 gql_map['meta_subtype'] = {"description": "metadata - The subtype of the DNA prep", "doc_type": "cases", "field": "File_subtype", "full": "file.subtype", "type": "string"}
+
+gql_map['tag'] = {"description": "Tag word attached to the file", "doc_type": "cases", "field": "tag", "full": "tag.term", "type": "string"}

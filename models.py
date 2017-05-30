@@ -102,6 +102,8 @@ class Aggregations(graphene.ObjectType): ***REMOVED***Collecting lists of bucket
     dataType = graphene.Field(BucketCounter, name="data_type")
     dataFormat = graphene.Field(BucketCounter, name="data_format")
 
+    tag_term = graphene.Field(BucketCounter, name="tag_term")
+
 class SBucket(graphene.ObjectType): ***REMOVED***Same idea as early bucket but used for summation (pie charts)
     key = graphene.String()
     docCount = graphene.Int(name="doc_count")
