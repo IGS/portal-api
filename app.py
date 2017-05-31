@@ -162,6 +162,12 @@ def get_cases():
                             doc_count
                         }}
                     }}
+                    study_name{{
+                        buckets{{
+                            key
+                            doc_count
+                        }}
+                    }}
                     subject_gender{{
                         buckets{{
                             key
