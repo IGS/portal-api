@@ -12,7 +12,7 @@ gql_map['project_subtype'] = {"description": "The subtype of the project", "doc_
 gql_map['study_center'] = {"description": "The study's sequencing center", "doc_type": "cases", "field": "study center", "full": "study.center", "type": "string"}
 gql_map['study_contact'] = {"description": "The study's primary contact at the sequencing center", "doc_type": "cases", "field": "study contact", "full": "study.contact", "type": "string"}
 gql_map['study_description'] = {"description": "A longer description of the study", "doc_type": "cases", "field": "study description", "full": "study.description", "type": "string"}
-gql_map['study_name'] = {"description": "The name of the study", "doc_type": "cases", "field": "study name", "full": "study.name", "type": "string"}
+gql_map['study_name'] = {"description": "The name of the study", "doc_type": "cases", "field": "study_name", "full": "study.name", "type": "string"}
 gql_map['study_srp_id'] = {"description": "NCBI Sequence Read Archive (SRA) project ID", "doc_type": "cases", "field": "study SRP ID", "full": "study.srp_id", "type": "string"}
 gql_map['study_subtype'] = {"description": "The subtype of the study", "doc_type": "cases", "field": "study subtype", "full": "study.subtype", "type": "string"}
 
@@ -79,7 +79,7 @@ gql_map['sample_body_product'] = {"description": "Substance produced by the body
 gql_map['sample_collection_date'] = {"description": "The time of sampling, either as an instance (single point in time) or interval", "doc_type": "cases", "field": "sample collection date", "full": "sample.collection_date", "type": "string"}
 gql_map['sample_env_package'] = {"description": "Controlled vocabulary of MIGS/MIMS environmental packages", "doc_type": "cases", "field": "sample env_package", "full": "sample.env_package", "type": "string"}
 gql_map['sample_feature'] = {"description": "Environmental feature level includes geographic environmental features", "doc_type": "cases", "field": "sample feature", "full": "sample.feature", "type": "string"}
-gql_map['sample_fma_body_site'] = {"description": "Body site from which the sample was obtained using the FMA ontology", "doc_type": "cases", "field": "sample FMA body site", "full": "sample.fma_body_site", "type": "string"}
+gql_map['sample_body_site'] = {"description": "Body site from which the sample was obtained using the FMA ontology", "doc_type": "cases", "field": "sample body site", "full": "sample.body_site", "type": "string"}
 gql_map['sample_geo_loc_name'] = {"description": "The geographical origin of the sample as defined by the country or sea name followed by specific region name", "doc_type": "cases", "field": "sample geo_loc_name", "full": "sample.geo_loc_name", "type": "string"}
 gql_map['sample_lat_lon'] = {"description": "Latitude/longitude in WGS 84 coordinates", "doc_type": "cases", "field": "sample lat_lon", "full": "sample.lat_lon", "type": "string"}
 gql_map['sample_material'] = {"description": "Matter that was displaced by the sample, before the sampling event", "doc_type": "cases", "field": "sample material", "full": "sample.material", "type": "string"}
