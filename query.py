@@ -238,7 +238,16 @@ def get_all_proj_data():
     return process_cquery_http(cquery)
 
 def get_all_study_data():
-    cquery = "{0} RETURN DISTINCT VSS.study_name, VSS.study_full_name, PS.project_subtype, VSS.study_subtype, COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count ORDER BY VSS.study_subtype,VSS.study_name".format(full_traversal)
+    cquery = '''
+        {0} RETURN VSS.study_name AS study_name, VSS.study_full_name AS study_full_name, 
+        PS.project_subtype AS project_subtype, VSS.study_subtype AS study_subtype, 
+        COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count, F.node_type as file_type, 
+        SUM(F.size) AS file_size, VSS.body_site AS body_site
+    '''.format(full_traversal)
+    return process_cquery_http(cquery)
+
+def get_study_sample_counts():
+    cquery = '{0} RETURN VSS.study_name AS study_name, COUNT(DISTINCT(VSS)) AS sample_count'.format(full_traversal)
     return process_cquery_http(cquery)
 
 ***REMOVED***This function is a bit unique as it's only called to populate the bar chart on the home page

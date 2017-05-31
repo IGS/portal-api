@@ -9,7 +9,9 @@ from files_schema import files_schema
 from table_schema import table_schema
 from indiv_files_schema import indiv_files_schema
 from indiv_sample_schema import indiv_sample_schema
-from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data,get_all_proj_counts,get_manifest_data,get_all_study_data,token_to_manifest,convert_portal_to_neo4j
+from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
+from query import get_all_proj_counts,get_manifest_data,get_all_study_data
+from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -463,15 +465,71 @@ def get_project():
 
     ***REMOVED***Enter here if going to the projects tab
     else:
-        pdata = get_all_study_data()
-        proj_list = []
+        
+        sdata_counts = get_study_sample_counts()
+        sample_counts_dict = {}
+        for study in sdata_counts:
+            sample_counts_dict[study['study_name']] = study['sample_count']
 
-        for p in pdata:
-            proj_list.append({ "project_id": p["VSS.study_name"], "study_full_name": p["VSS.study_full_name"], "disease_type": p["VSS.study_subtype"], "project_name": p["PS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
-        np = len(proj_list)
+        initial_sdata = get_all_study_data()
+
+        final_sdata = {}
+        valid_file_types = {}
+
+        for s in initial_sdata:
+            if s['study_name'] not in final_sdata: ***REMOVED***need to initialize the final aggregate dict to return
+                final_sdata[s['study_name']] = {
+                    "study_full_name":s['study_full_name'],
+                    "disease_type":s['study_subtype'],
+                    "project_name":s['project_subtype'],
+                    "primary_site": [],
+                    "summary": {
+                        "case_count":sample_counts_dict[s['study_name']],
+                        "file_count":s['file_count'],
+                        "file_size":s['file_size'],
+                        "data_categories":[]
+                    } 
+                }
+
+                final_sdata[s['study_name']]['summary']['data_categories'].append({'case_count':s['case_count'],'data_category':s['file_type']})
+
+            else: ***REMOVED***if already initialized, need to append values to what's there
+                final_sdata[s['study_name']]['summary']['file_count'] += s['file_count']
+                final_sdata[s['study_name']]['summary']['file_size'] += s['file_size']
+
+                data_present = False
+
+                for j in range(0,len(final_sdata[s['study_name']]['summary']['data_categories'])):
+                    if final_sdata[s['study_name']]['summary']['data_categories'][j] == s['file_type']:
+                        final_sdata[s['study_name']]['summary']['data_categories'][j]['case_count'] += s['case_count']
+                        data_present = True
+                        break ***REMOVED***can leave now and go to next result
+                
+                if data_present == False: ***REMOVED***need to add this data category
+                    final_sdata[s['study_name']]['summary']['data_categories'].append({'case_count':s['case_count'],'data_category':s['file_type']})
+
+            if s['body_site'] not in final_sdata[s['study_name']]['primary_site']:
+                final_sdata[s['study_name']]['primary_site'].append(s['body_site'])
+
+        study_list = []
+
+        for s in sorted(final_sdata):
+            study_list.append({ "project_id": s, 
+                "study_full_name": final_sdata[s]['study_full_name'], 
+                "disease_type": final_sdata[s]['disease_type'], 
+                "project_name": final_sdata[s]['project_name'], 
+                "primary_site": final_sdata[s]['primary_site'], 
+                "summary": { "case_count": final_sdata[s]['summary']['case_count'], 
+                    "file_count": final_sdata[s]['summary']['file_count'],
+                    "file_size": final_sdata[s]['summary']['file_size'],
+                    "data_categories": final_sdata[s]['summary']['data_categories']
+                } 
+            })
+
+        np = len(study_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
-        hit_str = json.dumps(proj_list)
+        hit_str = json.dumps(study_list)
         data = ("{{\"data\" : {{\"hits\" :  {0} , \"pagination\": {1}}}, \"warnings\": {{}}}}".format(hit_str, p_str))
         return make_json_response(data)
 
