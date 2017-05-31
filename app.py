@@ -52,7 +52,7 @@ def get_maps():
         "visit.number": gql_map['visit_number'],
         "visit.subtype": gql_map['visit_subtype'],
         "sample.id": gql_map['sample_id'], 
-        "sample.fma_body_site": gql_map['sample_fma_body_site'], 
+        "sample.body_site": gql_map['sample_body_site'], 
         "sample.biome": gql_map['sample_biome'],
         "sample.body_product": gql_map['sample_body_product'],
         "sample.collection_date": gql_map['sample_collection_date'],
@@ -467,7 +467,7 @@ def get_project():
         proj_list = []
 
         for p in pdata:
-            proj_list.append({ "project_id": p["VSS.study_name"], "disease_type": p["VSS.study_subtype"], "project_name": p["VSS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
+            proj_list.append({ "project_id": p["VSS.study_name"], "study_full_name": p["VSS.study_full_name"], "disease_type": p["VSS.study_subtype"], "project_name": p["PS.project_subtype"], "summary": { "case_count": p["case_count"], "file_count": p["file_count"]} })
         np = len(proj_list)
 
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(np, np)
