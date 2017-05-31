@@ -235,6 +235,7 @@ def get_case_files(case_id):
                     sample_id
                     body_site
                     subject_id
+                    rand_subject_id
                     subject_gender
                     study_center
                     project_name

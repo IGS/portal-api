@@ -117,6 +117,7 @@ class IndivSample(graphene.ObjectType): # individual sample model for populating
     sample_id = graphene.String(name="sample_id")
     body_site = graphene.String(name="body_site")
     subject_id = graphene.String(name="subject_id")
+    rand_subject_id = graphene.String(name="rand_subject_id")
     subject_gender = graphene.String(name="subject_gender")
     study_center = graphene.String(name="study_center")
     project_name = graphene.String(name="project_name")

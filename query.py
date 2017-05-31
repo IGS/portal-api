@@ -374,7 +374,7 @@ def get_sample_data(sample_id):
     fl = []
     for x in range(0,len(res)):
         fl.append(IndivFiles(fileId=res[x]['F']['id']))
-    return IndivSample(sample_id=sample_id,body_site=res[0]['VSS']['body_site'],subject_id=res[0]['PS']['id'],subject_gender=res[0]['PS']['gender'],study_center=res[0]['VSS']['study_center'],project_name=res[0]['PS']['project_name'],files=fl)
+    return IndivSample(sample_id=sample_id,body_site=res[0]['VSS']['body_site'],subject_id=res[0]['PS']['id'],rand_subject_id=res[0]['PS']['rand_subject_id'],subject_gender=res[0]['PS']['gender'],study_center=res[0]['VSS']['study_center'],project_name=res[0]['PS']['project_name'],files=fl)
 
 # Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):
