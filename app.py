@@ -128,7 +128,12 @@ def get_cases():
                 size = 20
             if not from_num:
                 from_num = 1
+            if not order:
+                order = "case_id.raw:asc"
 
+        elif filters:
+            filters = convert_gdc_to_osdf(filters)
+            
         ac_gql = '''
             {{
                 pagination(cy:"{0}",s:{1},f:{2}) {{
@@ -186,14 +191,6 @@ def get_cases():
             order = f2['sort']
             size = f2['size']
             filters = json.dumps(filters)
-
-        if filters:
-            filters = convert_gdc_to_osdf(filters)
-        else:
-            size = 20
-            from_num = 1
-            order = "case_id.raw:asc"
-            filters = ""
 
         query = {'query':ac_gql.format(filters,size,from_num,order)}
         response = urllib2.urlopen(url,data=urllib.urlencode(query))
