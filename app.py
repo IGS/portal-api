@@ -45,6 +45,8 @@ def get_maps():
         "study.name": gql_map['study_name'],
         "study.srp_id": gql_map['study_srp_id'],
         "study.subtype": gql_map['study_subtype'],
+        "subject.id": gql_map['subject_id'],
+        "subject.uuid": gql_map['subject_uuid'],
         "subject.gender": gql_map['subject_gender'],
         "subject.race": gql_map['subject_race'],
         "subject.subtype": gql_map['subject_subtype'],
@@ -71,7 +73,7 @@ def get_maps():
         "sample.subtype": gql_map['sample_subtype'],
         "sample.supersite": gql_map['sample_supersite'], 
         "file.format": gql_map['file_format'],
-        "file.type": gql_map['file_node_type'],
+        "file.type": gql_map['file_type'],
         "file.id": gql_map['file_id'],
         "tag": gql_map['tag']
         })

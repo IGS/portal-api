@@ -20,6 +20,8 @@ gql_map['study_subtype'] = {"description": "The subtype of the study", "doc_type
 gql_map['subject_gender'] = {"description": "The subject's sex", "doc_type": "cases", "field": "subject gender", "full": "subject.gender", "type": "string"}
 gql_map['subject_race'] = {"description": "The subject's race/ethnicity", "doc_type": "cases", "field": "subject race", "full": "subject.race", "type": "string"}
 gql_map['subject_subtype'] = {"description": "The subtype of the subject", "doc_type": "cases", "field": "subject subtype", "full": "subject.subtype", "type": "string"}
+gql_map['subject_uuid'] = {"description": "The subject's UUID", "doc_type": "cases", "field": "subject UUID", "full": "subject.uuid", "type": "string"}
+gql_map['subject_id'] = {"description": "The subject's per-study ID (can view in individual sample page)", "doc_type": "cases", "field": "subject ID", "full": "subject.id", "type": "string"}
 
 ***REMOVED***Subject attribute props
 gql_map['subject_attr_aerobics'] = {"description": "What is patient's baseline aerobic exercise level; type, minutes/week", "doc_type": "cases", "field": "SubjectAttr_aerobics", "full": "SubjectAttr_aerobics", "type": "string"}
@@ -94,7 +96,7 @@ gql_map['sample_supersite'] = {"description": "Body supersite from which the sam
 ***REMOVED***File props (includes everything below Sample node in OSDF schema)
 gql_map['file_id'] = {"description": "The iHMP ID of the file", "doc_type": "cases", "field": "file ID", "full": "file.id", "type": "string"}
 gql_map['file_format'] = {"description": "The format of the file", "doc_type": "cases", "field": "file format", "full": "file.format", "type": "string"}
-gql_map['file_node_type'] = {"description": "The node type of the file", "doc_type": "cases", "field": "file node type", "full": "file.node_type", "type": "string"}
+gql_map['file_type'] = {"description": "The node type of the file", "doc_type": "cases", "field": "file type", "full": "file.type", "type": "string"}
 gql_map['file_annotation_pipeline'] = {"description": "The annotation pipeline used to generate the file", "doc_type": "cases", "field": "file annotation pipeline", "full": "file.annotation_pipeline", "type": "string"}
 gql_map['file_matrix_type'] = {"description": "The type of matrix format present in the file", "doc_type": "cases", "field": "file matrix type", "full": "file.matrix_type", "type": "string"}
 ***REMOVED***MIMARKS

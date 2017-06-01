@@ -606,7 +606,8 @@ def convert_portal_to_neo4j(inp_str):
     inp_str = inp_str.replace("files.","")
 
     inp_str = inp_str.replace("Project.","project.")
-    inp_str = inp_str.replace("fma_body_site","body_site")
+    inp_str = inp_str.replace("subject.uuid","subject.id")
+    inp_str = inp_str.replace("subject.id","subject.rand_subject_id")
 
     if 'PS.' not in inp_str:
         ***REMOVED***Project -> Study -> Subject

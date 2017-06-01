@@ -78,6 +78,8 @@ class Aggregations(graphene.ObjectType): ***REMOVED***Collecting lists of bucket
     study_center = graphene.Field(BucketCounter, name="study_center")
     study_name = graphene.Field(BucketCounter, name="study_name")
 
+    subject_id = graphene.Field(BucketCounter, name="subject_id")
+    subject_uuid = graphene.Field(BucketCounter, name="subject_uuid")
     subject_gender = graphene.Field(BucketCounter, name="subject_gender")
     subject_race = graphene.Field(BucketCounter, name="subject_race")
 

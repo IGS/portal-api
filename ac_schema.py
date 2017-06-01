@@ -7,6 +7,8 @@ from query import get_buckets, get_case_hits, get_pagination
 ***REMOVED***based on filters as these are used to give a total count of the data.
 proN = get_buckets("PS.project_name","no","")
 proS = get_buckets("PS.project_subtype","no","")
+subUUID = get_buckets("PS.id","no","")
+subID = get_buckets("PS.rand_subject_id","no","")
 subG = get_buckets("PS.gender","no","")
 subR = get_buckets("PS.race","no","")
 visVN = get_buckets("VSS.visit_visit_number","no","") 
@@ -55,6 +57,8 @@ class Query(graphene.ObjectType):
             study_subtype=stuS,
             study_center=stuC,
             study_name=stuN,
+            subject_uuid=subUUID,
+            subject_id=subID,
             subject_gender=subG,
             subject_race=subR,
             visit_number=visVN,
