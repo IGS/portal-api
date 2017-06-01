@@ -500,10 +500,9 @@ def get_project():
                 data_present = False
 
                 for j in range(0,len(final_sdata[s['study_name']]['summary']['data_categories'])):
-                    if final_sdata[s['study_name']]['summary']['data_categories'][j] == s['file_type']:
+                    if final_sdata[s['study_name']]['summary']['data_categories'][j]['data_category'] == s['file_type']:
                         final_sdata[s['study_name']]['summary']['data_categories'][j]['case_count'] += s['case_count']
                         data_present = True
-                        break ***REMOVED***can leave now and go to next result
                 
                 if data_present == False: ***REMOVED***need to add this data category
                     final_sdata[s['study_name']]['summary']['data_categories'].append({'case_count':s['case_count'],'data_category':s['file_type']})
