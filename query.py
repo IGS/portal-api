@@ -47,7 +47,8 @@ returns = {
     'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
     'format': "RETURN F.format AS prop, count(F.format) AS counts",
     'format_detailed': base_detailed_return.format('F.format'),
-    'node_type_detailed': base_detailed_return.format('F.subtype'),
+    'node_type': "RETURN F.node_type AS prop, count(F.node_type) AS counts",
+    'node_type_detailed': base_detailed_return.format('F.node_type'),
     'size': "RETURN (SUM(toInt(F.size))) AS tot",
     'f_pagination': "RETURN (count(F)) AS tot",
     'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot"
