@@ -3,7 +3,7 @@ import ujson, urllib
 from py2neo import Graph # Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
 from models import Project,Pagination,CaseHits,IndivFiles,IndivSample,Analysis,AssociatedEntities
-from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCounter,FileSize
+from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCounter,FileSize,PieCharts
 
 # The match var is the base query to prepend all queries. The idea is to traverse
 # the graph entirely and use filters to return a subset of the total traversal. 
@@ -27,28 +27,29 @@ tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_f
 
 # The detailed queries require specifics about both sample and file counts to be 
 # returned so they require some extra handling. 
-base_detailed_return = ("WITH COUNT(DISTINCT(VSS)) as ccounts, "
-    "COUNT(F) AS dcounts, {0} AS prop, SUM(toInt(F.size)) as tot "
-    "RETURN prop,ccounts,dcounts,tot"
-    )
+pie_chart_return = '''
+    WITH COUNT(DISTINCT(VSS)) as scounts, COUNT(F) AS fcounts, 
+    PS.project_name AS pn, 
+    PS.gender AS sg, 
+    F.format AS ff, 
+    VSS.study_name AS sn, 
+    F.node_type AS fnt, 
+    VSS.body_site AS sbs, 
+    SUM(toInt(F.size)) as tot 
+    RETURN pn,sg,ff,sn,fnt,sbs,scounts,fcounts,tot
+'''
 
 returns = {
     'cases': "RETURN DISTINCT PS, VSS",
     'files': "RETURN PS, VSS, F",
     'project_name': "RETURN PS.project_name AS prop, count(PS.project_name) AS counts",
-    'project_name_detailed': base_detailed_return.format('PS.project_name'),
     'study_name': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
-    'study_name_detailed': base_detailed_return.format('VSS.study_name'),
     'body_site': "RETURN VSS.body_site AS prop, count(VSS.body_site) AS counts",
-    'body_site_detailed': base_detailed_return.format('VSS.body_site'), 
     'study': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
     'gender': "RETURN PS.gender AS prop, count(PS.gender) AS counts",
-    'gender_detailed': base_detailed_return.format('PS.gender'),
     'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
     'format': "RETURN F.format AS prop, count(F.format) AS counts",
-    'format_detailed': base_detailed_return.format('F.format'),
     'node_type': "RETURN F.node_type AS prop, count(F.node_type) AS counts",
-    'node_type_detailed': base_detailed_return.format('F.node_type'),
     'size': "RETURN (SUM(toInt(F.size))) AS tot",
     'f_pagination': "RETURN (count(F)) AS tot",
     'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot"
@@ -255,6 +256,45 @@ def get_study_sample_counts():
 def get_all_proj_counts():
     cquery = "{0} RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count".format(full_traversal)
     return process_cquery_http(cquery)
+
+# Function used by get_pie_chart_summary() to build up sample/file counts per prop
+def build_pie_chart_gql(res_dict,res,key):
+
+    if res[key] in res_dict:
+        res_dict[res[key]][0] += res['scounts'] 
+        res_dict[res[key]][1] += res['fcounts'] 
+        res_dict[res[key]][2] += res['tot'] 
+    else:
+        res_dict[res[key]] = [res['scounts'],res['fcounts'],res['tot']]
+
+    return res_dict
+
+# Function to return all relevant values for the pie charts. Takes in WHERE from UI
+def get_pie_chart_summary(cy):
+   
+    cquery = ""
+    
+    if "op" in cy:
+        cquery = build_cypher(cy,"null","null","null",'pie_chart')
+    else:
+        cquery = build_adv_cypher(cy,"null","null","null",'pie_chart')
+
+    res = process_cquery_http(cquery)
+
+    pn,sg,ff,sn,fnt,sbs = ({} for i in range(6)) # all the pie charts
+    file_size = 0
+
+    # aggregate the results into the correct categories
+    for x in range(0,len(res)):
+        pn = build_pie_chart_gql(pn,res[x],'pn')
+        sg = build_pie_chart_gql(sg,res[x],'sg')
+        ff = build_pie_chart_gql(ff,res[x],'ff')
+        sn = build_pie_chart_gql(sn,res[x],'sn')
+        fnt = build_pie_chart_gql(fnt,res[x],'fnt')
+        sbs = build_pie_chart_gql(sbs,res[x],'sbs')
+        file_size += res[x]['tot']
+
+    return PieCharts(fs=FileSize(value=file_size))
 
 # Cypher query to count the amount of each distinct property
 def count_props(node, prop, cy):
@@ -670,7 +710,12 @@ def build_cypher(whereFilters,order,start,size,rtype):
     where = build_facet_where(w1)
     order = order.replace("cases.","")
     order = order.replace("files.","")
+
+    if rtype == 'pie_chart': # sum schema handling
+        return "{0} {1} {2}".format(traversal,where,pie_chart_return)
+
     retval1 = returns[rtype] # actual RETURN portion of statement
+
     if rtype in ["cases","files"]: # pagination handling needed for these returns
         order = order.split(":")
 
@@ -733,9 +778,13 @@ def build_adv_cypher(whereFilters,order,start,size,rtype):
 
     order = order.replace("cases.","")
     order = order.replace("files.","")
-    retval1 = returns[rtype] # actual RETURN portion of statement
     where = convert_portal_to_neo4j(where)
     traversal = which_traversal(where)
+
+    if rtype == 'pie_chart': # sum schema handling
+        return "{0} {1} {2}".format(traversal,where,pie_chart_return)
+
+    retval1 = returns[rtype] # actual RETURN portion of statement
 
     if rtype in ["cases","files"]: # pagination handling needed for these returns
         order = order.split(":")

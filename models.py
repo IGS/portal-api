@@ -124,3 +124,12 @@ class IndivSample(graphene.ObjectType): # individual sample model for populating
     study_center = graphene.String(name="study_center")
     project_name = graphene.String(name="project_name")
     files = graphene.List(IndivFiles, name="files")
+
+class PieCharts(graphene.ObjectType): # individual sample model for populating the particular sample page
+    sample_body_site = graphene.Field(SBucketCounter, name="sample_body_site")
+    project_name = graphene.Field(SBucketCounter, name="project_name")
+    subject_gender = graphene.Field(SBucketCounter, name="subject_gender")
+    file_format = graphene.Field(SBucketCounter, name="file_format")
+    file_type = graphene.Field(SBucketCounter, name="file_type")
+    study_name = graphene.Field(SBucketCounter, name="study_name")
+    fs = graphene.Field(FileSize)
