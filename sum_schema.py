@@ -1,6 +1,6 @@
 import graphene
-from models import SBucketCounter, FileSize
-from query import get_buckets, get_total_file_size
+from models import FileSize, SBucketCounter, PieCharts
+from query import get_buckets, get_total_file_size, get_pie_chart_summary
 
 ***REMOVED***Can preload default counts for fast loading, user interaction with facets or
 ***REMOVED***queries will then refine these counts.
@@ -21,6 +21,12 @@ class Query(graphene.ObjectType):
     file_type = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="file_type")
     study_name = graphene.Field(SBucketCounter, cy=graphene.String(description='Cypher WHERE parameters'), name="study_name")
     fs = graphene.Field(FileSize, cy=graphene.String(description='Cypher WHERE parameters'))
+    pie_charts = graphene.Field(PieCharts, cy=graphene.String(description='Cypher WHERE parameters'), name="pie_charts")
+
+    def resolve_pie_charts(self, args, context, info):
+        ***REMOVED***accept the pipes and convert to quotes again now that it's been passed across the URL
+        cy = args['cy'].replace("|",'"') 
+        return get_pie_chart_summary(cy)
 
     def resolve_sample_body_site(self, args, context, info):
         ***REMOVED***accept the pipes and convert to quotes again now that it's been passed across the URL
