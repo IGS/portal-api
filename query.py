@@ -27,16 +27,10 @@ tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_f
 
 ***REMOVED***The detailed queries require specifics about both sample and file counts to be 
 ***REMOVED***returned so they require some extra handling. 
-pie_chart_return = '''
-    WITH COUNT(DISTINCT(VSS)) as scounts, COUNT(F) AS fcounts, 
-    PS.project_name AS pn, 
-    PS.gender AS sg, 
-    F.format AS ff, 
-    VSS.study_name AS sn, 
-    F.node_type AS fnt, 
-    VSS.body_site AS sbs, 
-    SUM(toInt(F.size)) as tot 
-    RETURN pn,sg,ff,sn,fnt,sbs,scounts,fcounts,tot
+base_detailed_return = '''
+    WITH COUNT(DISTINCT(VSS)) as scount, 
+    COUNT(F) AS fcount, {0} AS prop, SUM(toInt(F.size)) as tot 
+    RETURN prop,scount,fcount,tot
 '''
 
 returns = {
@@ -52,7 +46,13 @@ returns = {
     'node_type': "RETURN F.node_type AS prop, count(F.node_type) AS counts",
     'size': "RETURN (SUM(toInt(F.size))) AS tot",
     'f_pagination': "RETURN (count(F)) AS tot",
-    'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot"
+    'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot",
+    'project_name_detailed': base_detailed_return.format('PS.project_name'),
+    'study_name_detailed': base_detailed_return.format('VSS.study_name'),
+    'sample_body_site_detailed': base_detailed_return.format('VSS.body_site'), 
+    'subject_gender_detailed': base_detailed_return.format('PS.gender'),
+    'file_format_detailed': base_detailed_return.format('F.format'),
+    'file_node_type_detailed': base_detailed_return.format('F.node_type')
 }
 
 ***REMOVED***This populates the values in the side table of facet search. Want to let users
@@ -71,6 +71,7 @@ count_props_dict = {
 ***REMOVED***Get all these values from the conf
 neo4j_bolt = int(neo4j_bolt)
 neo4j_http = int(neo4j_http)
+cypher_conn = Graph(password = neo4j_pw)
 
 ***REMOVED***This section will have all the logic for populating the actual data in the schema (data from Neo4j)
 #graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
@@ -257,44 +258,57 @@ def get_all_proj_counts():
     cquery = "{0} RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count".format(full_traversal)
     return process_cquery_http(cquery)
 
-***REMOVED***Function used by get_pie_chart_summary() to build up sample/file counts per prop
-def build_pie_chart_gql(res_dict,res,key):
-
-    if res[key] in res_dict:
-        res_dict[res[key]][0] += res['scounts'] 
-        res_dict[res[key]][1] += res['fcounts'] 
-        res_dict[res[key]][2] += res['tot'] 
-    else:
-        res_dict[res[key]] = [res['scounts'],res['fcounts'],res['tot']]
-
-    return res_dict
-
 ***REMOVED***Function to return all relevant values for the pie charts. Takes in WHERE from UI
 def get_pie_chart_summary(cy):
    
     cquery = ""
-    
-    if "op" in cy:
-        cquery = build_cypher(cy,"null","null","null",'pie_chart')
-    else:
-        cquery = build_adv_cypher(cy,"null","null","null",'pie_chart')
-
-    res = process_cquery_http(cquery)
-
-    pn,sg,ff,sn,fnt,sbs = ({} for i in range(6)) ***REMOVED***all the pie charts
+    pn_bl,sn_bl,sbs_bl,sg_bl,fnt_bl,ff_bl = ([] for i in range(6))
     file_size = 0
 
-    ***REMOVED***aggregate the results into the correct categories
-    for x in range(0,len(res)):
-        pn = build_pie_chart_gql(pn,res[x],'pn')
-        sg = build_pie_chart_gql(sg,res[x],'sg')
-        ff = build_pie_chart_gql(ff,res[x],'ff')
-        sn = build_pie_chart_gql(sn,res[x],'sn')
-        fnt = build_pie_chart_gql(fnt,res[x],'fnt')
-        sbs = build_pie_chart_gql(sbs,res[x],'sbs')
-        file_size += res[x]['tot']
+    chart_order = [
+        'project_name',
+        "study_name",
+        "sample_body_site",
+        "subject_gender",
+        "file_node_type",
+        "file_format"
+    ]
 
-    return PieCharts(fs=FileSize(value=file_size))
+    tx = cypher_conn.begin()
+
+    for chart in chart_order:        
+        if "op" in cy:
+            cquery = build_cypher(cy,"null","null","null","{0}_detailed".format(chart))
+        else:
+            cquery = build_adv_cypher(cy,"null","null","null","{0}_detailed".format(chart))
+
+        res = tx.run(cquery)
+        for record in res:
+            if chart == 'sample_body_site': ***REMOVED***minor optimization, those with more groups towards the top
+                sbs_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
+            elif chart == 'study_name':
+                sn_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
+            elif chart == 'file_node_type':
+                fnt_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
+            elif chart == 'file_format':
+                ff_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
+            elif chart == 'subject_gender':
+                sg_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
+            elif chart == 'project_name':
+                pn_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
+                file_size += record['tot'] ***REMOVED***calculate this here as projects most likely to return lowest amount of rows
+
+        res.close()
+
+    tx.commit()
+
+    return PieCharts(project_name=SBucketCounter(buckets=pn_bl),
+        subject_gender=SBucketCounter(buckets=sg_bl),
+        file_format=SBucketCounter(buckets=ff_bl),
+        study_name=SBucketCounter(buckets=sn_bl),
+        file_type=SBucketCounter(buckets=fnt_bl),
+        sample_body_site=SBucketCounter(buckets=sbs_bl),
+        fs=FileSize(value=file_size))
 
 ***REMOVED***Cypher query to count the amount of each distinct property
 def count_props(node, prop, cy):
@@ -711,10 +725,14 @@ def build_cypher(whereFilters,order,start,size,rtype):
     order = order.replace("cases.","")
     order = order.replace("files.","")
 
-    if rtype == 'pie_chart': ***REMOVED***sum schema handling
-        return "{0} {1} {2}".format(traversal,where,pie_chart_return)
-
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
+
+    if rtype.endswith('detailed'): ***REMOVED***sum schema handling
+        if whereFilters != "":
+            return "{0} WHERE {1} {2}".format(traversal,where,retval1)
+        else:
+            return "{0} {1}".format(traversal,retval1)
+
 
     if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
         order = order.split(":")
@@ -781,10 +799,13 @@ def build_adv_cypher(whereFilters,order,start,size,rtype):
     where = convert_portal_to_neo4j(where)
     traversal = which_traversal(where)
 
-    if rtype == 'pie_chart': ***REMOVED***sum schema handling
-        return "{0} {1} {2}".format(traversal,where,pie_chart_return)
-
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
+
+    if rtype.endswith('detailed'): ***REMOVED***sum schema handling
+        if whereFilters != "":
+            return "{0} WHERE {1} {2}".format(traversal,where,retval1)
+        else:
+            return "{0} {1}".format(traversal,retval1)
 
     if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
         order = order.split(":")

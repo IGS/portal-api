@@ -546,7 +546,7 @@ def get_ui_search_summary():
     url = "http://localhost:{0}/sum_schema".format(be_port)
 
     sum_gql = '''
-        {0}(cy:"{1}") {{
+        {0} {{
             buckets {{
                 case_count
                 doc_count
@@ -557,13 +557,12 @@ def get_ui_search_summary():
     '''  
 
     file_size_gql = '''
-        fs(cy:"{0}") {{
+        fs {
             value
-        }}
+        }
     ''' 
 
-    empty_cy_gql = '''
-    {{
+    all_charts = '''
         {0}
         {1}
         {2}
@@ -571,15 +570,25 @@ def get_ui_search_summary():
         {4}
         {5}
         {6}
+    '''.format(
+        sum_gql.format("sample_body_site"),
+        sum_gql.format("project_name"),
+        sum_gql.format("subject_gender"),
+        sum_gql.format("file_format"),
+        sum_gql.format("file_type"),
+        sum_gql.format("study_name"),
+        file_size_gql  
+        )
+
+    empty_cy_gql = '''
+    {{
+        pie_charts(cy:"{0}"){{
+            {1}
+        }}        
     }}
     '''.format(
-        sum_gql.format("sample_body_site",""),
-        sum_gql.format("project_name",""),
-        sum_gql.format("subject_gender",""),
-        sum_gql.format("file_format",""),
-        sum_gql.format("file_type",""),
-        sum_gql.format("study_name",""),
-        file_size_gql.format("")
+        "",
+        all_charts
     )
 
     query = {'query':""}
@@ -594,24 +603,15 @@ def get_ui_search_summary():
             filters = convert_gdc_to_osdf(filters)
 
             query['query'] = '''
-            {{
-                {0}
-                {1}
-                {2}
-                {3}
-                {4}
-                {5}
-                {6}
-            }}
+                {{
+                    pie_charts(cy:"{0}") {{
+                        {1}
+                    }}        
+                }}
             '''.format(
-                sum_gql.format("sample_body_site",filters),
-                sum_gql.format("project_name",filters),
-                sum_gql.format("subject_gender",filters),
-                sum_gql.format("file_format",filters),
-                sum_gql.format("file_type",filters),
-                sum_gql.format("study_name",filters),
-                file_size_gql.format(filters)
-            )
+                filters,
+                all_charts
+                )
 
         else:
             query['query'] = empty_cy_gql
@@ -620,7 +620,7 @@ def get_ui_search_summary():
         query['query'] = empty_cy_gql
 
     response = json.load(urllib2.urlopen(url,data=urllib.urlencode(query)))
-    data = json.dumps(response['data'])
+    data = json.dumps(response['data']['pie_charts'])
     return make_json_response(data)
 
 @application.route('/status/api/manifest', methods=['GET','OPTIONS','POST'])
