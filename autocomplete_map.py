@@ -94,11 +94,14 @@ gql_map['sample_subtype'] = {"description": "The subtype of the sample", "doc_ty
 gql_map['sample_supersite'] = {"description": "Body supersite from which the sample was obtained", "doc_type": "cases", "field": "sample supersite", "full": "sample.supersite", "type": "string"}
 
 ***REMOVED***File props (includes everything below Sample node in OSDF schema)
-gql_map['file_id'] = {"description": "The iHMP ID of the file", "doc_type": "cases", "field": "file ID", "full": "file.id", "type": "string"}
-gql_map['file_format'] = {"description": "The format of the file", "doc_type": "cases", "field": "file format", "full": "file.format", "type": "string"}
-gql_map['file_type'] = {"description": "The node type of the file", "doc_type": "cases", "field": "file type", "full": "file.type", "type": "string"}
-gql_map['file_annotation_pipeline'] = {"description": "The annotation pipeline used to generate the file", "doc_type": "cases", "field": "file annotation pipeline", "full": "file.annotation_pipeline", "type": "string"}
-gql_map['file_matrix_type'] = {"description": "The type of matrix format present in the file", "doc_type": "cases", "field": "file matrix type", "full": "file.matrix_type", "type": "string"}
+gql_map['file_id'] = {"description": "The iHMP ID of the file", "doc_type": "files", "field": "file ID", "full": "file.id", "type": "string"}
+gql_map['file_format'] = {"description": "The format of the file", "doc_type": "files", "field": "file format", "full": "file.format", "type": "string"}
+gql_map['file_type'] = {"description": "The node type of the file", "doc_type": "files", "field": "file type", "full": "file.type", "type": "string"}
+gql_map['file_annotation_pipeline'] = {"description": "The annotation pipeline used to generate the file", "doc_type": "files", "field": "file annotation pipeline", "full": "file.annotation_pipeline", "type": "string"}
+gql_map['file_matrix_type'] = {"description": "The type of matrix format present in the file", "doc_type": "files", "field": "file matrix type", "full": "file.matrix_type", "type": "string"}
+
+***REMOVED***These are now all contained within the "Tags" node so auto-complete for the 
+***REMOVED***respective terms should be achieved by searching there. 
 ***REMOVED***MIMARKS
 gql_map['mimarks_adapters'] = {"description": "MIMARKS - Adapters provide priming sequences for both amplification and sequencing of the sample-library fragments", "doc_type": "cases", "field": "File_adapters", "full": "file.adapters", "type": "string"}
 gql_map['mimarks_biome'] = {"description": "MIMARKS - Biomes are defined based on factors such as plant structures, leaf types, plant spacing, and other factors like climate", "doc_type": "cases", "field": "File_biome", "full": "file.biome", "type": "string"}
