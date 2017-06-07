@@ -107,6 +107,7 @@ def convert_order(order):
     map_order = {
         'case_id': 'VSS.id',
         'file_name': 'F.id',
+        'file_id': 'F.id',
         'project.primary_site': 'VSS.body_site',
         'data_category': 'F.node_type',
         'data_format': 'F.format',
@@ -762,7 +763,6 @@ def build_cypher(whereFilters,order,start,size,rtype):
 
 
     if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
-        order = order.split(":")
 
         ***REMOVED***When adding all files to cart, a special case happens where there is
         ***REMOVED***no order specified so have to return a more basic query.
@@ -835,7 +835,6 @@ def build_adv_cypher(whereFilters,order,start,size,rtype):
             return "{0} {1}".format(traversal,retval1)
 
     if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
-        order = order.split(":")
         if start != 0:
             start = start-1
         retval2 = "ORDER BY {0} SKIP {1} LIMIT {2}".format(order,start,size)
