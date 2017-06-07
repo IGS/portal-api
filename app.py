@@ -413,13 +413,16 @@ def get_files():
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
     return make_json_response(data)
 
+pdata = get_all_proj_data()
+pd = get_all_proj_counts()
+sdata_counts = get_study_sample_counts()
+
 @application.route('/projects', methods=['GET','POST'])
 def get_project():
     facets = request.args.get('facets')
 
     if facets is None:
         ***REMOVED***HACK - should go through GQL endpoint
-        pdata = get_all_proj_data()
         proj_list = []
 
         for p in pdata:
@@ -433,7 +436,6 @@ def get_project():
 
     ***REMOVED***HACK - should go through GQL endpoint
     if facets == 'primary_site':
-        pd = get_all_proj_counts()
 
         npd = len(pd)
         p_str = "{{ \"count\": {0}, \"sort\": \"\", \"from\": 1, \"page\": 1, \"total\": {1}, \"pages\": 1, \"size\": 100 }}".format(npd, npd)
@@ -468,7 +470,6 @@ def get_project():
     ***REMOVED***Enter here if going to the projects tab
     else:
         
-        sdata_counts = get_study_sample_counts()
         sample_counts_dict = {}
         for study in sdata_counts:
             sample_counts_dict[study['study_name']] = study['sample_count']

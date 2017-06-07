@@ -94,6 +94,31 @@ def process_cquery_http(cquery):
 
     return query_res
 
+***REMOVED***Placeholder until the UI is completely stripped of GDC syntax
+def convert_order(order):
+
+    ***REMOVED***replace UI ':' with a ' '
+    order = order.replace(':',' ')
+
+    ***REMOVED***UI has an erroneous ',' appended for files occassionally
+    if order[-1] == ',':
+        order = order[:-1]
+
+    map_order = {
+        'case_id': 'VSS.id',
+        'file_name': 'F.id',
+        'project.primary_site': 'VSS.body_site',
+        'data_category': 'F.node_type',
+        'data_format': 'F.format',
+        'cases.project.project_id': 'PS.project_name',
+        'file_size': 'F.size'
+    }
+    
+    for k,v in map_order.items():
+        order = order.replace(k,v)
+
+    return order
+
 ***REMOVED***Function to extract a file name and an HTTP URL given values from a urls 
 ***REMOVED***property from an OSDF node. Note that this prioritizes http>fasp>ftp>s3
 ***REMOVED***and that it only returns a single one of the endpoints. This is in an effort
@@ -373,11 +398,12 @@ def get_buckets(inp,sum, cy):
 def get_case_hits(size,order,f,cy):
     hits = []
     cquery = ""
+    order = convert_order(order)
+
     if cy == "":
-        order = order.split(":")
         if f != 0:
             f = f-1
-        retval = "RETURN DISTINCT PS,VSS ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        retval = "RETURN DISTINCT PS,VSS ORDER BY {0} SKIP {1} LIMIT {2}".format(order,f,size)
         cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
         cquery = build_cypher(cy,order,f,size,"cases")
@@ -396,11 +422,12 @@ def get_case_hits(size,order,f,cy):
 def get_file_hits(size,order,f,cy):
     hits = []
     cquery = ""
+    order = convert_order(order)
+
     if cy == "":
-        order = order.split(":")
         if f != 0:
             f = f-1
-        retval = "RETURN DISTINCT PS,VSS,F ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),f,size)
+        retval = "RETURN DISTINCT PS,VSS,F ORDER BY {0} SKIP {1} LIMIT {2}".format(order,f,size)
         cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
         cquery = build_cypher(cy,order,f,size,"files")
@@ -744,7 +771,7 @@ def build_cypher(whereFilters,order,start,size,rtype):
 
         if start != 0:
             start = start - 1
-        retval2 = "ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),start,size) 
+        retval2 = "ORDER BY {0} SKIP {1} LIMIT {2}".format(order,start,size) 
         return "{0} WHERE {1} {2} {3}".format(traversal,where,retval1,retval2)
     else:
         return "{0} WHERE {1} {2}".format(traversal,where,retval1)
@@ -811,9 +838,9 @@ def build_adv_cypher(whereFilters,order,start,size,rtype):
         order = order.split(":")
         if start != 0:
             start = start-1
-        retval2 = "ORDER BY {0} {1} SKIP {2} LIMIT {3}".format(order[0],order[1].upper(),start,size)
+        retval2 = "ORDER BY {0} SKIP {1} LIMIT {2}".format(order,start,size)
         if size == 0: ***REMOVED***accounting for inconsistency where front-end asks for a 0 size return
-            retval2 = "ORDER BY {0} {1}".format(order[0],order[1].upper())
+            retval2 = "ORDER BY {0}".format(order)
         return "{0} WHERE {1} {2} {3}".format(traversal,where,retval1,retval2)
     else:
         return "{0} WHERE {1} {2}".format(traversal,where,retval1)
