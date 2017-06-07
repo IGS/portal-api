@@ -43,12 +43,10 @@ class Query(graphene.ObjectType):
 
     def resolve_hits(self, args, context, info):
         cy = args['cy'].replace("|",'"') # handle quotes for GQL
-        o = args['o'].replace("case_id","VSS.id") # lose the portal ordering syntax
-        o = o.replace(".raw","")
         if args['cy'] == "":
-            return get_case_hits(args['s'],"VSS.id:asc",args['f'],"")
+            return get_case_hits(args['s'],args['o'],args['f'],"")
         else:
-            return get_case_hits(args['s'],o,args['f'],cy)
+            return get_case_hits(args['s'],args['o'],args['f'],cy)
 
     def resolve_aggregations(self, args, context, info):
         return Aggregations(
