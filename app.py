@@ -98,26 +98,24 @@ def get_cases():
     elif filters == q3_query:
         return make_json_response(q3_cases)
 
+    aggregation_gql = '''        
+        aggregations {{
+            {0} {{
+                buckets {{
+                    key
+                    doc_count
+                }}
+            }}     
+        }}
+    '''
+
     # Processing autocomplete here as well as finding counts for the set category
     if(request.args.get('facets') and not request.args.get('expand')):
 
         original_facet = request.args.get('facets') # original facet
         gql_facet = original_facet.replace('.','_')
 
-        gql = '''
-            {{
-                aggregations {{
-                    {0} {{
-                        buckets {{
-                            key
-                            doc_count
-                        }}
-                    }}     
-                }}
-            }}
-        '''.format(gql_facet)
-
-        query = {'query':gql}
+        query = {'query':'{{{0}}}'.format(aggregation_gql.format(gql_facet))}
 
         response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
@@ -137,7 +135,7 @@ def get_cases():
 
         elif filters:
             filters = convert_gdc_to_osdf(filters)
-            
+
         ac_gql = '''
             {{
                 pagination(cy:"{0}",s:{1},f:{2}) {{
@@ -158,32 +156,7 @@ def get_cases():
                     primary_site
                     }}
                 }}
-                aggregations{{
-                    project_name{{
-                        buckets{{
-                            key
-                            doc_count
-                        }}
-                    }}
-                    sample_body_site{{
-                        buckets{{
-                            key
-                            doc_count
-                        }}
-                    }}
-                    study_name{{
-                        buckets{{
-                            key
-                            doc_count
-                        }}
-                    }}
-                    subject_gender{{
-                        buckets{{
-                            key
-                            doc_count
-                        }}
-                    }}
-                }}
+                {4}
             }}         
         '''
         
@@ -196,7 +169,17 @@ def get_cases():
             size = f2['size']
             filters = json.dumps(filters)
 
-        query = {'query':ac_gql.format(filters,size,from_num,order)}
+        query = ""
+        if not request.args.get('facets'): # advanced search
+            query = {'query':ac_gql.format(filters,size,from_num,order,"")}
+        else: # facet search
+            all_facet_aggregations = []
+
+            for facet in request.args.get('facets').split(','):
+                all_facet_aggregations.append(aggregation_gql.format(facet))
+
+            query = {'query':ac_gql.format(filters,size,from_num,order,(' ').join(all_facet_aggregations))}
+        
         response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
