@@ -1,6 +1,6 @@
 import graphene
 from models import Pagination, FileHits, Aggregations
-from query import get_buckets, get_file_hits, get_pagination
+from query import get_buckets, get_file_hits, get_pagination, get_sample_count
 
 ***REMOVED***Can preload aggregate. Note that the get_buckets function needs to be changed 
 ***REMOVED***up a bit for files counts since it needs to pull ALL nodes that are tied to 
@@ -13,6 +13,7 @@ class Query(graphene.ObjectType):
 
     pagination = graphene.Field(Pagination, cy=graphene.String(description='Cypher WHERE parameters'), s=graphene.Int(description='size of subset to return'), f=graphene.Int(description='what position of the sort to start at'))
     hits = graphene.List(FileHits, cy=graphene.String(description='Cypher WHERE parameters'), s=graphene.Int(description='size of subset to return'), o=graphene.String(description='what to sort by'), f=graphene.Int(description='what position of the sort to start at'))
+    sample_count = graphene.Int(name="sample_count", cy=graphene.String(description='Cypher to count samples by'))
     aggregations = graphene.Field(Aggregations)
 
     def resolve_pagination(self, args, context, info):
@@ -25,6 +26,10 @@ class Query(graphene.ObjectType):
             return get_file_hits(args['s'],args['o'],args['f'],"")
         else:
             return get_file_hits(args['s'],args['o'],args['f'],cy)
+
+    def resolve_sample_count(self, args, context, info):
+        cy = args['cy'].replace("|",'"')
+        return get_sample_count(cy)
 
     def resolve_aggregations(self, args, context, info):
         return Aggregations(file_type=ft, file_format=ff)

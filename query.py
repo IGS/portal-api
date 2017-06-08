@@ -235,6 +235,13 @@ def get_pagination(cy,size,f,c_or_f):
         calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
         return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
 
+***REMOVED***retrieve the number of samples associated with the particular IDs
+def get_sample_count(cy):
+    cquery = build_cypher(cy,"null","null","null",'c_pagination')
+    cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
+    res = process_cquery_http(cquery)
+    return int(res[0]['tot'])
+    
 ***REMOVED***Retrieve ALL files associated with a given Subject ID.
 def get_files(sample_id):
     fl = []
