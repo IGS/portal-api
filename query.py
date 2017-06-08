@@ -99,6 +99,7 @@ def convert_order(order):
 
     # replace UI ':' with a ' '
     order = order.replace(':',' ')
+    order = order.replace('.raw','') # trim more GDC syntax
 
     # UI has an erroneous ',' appended for files occassionally
     if order[-1] == ',':
