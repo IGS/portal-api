@@ -348,6 +348,7 @@ def get_files():
                     }}
                 }}
             }}
+            {4}
         }}  
     '''
 
@@ -390,7 +391,16 @@ def get_files():
         size = 10000
 
     filters = convert_gdc_to_osdf(filters)
-    query = {'query':table_schema_gql.format(filters,size,from_num,order)}
+
+    query = ""
+    if not request.args.get('filters'): # handle cart load
+        cart_str = '''
+            sample_count(cy:"{0}")
+        '''
+        query = {'query':table_schema_gql.format(filters,size,from_num,order,cart_str.format(filters))}
+    else:
+        query = {'query':table_schema_gql.format(filters,size,from_num,order,"")}
+        
     response = urllib2.urlopen(url,data=urllib.urlencode(query))
     r = response.read()
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
