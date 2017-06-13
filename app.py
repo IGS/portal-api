@@ -149,11 +149,13 @@ def get_cases():
                 }}
                 hits(cy:"{0}",s:{1},f:{2},o:"{3}"){{
                     case_id
-                    project{{
-                    project_id
-                    study_name
-                    study_full_name
-                    primary_site
+                    visit_number
+                    subject_id
+                    project {{
+                        project_id
+                        study_name
+                        study_full_name
+                        primary_site
                     }}
                 }}
                 {4}
@@ -326,13 +328,6 @@ def get_files():
                 data_category
                 file_size
                 experimental_strategy
-                cases {{
-                    project {{
-                        project_id
-                        name
-                    }}
-                    case_id
-                }}
             }}
             aggregations {{
                 file_type {{
@@ -400,7 +395,7 @@ def get_files():
         query = {'query':table_schema_gql.format(filters,size,from_num,order,cart_str.format(filters))}
     else:
         query = {'query':table_schema_gql.format(filters,size,from_num,order,"")}
-        
+
     response = urllib2.urlopen(url,data=urllib.urlencode(query))
     r = response.read()
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))

@@ -25,6 +25,8 @@ class Pagination(graphene.ObjectType): # GDC expects pagination data for populat
 class CaseHits(graphene.ObjectType): # GDC defines hits as matching Project node + Case ID (in our case sample ID)
     project = graphene.Field(Project)
     caseId = graphene.String(name="case_id")
+    visitNumber = graphene.String(name="visit_number")
+    subjectId = graphene.String(name="subject_id")
 
 class IndivFiles(graphene.ObjectType): # individual files to populate all files list
     dataType = graphene.String(name="data_type")
