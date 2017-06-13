@@ -22,7 +22,12 @@ class Query(graphene.ObjectType):
 
     def resolve_hits(self, args, context, info):
         cy = args['cy'].replace("|",'"') ***REMOVED***handle quotes for GQL
-        if args['cy'] == "":
+        if not args['o']:
+            if args['cy'] == "":
+                return get_file_hits(args['s'],'',args['f'],"")
+            else:
+                return get_file_hits(args['s'],'',args['f'],cy)
+        elif args['cy'] == "":
             return get_file_hits(args['s'],args['o'],args['f'],"")
         else:
             return get_file_hits(args['s'],args['o'],args['f'],cy)

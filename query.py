@@ -10,9 +10,10 @@ from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCou
 ***REMOVED***PS = Project/Subject
 ***REMOVED***VSS = Visit/Sample/Study
 ***REMOVED***File = File
-full_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file) "
+***REMOVED***D = derived from (contains prep data)
+full_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[D:derived_from]-(F:file) "
 
-tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(T:tag) "
+tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[D:derived_from]-(F:file)-[:has_tag]->(T:tag) "
 
 ***REMOVED***If the following return ends in "counts", then it is for a pie chart. The first two are for
 ***REMOVED***cases/files tabs and the last is for the total size. 
@@ -29,23 +30,23 @@ tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_f
 ***REMOVED***returned so they require some extra handling. 
 base_detailed_return = '''
     WITH COUNT(DISTINCT(VSS)) as scount, 
-    COUNT(F) AS fcount, {0} AS prop, SUM(toInt(F.size)) as tot 
+    COUNT(DISTINCT(F)) AS fcount, {0} AS prop, SUM(DISTINCT(F.size)) as tot 
     RETURN prop,scount,fcount,tot
 '''
 
 returns = {
     'cases': "RETURN DISTINCT PS, VSS",
-    'files': "RETURN PS, VSS, F",
+    'files': "RETURN DISTINCT F",
     'project_name': "RETURN PS.project_name AS prop, count(PS.project_name) AS counts",
     'study_name': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
     'body_site': "RETURN VSS.body_site AS prop, count(VSS.body_site) AS counts",
     'study': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
     'gender': "RETURN PS.gender AS prop, count(PS.gender) AS counts",
     'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
-    'format': "RETURN F.format AS prop, count(F.format) AS counts",
-    'node_type': "RETURN F.node_type AS prop, count(F.node_type) AS counts",
-    'size': "RETURN (SUM(toInt(F.size))) AS tot",
-    'f_pagination': "RETURN (count(F)) AS tot",
+    'format': "WITH DISTINCT F RETURN F.format AS prop, count(F.format) AS counts",
+    'node_type': "WITH DISTINCT F RETURN F.node_type AS prop, count(F.node_type) AS counts",
+    'size': "RETURN (SUM(DISTINCT(F.size))) AS tot",
+    'f_pagination': "RETURN (count(DISTINCT(F))) AS tot",
     'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot",
     'project_name_detailed': base_detailed_return.format('PS.project_name'),
     'study_name_detailed': base_detailed_return.format('VSS.study_name'),
@@ -169,7 +170,7 @@ def extract_manifest_urls(urls_node):
 def get_total_file_size(cy):
     cquery = ""
     if cy == "":
-        cquery = "MATCH (F:file) RETURN SUM(toInt(F.size)) AS tot"
+        cquery = "MATCH (F:file) RETURN SUM(DISTINCT(F.size)) AS tot"
     elif '"op"' in cy:
         cquery = build_cypher(cy,"null","null","null","size")
     else:
@@ -278,8 +279,8 @@ def get_all_study_data():
     cquery = '''
         {0} RETURN VSS.study_name AS study_name, VSS.study_full_name AS study_full_name, 
         PS.project_subtype AS project_subtype, VSS.study_subtype AS study_subtype, 
-        COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count, F.node_type as file_type, 
-        SUM(F.size) AS file_size, VSS.body_site AS body_site
+        COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count, F.node_type as file_type, 
+        SUM(DISTINCT(F.size)) AS file_size, VSS.body_site AS body_site
     '''.format(full_traversal)
     return process_cquery_http(cquery)
 
@@ -289,7 +290,7 @@ def get_study_sample_counts():
 
 ***REMOVED***This function is a bit unique as it's only called to populate the bar chart on the home page
 def get_all_proj_counts():
-    cquery = "{0} RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(F) as file_count".format(full_traversal)
+    cquery = "{0} RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count".format(full_traversal)
     return process_cquery_http(cquery)
 
 ***REMOVED***Function to return all relevant values for the pie charts. Takes in WHERE from UI
@@ -359,7 +360,7 @@ def count_props_and_files(node, prop, cy):
     cquery,with_distinct = ("" for i in range (2))
     
     if cy == "":
-        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VSS)) AS ccounts, COUNT(F) AS dcounts, SUM(toInt(F.size)) as tot".format(node,prop)
+        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VSS)) AS ccounts, COUNT(F) AS dcounts, SUM(DISTINCT(F.size)) as tot".format(node,prop)
         cquery = "{0} {1}".format(full_traversal,retval)
 
     else:
@@ -423,7 +424,7 @@ def get_case_hits(size,order,f,cy):
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)):
-        cur = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],primarySite=res[x]['VSS']['body_site'],name=res[x]['PS']['project_name'],studyName=res[x]['VSS']['study_name'],studyFullName=res[x]['VSS']['study_name']),caseId=res[x]['VSS']['id'])
+        cur = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],primarySite=res[x]['VSS']['body_site'],name=res[x]['PS']['project_name'],studyName=res[x]['VSS']['study_name'],studyFullName=res[x]['VSS']['study_name']),caseId=res[x]['VSS']['id'],visitNumber=res[x]['VSS']['visit_visit_number'],subjectId=res[x]['PS']['rand_subject_id'])
         hits.append(cur)
     return hits
 
@@ -431,12 +432,13 @@ def get_case_hits(size,order,f,cy):
 def get_file_hits(size,order,f,cy):
     hits = []
     cquery = ""
-    order = convert_order(order)
+    if order != '':
+        order = convert_order(order)
 
     if cy == "":
         if f != 0:
             f = f-1
-        retval = "RETURN DISTINCT PS,VSS,F ORDER BY {0} SKIP {1} LIMIT {2}".format(order,f,size)
+        retval = "RETURN DISTINCT(F) ORDER BY {0} SKIP {1} LIMIT {2}".format(order,f,size)
         cquery = "{0} {1}".format(full_traversal,retval)
     elif '"op"' in cy:
         cquery = build_cypher(cy,order,f,size,"files")
@@ -444,12 +446,16 @@ def get_file_hits(size,order,f,cy):
         cquery = build_adv_cypher(cy,order,f,size,"files")
         cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
 
+    if order == '': ***REMOVED***for adding all to cart, allow no 'ORDER BY' for the sake of speed
+        cquery = cquery.replace('ORDER BY','')
+
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)):
-        case_hits = [] ***REMOVED***reinit each iteration
-        cur_case = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],name=res[x]['PS']['project_name']),caseId=res[x]['VSS']['id'])
-        case_hits.append(cur_case)
+        ***REMOVED***For now, just returning file data for file hits
+        #case_hits = [] ***REMOVED***reinit each iteration
+        #cur_case = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],name=res[x]['PS']['project_name']),caseId=res[x]['VSS']['id'])
+        #case_hits.append(cur_case)
 
         furl = extract_url(res[x]['F']) ***REMOVED***File name is our URL
         if '.hmpdacc' in furl and '/data/' in furl: ***REMOVED***HMP endpoint
@@ -461,7 +467,7 @@ def get_file_hits(size,order,f,cy):
         if 'size' not in res[x]['F']:
             res[x]['F']['size'] = 0
 
-        cur_file = FileHits(dataType=res[x]['F']['subtype'],fileName=furl,dataFormat=res[x]['F']['format'],submitterId="null",access="open",state="submitted",fileId=res[x]['F']['id'],dataCategory=res[x]['F']['node_type'],experimentalStrategy=res[x]['F']['subtype'],fileSize=res[x]['F']['size'],cases=case_hits)
+        cur_file = FileHits(dataType=res[x]['F']['subtype'],fileName=furl,dataFormat=res[x]['F']['format'],submitterId="null",access="open",state="submitted",fileId=res[x]['F']['id'],dataCategory=res[x]['F']['node_type'],experimentalStrategy=res[x]['F']['subtype'],fileSize=res[x]['F']['size'])
 
         hits.append(cur_file)    
     return hits
@@ -479,14 +485,14 @@ def get_sample_data(sample_id):
 ***REMOVED***Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):
     cl, al, fl = ([] for i in range(3))
-    retval = "WHERE F.id='{0}' RETURN PS,VSS,F".format(file_id)
+    retval = "WHERE F.id='{0}' RETURN PS,VSS,d,F".format(file_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
     furl = extract_url(res[0]['F']) 
     sample_bs = res[0]['VSS']['body_site']
-    wf = "{0} -> {1}".format(sample_bs,res[0]['F']['prep_node_type'])
+    wf = "{0} -> {1}".format(sample_bs,res[0]['D']['node_type'])
     cl.append(CaseHits(project=Project(projectId=res[0]['PS']['project_subtype']),caseId=res[0]['VSS']['id']))
-    al.append(AssociatedEntities(entityId=res[0]['F']['prep_id'],caseId=res[0]['VSS']['id'],entityType=res[0]['F']['prep_node_type']))
+    al.append(AssociatedEntities(entityId=res[0]['D']['id'],caseId=res[0]['VSS']['id'],entityType=res[0]['D']['node_type']))
     fl.append(IndivFiles(fileId=res[0]['F']['id']))
     a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) ***REMOVED***can add analysis ID once node is present or remove if deemed unnecessary
     return FileHits(dataType=res[0]['F']['node_type'],fileName=furl,md5sum=res[0]['F']['md5'],dataFormat=res[0]['F']['format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F']['id'],dataCategory=res[0]['F']['node_type'],experimentalStrategy=res[0]['F']['study'],fileSize=res[0]['F']['size'],cases=cl,associatedEntities=al,analysis=a)
@@ -612,6 +618,7 @@ def convert_gdc_to_osdf(inp_str):
     ***REMOVED***Cypher ready Project.name here (as are the other possible query parameters).
     inp_str = inp_str.replace("cases.ProjectName","PS.project_name")
     inp_str = inp_str.replace("cases.SampleFmabodysite","VSS.body_site")
+    inp_str = inp_str.replace("cases.sample_body_site","VSS.body_site")
     inp_str = inp_str.replace("cases.SubjectGender","PS.gender")
     inp_str = inp_str.replace("project.primary_site","VSS.body_site")
     inp_str = inp_str.replace("file.category","F.subtype") ***REMOVED***note the conversion
@@ -713,9 +720,10 @@ def convert_portal_to_neo4j(inp_str):
         inp_str = inp_str.replace("visit_","visit.")
         inp_str = inp_str.replace("sample_","sample.")  
         inp_str = inp_str.replace("visit.","VSS.visit_")
+        if 'VSS.visit_number' in inp_str:
+            inp_str = inp_str.replace("VSS.visit_number","VSS.visit_visit_number")
         inp_str = inp_str.replace("sample.","VSS.")   
   
-
     if "F." not in inp_str:
         ***REMOVED***File
         inp_str = inp_str.replace("file.","F.")
