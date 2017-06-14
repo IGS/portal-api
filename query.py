@@ -45,7 +45,7 @@ returns = {
     'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
     'format': "WITH DISTINCT F RETURN F.format AS prop, count(F.format) AS counts",
     'node_type': "WITH DISTINCT F RETURN F.node_type AS prop, count(F.node_type) AS counts",
-    'size': "RETURN (SUM(DISTINCT(F.size))) AS tot",
+    'size': "WITH DISTINCT F RETURN SUM(F.size) AS tot",
     'f_pagination': "RETURN (count(DISTINCT(F))) AS tot",
     'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot",
     'project_name_detailed': base_detailed_return.format('PS.project_name'),
@@ -485,7 +485,7 @@ def get_sample_data(sample_id):
 ***REMOVED***Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):
     cl, al, fl = ([] for i in range(3))
-    retval = "WHERE F.id='{0}' RETURN PS,VSS,d,F".format(file_id)
+    retval = "WHERE F.id='{0}' RETURN PS,VSS,D,F".format(file_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
     furl = extract_url(res[0]['F']) 
