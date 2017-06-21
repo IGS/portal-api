@@ -714,6 +714,7 @@ def convert_portal_to_neo4j(inp_str):
         inp_str = inp_str.replace("project."," PS.project_")
         inp_str = inp_str.replace("study.","VSS.study_")
         inp_str = inp_str.replace("subject.","PS.")
+        inp_str = inp_str.replace("rand_PS.id","rand_subject_id")
 
     if 'VSS.' not in inp_str:
          ***REMOVED***Visit -> Sample
@@ -737,7 +738,7 @@ def convert_portal_to_neo4j(inp_str):
 
     if inp_str.startswith('"'):
         inp_str = inp_str[1:]
-
+        
     return inp_str
 
 ***REMOVED***Whether or not to traverse to the tag level, only required when a tag is 
