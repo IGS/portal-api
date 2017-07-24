@@ -23,7 +23,12 @@ application.debug = True
 
 ***REMOVED***Function to handle access control allow headers
 def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = access_origin
+
+    if 'HTTP_ORIGIN' in request.environ:
+        if request.environ['HTTP_ORIGIN'] in access_origin:
+            response.headers['Access-Control-Allow-Origin'] = request.environ['HTTP_ORIGIN']
+    elif request.environ['QUERY_STRING'] == '':
+        response.headers['Access-Control-Allow-Origin'] = '*'
 
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     if request.method == 'OPTIONS':
@@ -631,6 +636,25 @@ def get_manifest():
     response.set_cookie(cookie,'',expires=0)
     
     response.headers["Content-Disposition"] = "attachment; filename=hmp_cart_{0}.tsv".format(cookie)
+    return response
+
+@application.route('/status/api/files', methods=['GET','OPTIONS','POST'])
+def get_cart_metadata():
+    string = 'sample_id\tsubject_id\tsample_body_site\tsubject_gender\tvisit_number\tsubject_race\tstudy_full_name\tstudy_center\tproject_name\t' ***REMOVED***header
+
+    filters = json.loads(request.form.get('filters')) ***REMOVED***use json lib to parse the nested dict
+    ids = json.dumps(filters['content'][0]['content']['value'])
+
+    for result in data:
+        string += result
+
+    response = make_response(string)
+
+    ***REMOVED***If we've processed the data, reset the cookie key for the cart.
+    cookie = request.form.get('downloadCookieKey')
+    response.set_cookie(cookie,'',expires=0)
+    
+    response.headers["Content-Disposition"] = "attachment; filename=hmp_cart_metadata_{0}.tsv".format(cookie)
     return response
 
 @application.route('/status/api/token', methods=['GET','OPTIONS','POST'])
