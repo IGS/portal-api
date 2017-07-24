@@ -85,6 +85,9 @@ def get_maps():
 @application.route('/file', methods=['GET','OPTIONS','POST'], endpoint='file_alt_ep')
 def get_cases():
     
+    if not request.args:
+        return 'placeholder' # return a value when the cart page sends no args
+
     filters = request.args.get('filters')
     from_num = request.args.get('from')
     size = request.args.get('size')
@@ -525,7 +528,7 @@ def get_project():
 
 @application.route('/annotations', methods=['GET','OPTIONS'])
 def get_annotation():
-    return 'hi'
+    return 'placeholder' # trimmed endpoint from GDC, not using for now
 
 # Calls sum_schema endpoint/GQL instance in order to return the necessary data
 # to populate the pie charts
@@ -614,7 +617,7 @@ def get_ui_search_summary():
 
 @application.route('/status/api/manifest', methods=['GET','OPTIONS','POST'])
 def get_manifest():
-    string = 'id\tmd5\tsize\turls' # header
+    string = 'file_id\tmd5\tsize\turls\tsample_id' # header
     ids = request.form.getlist('ids')
     data = get_manifest_data(ids) # get all the relevant properties for this file
     
