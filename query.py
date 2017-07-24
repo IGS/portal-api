@@ -525,7 +525,7 @@ def get_manifest_data(id_list):
 
     ***REMOVED***Surround in brackets to format list syntax
     ids = "[{0}]".format(ids)
-    cquery = "MATCH (F:file) WHERE F.id IN {0} RETURN F".format(ids)
+    cquery = "MATCH (F:file)-[:derived_from]->(S:sample) WHERE F.id IN {0} RETURN F,S".format(ids)
     res = process_cquery_http(cquery)
 
     outlist = []
@@ -533,13 +533,14 @@ def get_manifest_data(id_list):
     ***REMOVED***Grab the ID, file URL, md5, and size
     for entry in res:
         md5,size = ("" for i in range(2)) ***REMOVED***private node data won't have these properties
-        id = entry['F']['id']
+        file_id = entry['F']['id']
         urls = extract_manifest_urls(entry['F'])
         if 'md5' in entry['F']:
             md5 = entry['F']['md5']
         if 'size' in entry['F']:
             size = entry['F']['size']
-        outlist.append("\n{0}\t{1}\t{2}\t{3}".format(id,md5,size,urls))
+        sample_id = entry['S']['id']
+        outlist.append("\n{0}\t{1}\t{2}\t{3}\t{4}".format(file_id,md5,size,urls,sample_id))
 
     return outlist
 
