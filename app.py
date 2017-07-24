@@ -10,8 +10,9 @@ from table_schema import table_schema
 from indiv_files_schema import indiv_files_schema
 from indiv_sample_schema import indiv_sample_schema
 from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
-from query import get_all_proj_counts,get_manifest_data,get_all_study_data
+from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
+from query import get_manifest_data,get_cart_metadata
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -19,7 +20,7 @@ import graphene
 import json, urllib2, urllib, re
 
 application = Flask(__name__)
-application.debug = True
+application.debug = False
 
 # Function to handle access control allow headers
 def add_cors_headers(response):
@@ -645,6 +646,8 @@ def get_cart_metadata():
     filters = json.loads(request.form.get('filters')) # use json lib to parse the nested dict
     ids = json.dumps(filters['content'][0]['content']['value'])
 
+    data = get_cart_metadata(ids)
+
     for result in data:
         string += result
 
@@ -682,7 +685,7 @@ application.add_url_rule(
     view_func=GraphQLView.as_view(
         'sum_graphql',
         schema=sum_schema,
-        graphiql=True
+        graphiql=False
     )
 )
 
@@ -691,7 +694,7 @@ application.add_url_rule(
     view_func=GraphQLView.as_view(
         'ac_graphql',
         schema=ac_schema,
-        graphiql=True
+        graphiql=False
     )
 )
 
@@ -700,7 +703,7 @@ application.add_url_rule(
     view_func=GraphQLView.as_view(
         'files_graphql',
         schema=files_schema,
-        graphiql=True
+        graphiql=False
     )
 )
 
@@ -709,7 +712,7 @@ application.add_url_rule(
     view_func=GraphQLView.as_view(
         'table_graphql',
         schema=table_schema,
-        graphiql=True
+        graphiql=False
     )
 )
 
@@ -718,7 +721,7 @@ application.add_url_rule(
     view_func=GraphQLView.as_view(
         'indiv_files_graphql',
         schema=indiv_files_schema,
-        graphiql=True
+        graphiql=False
     )
 )
 
@@ -727,7 +730,7 @@ application.add_url_rule(
     view_func=GraphQLView.as_view(
         'indiv_sample_graphql',
         schema=indiv_sample_schema,
-        graphiql=True
+        graphiql=False
     )
 )
 
