@@ -514,6 +514,9 @@ def get_file_data(file_id):
     retval = "WHERE F.id='{0}' RETURN PS,VSS,D,F".format(file_id)
     cquery = "{0} {1}".format(full_traversal,retval)
     res = process_cquery_http(cquery)
+    size = 0
+    if 'size' in res[0]['F']: ***REMOVED***some files with non-valid URLs can have no size
+        size = res[0]['F']['size']
     furl = extract_url(res[0]['F']) 
     sample_bs = res[0]['VSS']['body_site']
     wf = "{0} -> {1}".format(sample_bs,res[0]['D']['node_type'])
@@ -532,7 +535,7 @@ def get_file_data(file_id):
         fileId=res[0]['F']['id'],
         dataCategory=res[0]['F']['node_type'],
         experimentalStrategy=res[0]['F']['study'],
-        fileSize=res[0]['F']['size'],
+        fileSize=size,
         cases=cl,
         associatedEntities=al,
         analysis=a
@@ -588,7 +591,6 @@ def get_manifest_data(id_list):
 def get_metadata(id_list):
 
     cquery = "MATCH (F:file)-[:derived_from]->(S:sample)-[:extracted_from]->(J:subject) WHERE F.id IN {0} RETURN S,J".format(id_list)
-    print(cquery)
     res = process_cquery_http(cquery)
 
     outlist = []
