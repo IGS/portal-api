@@ -12,7 +12,7 @@ from indiv_sample_schema import indiv_sample_schema
 from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
-from query import get_manifest_data,get_cart_metadata
+from query import get_manifest_data,get_metadata
 from autocomplete_map import gql_map
 from conf import access_origin,be_port
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -641,12 +641,12 @@ def get_manifest():
 
 @application.route('/status/api/files', methods=['GET','OPTIONS','POST'])
 def get_cart_metadata():
-    string = 'sample_id\tsubject_id\tsample_body_site\tsubject_gender\tvisit_number\tsubject_race\tstudy_full_name\tstudy_center\tproject_name\t' ***REMOVED***header
+    string = 'sample_id\tsubject_id\tsample_body_site\tsubject_gender\tvisit_number\tsubject_race\tstudy_full_name\tproject_name' ***REMOVED***header
 
     filters = json.loads(request.form.get('filters')) ***REMOVED***use json lib to parse the nested dict
     ids = json.dumps(filters['content'][0]['content']['value'])
 
-    data = get_cart_metadata(ids)
+    data = get_metadata(ids)
 
     for result in data:
         string += result
@@ -735,4 +735,4 @@ application.add_url_rule(
 )
 
 if __name__ == '__main__':
-    application.run(threaded=True,host='0.0.0.0',port=int(be_port))
+    application.run(host='0.0.0.0',port=int(be_port))
