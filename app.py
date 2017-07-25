@@ -1,6 +1,6 @@
 ***REMOVED***simple app to allow GraphiQL interaction with the schema and verify it is
 ***REMOVED***structured how it ought to be. 
-from flask import Flask, jsonify, request, abort, redirect, make_response
+from flask import Flask, jsonify, request, abort, redirect, make_response, render_template, flash, session
 from flask_graphql import GraphQLView
 from flask.views import MethodView
 from sum_schema import sum_schema
@@ -14,13 +14,14 @@ from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
 from autocomplete_map import gql_map
-from conf import access_origin,be_port
+from conf import access_origin,be_port,secret_key
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
 import graphene
 import json, urllib2, urllib, re
 
 application = Flask(__name__)
-application.debug = False
+application.secret_key = secret_key
+application.debug = True
 
 ***REMOVED***Function to handle access control allow headers
 def add_cors_headers(response):
@@ -295,13 +296,34 @@ def get_file_metadata(file_id):
     data = ('{0}, "warnings": {{}}}}'.format(final_r[:-1]))
     return make_json_response(data)
 
+@application.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if request.form['username'] != 'admin' or request.form['password'] != 'secret':
+            error = 'Invalid credentials'
+        else:
+            session['username'] = 'admin'
+            flash('You were successfully logged in')
+            return redirect(request.referrer)
+        
+    return render_template('login.html',error=error)
+
+@application.route('/logout')
+def logout():
+    session.pop('username',None)
+    flash('You were successfully logged out')
+    return redirect(request.referrer)
+
 @application.route('/status', methods=['GET','OPTIONS'])
 def get_status():
     return 'OK'
 
 @application.route('/status/user', methods=['GET','OPTIONS','POST'])
 def get_status_user_unauthorized():
-    return 'OK'
+    if 'username' in session:
+        return 'Logged in as {0}'.format(session['username'])
+    return 'You are not logged in'
 
 @application.route('/status/api/data', methods=['GET','OPTIONS','POST'])
 def get_status_api_data():
@@ -735,4 +757,4 @@ application.add_url_rule(
 )
 
 if __name__ == '__main__':
-    application.run(host='0.0.0.0',port=int(be_port))
+    application.run(threaded=True,host='0.0.0.0',port=int(be_port))
