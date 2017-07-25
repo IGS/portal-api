@@ -424,7 +424,15 @@ def get_case_hits(size,order,f,cy):
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)):
-        cur = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],primarySite=res[x]['VSS']['body_site'],name=res[x]['PS']['project_name'],studyName=res[x]['VSS']['study_name'],studyFullName=res[x]['VSS']['study_name']),caseId=res[x]['VSS']['id'],visitNumber=res[x]['VSS']['visit_visit_number'],subjectId=res[x]['PS']['rand_subject_id'])
+        cur = CaseHits(
+            project=Project(projectId=res[x]['PS']['project_subtype'],
+                primarySite=res[x]['VSS']['body_site'],
+                name=res[x]['PS']['project_name'],
+                studyName=res[x]['VSS']['study_name'],
+                studyFullName=res[x]['VSS']['study_name']),
+                caseId=res[x]['VSS']['id'],
+                visitNumber=res[x]['VSS']['visit_visit_number'],
+                subjectId=res[x]['PS']['rand_subject_id'])
         hits.append(cur)
     return hits
 
@@ -467,7 +475,17 @@ def get_file_hits(size,order,f,cy):
         if 'size' not in res[x]['F']:
             res[x]['F']['size'] = 0
 
-        cur_file = FileHits(dataType=res[x]['F']['subtype'],fileName=furl,dataFormat=res[x]['F']['format'],submitterId="null",access="open",state="submitted",fileId=res[x]['F']['id'],dataCategory=res[x]['F']['node_type'],experimentalStrategy=res[x]['F']['subtype'],fileSize=res[x]['F']['size'])
+        cur_file = FileHits(dataType=res[x]['F']['subtype'],
+            fileName=furl,
+            dataFormat=res[x]['F']['format'],
+            submitterId="null",
+            access="open",
+            state="submitted",
+            fileId=res[x]['F']['id'],
+            dataCategory=res[x]['F']['node_type'],
+            experimentalStrategy=res[x]['F']['subtype'],
+            fileSize=res[x]['F']['size']
+            )
 
         hits.append(cur_file)    
     return hits
@@ -480,7 +498,15 @@ def get_sample_data(sample_id):
     fl = []
     for x in range(0,len(res)):
         fl.append(IndivFiles(fileId=res[x]['F']['id']))
-    return IndivSample(sample_id=sample_id,body_site=res[0]['VSS']['body_site'],subject_id=res[0]['PS']['id'],rand_subject_id=res[0]['PS']['rand_subject_id'],subject_gender=res[0]['PS']['gender'],study_center=res[0]['VSS']['study_center'],project_name=res[0]['PS']['project_name'],files=fl)
+    return IndivSample(sample_id=sample_id,
+        body_site=res[0]['VSS']['body_site'],
+        subject_id=res[0]['PS']['id'],
+        rand_subject_id=res[0]['PS']['rand_subject_id'],
+        subject_gender=res[0]['PS']['gender'],
+        study_center=res[0]['VSS']['study_center'],
+        project_name=res[0]['PS']['project_name'],
+        files=fl
+        )
 
 # Pull all the data associated with a particular file ID. 
 def get_file_data(file_id):
@@ -495,7 +521,22 @@ def get_file_data(file_id):
     al.append(AssociatedEntities(entityId=res[0]['D']['id'],caseId=res[0]['VSS']['id'],entityType=res[0]['D']['node_type']))
     fl.append(IndivFiles(fileId=res[0]['F']['id']))
     a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) # can add analysis ID once node is present or remove if deemed unnecessary
-    return FileHits(dataType=res[0]['F']['node_type'],fileName=furl,md5sum=res[0]['F']['md5'],dataFormat=res[0]['F']['format'],submitterId="null",state="submitted",access="open",fileId=res[0]['F']['id'],dataCategory=res[0]['F']['node_type'],experimentalStrategy=res[0]['F']['study'],fileSize=res[0]['F']['size'],cases=cl,associatedEntities=al,analysis=a)
+    return FileHits(
+        dataType=res[0]['F']['node_type'],
+        fileName=furl,
+        md5sum=res[0]['F']['md5'],
+        dataFormat=res[0]['F']['format'],
+        submitterId="null",
+        state="submitted",
+        access="open",
+        fileId=res[0]['F']['id'],
+        dataCategory=res[0]['F']['node_type'],
+        experimentalStrategy=res[0]['F']['study'],
+        fileSize=res[0]['F']['size'],
+        cases=cl,
+        associatedEntities=al,
+        analysis=a
+        )
 
 def get_url_for_download(id):
     cquery = "MATCH (F:file) WHERE F.id='{0}' RETURN F".format(id)
@@ -544,28 +585,28 @@ def get_manifest_data(id_list):
 
     return outlist
 
-def get_cart_metadata(id_list):
+def get_metadata(id_list):
 
-    ids = build_neo4j_list(id_list)
-
-    # Surround in brackets to format list syntax
-    ids = "[{0}]".format(ids)
-    cquery = "MATCH (F:file)-[:derived_from]->(S:sample) WHERE F.id IN {0} RETURN F,S".format(ids)
+    cquery = "MATCH (F:file)-[:derived_from]->(S:sample)-[:extracted_from]->(J:subject) WHERE F.id IN {0} RETURN S,J".format(id_list)
+    print(cquery)
     res = process_cquery_http(cquery)
 
     outlist = []
 
     # Grab the ID, file URL, md5, and size
     for entry in res:
-        md5,size = ("" for i in range(2)) # private node data won't have these properties
-        file_id = entry['F']['id']
-        urls = extract_manifest_urls(entry['F'])
-        if 'md5' in entry['F']:
-            md5 = entry['F']['md5']
-        if 'size' in entry['F']:
-            size = entry['F']['size']
-        sample_id = entry['S']['id']
-        outlist.append("\n{0}\t{1}\t{2}\t{3}\t{4}".format(file_id,md5,size,urls,sample_id))
+        # Using information we know will exist, simply call the result no need to assign to variable
+        outlist.append(
+            "\n{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(
+                entry['S']['id'],
+                entry['J']['id'],
+                entry['S']['body_site'],
+                entry['J']['gender'],
+                entry['S']['visit_visit_number'],
+                entry['J']['race'],
+                entry['S']['study_full_name'],
+                entry['J']['project_name'])
+                )
 
     return outlist
 
