@@ -1,5 +1,6 @@
 <!doctype html>
 <title>HMP Login</title>
+<link rel=stylesheet type=text/css href="{{ url_for('static', filename='style.css') }}">
 {% with messages = get_flashed_messages() %}
   {% if messages %}
     <ul class=flashes>

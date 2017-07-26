@@ -1,6 +1,6 @@
 ***REMOVED***simple app to allow GraphiQL interaction with the schema and verify it is
 ***REMOVED***structured how it ought to be. 
-from flask import Flask, jsonify, request, abort, redirect, make_response, render_template, flash, session
+from flask import Flask, jsonify, request, redirect, jsonify, make_response, render_template, flash, session
 from flask_graphql import GraphQLView
 from flask.views import MethodView
 from sum_schema import sum_schema
@@ -21,7 +21,7 @@ import json, urllib2, urllib, re
 
 application = Flask(__name__)
 application.secret_key = secret_key
-application.debug = True
+application.debug = False
 
 ***REMOVED***Function to handle access control allow headers
 def add_cors_headers(response):
@@ -309,21 +309,41 @@ def login():
         
     return render_template('login.html',error=error)
 
-@application.route('/logout')
+@application.route('/status/logout')
 def logout():
-    session.pop('username',None)
-    flash('You were successfully logged out')
-    return redirect(request.referrer)
+    if 'username' in session:
+        session.pop('username',None)
+        return redirect(request.referrer)
 
-@application.route('/status', methods=['GET','OPTIONS'])
+@application.route('/status', methods=['GET','OPTIONS','POST'])
 def get_status():
-    return 'OK'
+    return 'OK' 
+
+def unauthorized(message):
+    response = jsonify({'message': message})
+    response.status_code = 401
+    return response
 
 @application.route('/status/user', methods=['GET','OPTIONS','POST'])
 def get_status_user_unauthorized():
+    ***REMOVED***Base response with dummy gdc_ids to avoid error until it's trimmed from UI
+    response = '''
+        {{
+            "username": "{0}",
+            "projects": {{
+                "gdc_ids": {{
+                    "TCGA-LAML": ["read", "delete", "read_report", "_member_"]
+                }}
+            }}
+        }}
+    '''
+      
+    #'{"currentUser": {"username":"DEV_USER"}, "projects":{"gdc_ids":{"TCGA-LAML": ["read", "delete", "read_report", "_member_"]}}')
     if 'username' in session:
-        return 'Logged in as {0}'.format(session['username'])
-    return 'You are not logged in'
+        return make_json_response(response.format(session['username']))
+
+    return unauthorized('not currently logged in')
+
 
 @application.route('/status/api/data', methods=['GET','OPTIONS','POST'])
 def get_status_api_data():
@@ -757,4 +777,4 @@ application.add_url_rule(
 )
 
 if __name__ == '__main__':
-    application.run(threaded=True,host='0.0.0.0',port=int(be_port))
+    application.run(host='0.0.0.0',port=int(be_port))
