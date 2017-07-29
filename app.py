@@ -1,6 +1,6 @@
 # simple app to allow GraphiQL interaction with the schema and verify it is
 # structured how it ought to be. 
-from flask import Flask, jsonify, request, redirect, jsonify, make_response, render_template, flash, session
+from flask import Flask, jsonify, request, redirect, jsonify, make_response, render_template, flash, abort
 from flask_graphql import GraphQLView
 from flask.views import MethodView
 from sum_schema import sum_schema
@@ -18,31 +18,15 @@ from conf import access_origin,be_port,secret_key
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
 import graphene
 import json, urllib2, urllib, re
+from flask_cors import CORS
 
 application = Flask(__name__)
 application.secret_key = secret_key
 application.debug = False
+#application.debug = True
+CORS(application, origins=access_origin, supports_credentials=True, methods=['GET','OPTIONS','POST'])
 
-# Function to handle access control allow headers
-def add_cors_headers(response):
-
-    if 'HTTP_ORIGIN' in request.environ:
-        if request.environ['HTTP_ORIGIN'] in access_origin:
-            response.headers['Access-Control-Allow-Origin'] = request.environ['HTTP_ORIGIN']
-    elif request.environ['QUERY_STRING'] == '':
-        response.headers['Access-Control-Allow-Origin'] = '*'
-
-    response.headers['Access-Control-Allow-Credentials'] = 'true'
-    if request.method == 'OPTIONS':
-        response.headers['Access-Control-Allow-Methods'] = 'DELETE, GET, POST, PUT'
-        headers = request.headers.get('Access-Control-Request-Headers')
-        if headers:
-            response.headers['Access-Control-Allow-Headers'] = headers
-    return response
-
-application.after_request(add_cors_headers)
-
-@application.route('/gql/_mapping', methods=['GET'])
+@application.route('/gql/_mapping', methods=['GET','OPTIONS','POST'])
 def get_maps():
     res = jsonify({"project.name": gql_map['project_name'],
         "project.subtype": gql_map['project_subtype'],
@@ -198,7 +182,7 @@ def get_cases():
         return make_json_response(data)
 
 # Route for specific cases endpoints that associates with various files
-@application.route('/cases/<case_id>', methods=['GET','OPTIONS'])
+@application.route('/cases/<case_id>', methods=['GET','OPTIONS','POST'])
 def get_case_files(case_id):
 
     if not request.args.get('expand'):
@@ -251,7 +235,7 @@ def get_case_files(case_id):
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
 
-@application.route('/files/<file_id>', methods=['GET','OPTIONS'])
+@application.route('/files/<file_id>', methods=['GET','OPTIONS','POST'])
 def get_file_metadata(file_id):
 
     url = "http://localhost:{0}/indiv_files_schema".format(be_port)
@@ -296,24 +280,27 @@ def get_file_metadata(file_id):
     data = ('{0}, "warnings": {{}}}}'.format(final_r[:-1]))
     return make_json_response(data)
 
-@application.route('/login', methods=['GET', 'POST'])
+@application.route('/login', methods=['GET','OPTIONS','POST'])
 def login():
     error = None
+
     if request.method == 'POST':
         if request.form['username'] != 'admin' or request.form['password'] != 'secret':
             error = 'Invalid credentials'
         else:
-            session['username'] = 'admin'
             flash('You were successfully logged in')
-            return redirect(request.referrer)
+            response = make_response(redirect(access_origin[0]))
+            response.set_cookie('username','admin')
+            return response
+            #response = make_response(redirect(access_origin[0]))
+            #session['username'] = 'admin'
+            #return response
         
     return render_template('login.html',error=error)
 
-@application.route('/status/logout')
+@application.route('/status/logout', methods=['GET','OPTIONS','POST'])
 def logout():
-    if 'username' in session:
-        session.pop('username',None)
-        return redirect(request.referrer)
+    return redirect(request.referrer)
 
 @application.route('/status', methods=['GET','OPTIONS','POST'])
 def get_status():
@@ -326,23 +313,24 @@ def unauthorized(message):
 
 @application.route('/status/user', methods=['GET','OPTIONS','POST'])
 def get_status_user_unauthorized():
+
+    username = request.cookies.get('username')
+
     # Base response with dummy gdc_ids to avoid error until it's trimmed from UI
-    response = '''
-        {{
-            "username": "{0}",
-            "projects": {{
-                "gdc_ids": {{
-                    "TCGA-LAML": ["read", "delete", "read_report", "_member_"]
+    if username:
+        response = '''
+            {{
+                "username": "{0}",
+                "projects": {{
+                    "gdc_ids": {{
+                        "TCGA-LAML": ["read", "delete", "read_report", "_member_"]
+                    }}
                 }}
             }}
-        }}
-    '''
-      
-    #'{"currentUser": {"username":"DEV_USER"}, "projects":{"gdc_ids":{"TCGA-LAML": ["read", "delete", "read_report", "_member_"]}}')
-    if 'username' in session:
-        return make_json_response(response.format(session['username']))
+        '''
+        return make_json_response(response.format(username))
 
-    return unauthorized('not currently logged in')
+    return 'ok'
 
 
 @application.route('/status/api/data', methods=['GET','OPTIONS','POST'])
@@ -456,7 +444,7 @@ pdata = get_all_proj_data()
 pd = get_all_proj_counts()
 sdata_counts = get_study_sample_counts()
 
-@application.route('/projects', methods=['GET','POST'])
+@application.route('/projects', methods=['GET','OPTIONS','POST'])
 def get_project():
     facets = request.args.get('facets')
 
@@ -574,7 +562,7 @@ def get_project():
         data = ("{{\"data\" : {{\"hits\" :  {0} , \"pagination\": {1}}}, \"warnings\": {{}}}}".format(hit_str, p_str))
         return make_json_response(data)
 
-@application.route('/annotations', methods=['GET','OPTIONS'])
+@application.route('/annotations', methods=['GET','OPTIONS','POST'])
 def get_annotation():
     return 'placeholder' # trimmed endpoint from GDC, not using for now
 
@@ -708,7 +696,7 @@ def get_token():
     token = get_manifest_token(ids) # get all the relevant properties for this file
     return token # need to decide how to communicate the token to the user
 
-@application.route('/client/token', methods=['GET','POST','OPTIONS'])
+@application.route('/client/token', methods=['GET','OPTIONS','POST'])
 def handle_client_token():
 
     cart = token_to_manifest(request.form.get('token'))
@@ -777,4 +765,5 @@ application.add_url_rule(
 )
 
 if __name__ == '__main__':
+    #application.run(threaded=True,host='0.0.0.0',port=int(be_port))
     application.run(host='0.0.0.0',port=int(be_port))
