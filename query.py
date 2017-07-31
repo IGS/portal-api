@@ -1,4 +1,4 @@
-import re, json, requests, hashlib
+import re, json, requests, hashlib, time
 import ujson, urllib
 from py2neo import Graph # Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
@@ -65,9 +65,9 @@ count_props_dict = {
     "T": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(n:tag) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts"
 }
 
-####################################
-# FUNCTIONS FOR GETTING NEO4J DATA #
-####################################
+###############
+# NEO4J SETUP #
+###############
 
 # Get all these values from the conf
 neo4j_bolt = int(neo4j_bolt)
@@ -76,6 +76,28 @@ cypher_conn = Graph(password = neo4j_pw)
 
 # This section will have all the logic for populating the actual data in the schema (data from Neo4j)
 #graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
+
+##########################################################
+# FUNCTIONS FOR MANAGING USER SESSIONS AND QUERY HISTORY #
+##########################################################
+
+def establish_session(username):
+
+    session_id = hashlib.sha256(username+str(time.time())).hexdigest()
+
+    # We know that if we've made it here this is a valid user found in the
+    # MySQL database.
+    cypher = "MERGE (u:user { username:{un} })-[:has_session]->(s:session { id:{si} })"
+
+    tx = cypher_conn.begin()
+    tx.run(cypher, parameters={'un':username, 'si':session_id})
+    tx.commit()
+
+    return session_id
+
+####################################
+# FUNCTIONS FOR GETTING NEO4J DATA #
+####################################
 
 def process_cquery_http(cquery):
     headers = {'Content-Type': 'application/json'}
