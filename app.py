@@ -13,7 +13,7 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
-from query import establish_session,disconnect_session
+from query import establish_session,disconnect_session,get_username
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -293,7 +293,6 @@ def login():
             flash('You were successfully logged in')
             response = make_response(redirect(access_origin[0]))
             response.set_cookie('csrftoken',new_session)
-            response.set_cookie('username',request.form['username'])
             return response
             #response = make_response(redirect(access_origin[0]))
             #session['username'] = 'admin'
@@ -308,7 +307,6 @@ def logout():
     disconnect_session(request.cookies['csrftoken']) 
     response = make_response(redirect(request.referrer))
     response.set_cookie('csrftoken','')
-    response.set_cookie('username','')
 
     return response
 
@@ -324,23 +322,25 @@ def unauthorized(message):
 @application.route('/status/user', methods=['GET','OPTIONS','POST'])
 def get_status_user_unauthorized():
 
-    if 'username' in request.cookies:
-        if 'HTTP_X_CSRFTOKEN' in request.environ:
-            if request.environ['HTTP_X_CSRFTOKEN']:
+    if 'HTTP_X_CSRFTOKEN' in request.environ:
+        if request.environ['HTTP_X_CSRFTOKEN']:
 
-                response = '''
-                    {{
-                        "username": "{0}",
-                        "projects": {{
-                            "gdc_ids": {{
-                                "TCGA-LAML": []
-                            }}
+            response = '''
+                {{
+                    "username": "{0}",
+                    "projects": {{
+                        "gdc_ids": {{
+                            "TCGA-LAML": []
                         }}
                     }}
-                '''
-                return make_json_response(response.format(request.cookies['username']))
+                }}
+            '''
 
-    return 'ok'
+            username = get_username(request.environ['HTTP_X_CSRFTOKEN'])
+            if username: # if successfully logged in, should be in DB
+                return make_json_response(response.format(username))
+
+    return 'Not yet logged in'
 
 
 @application.route('/status/api/data', methods=['GET','OPTIONS','POST'])

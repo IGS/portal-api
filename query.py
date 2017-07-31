@@ -113,12 +113,20 @@ def establish_session(username):
 def disconnect_session(session_id):
 
     cypher = "MATCH (s:session { id:{si} }) DETACH DELETE s"
-
-    tx = cypher_conn.begin()
-    tx.run(cypher, parameters={'si':session_id})
-    tx.commit()
+    cypher_conn.run(cypher, parameters={'si':session_id})
 
     return
+
+# Given a session ID and see if it checks out with what was set in the cookies
+def get_username(session_id):
+
+    cquery = "MATCH (s:session)<-[:has_session]-(u:user) WHERE s.id = {si} RETURN u.username"
+    username = cypher_conn.run(cquery, parameters={'si':session_id}).evaluate()
+
+    if username:
+        return username
+    else:
+        return None
 
 ####################################
 # FUNCTIONS FOR GETTING NEO4J DATA #
