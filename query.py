@@ -85,9 +85,18 @@ def establish_session(username):
 
     session_id = hashlib.sha256(username+str(time.time())).hexdigest()
 
+    unique_session = True ***REMOVED***loop until we get a unique session_id
+    while unique_session:
+        if cypher_conn.find_one("session", property_key='id', property_value=session_id):
+            session_id = hashlib.sha256(username+str(time.time())).hexdigest()
+        else:
+            unique_session = False
+
     ***REMOVED***We know that if we've made it here this is a valid user found in the
-    ***REMOVED***MySQL database.
-    cypher = "MERGE (u:user { username:{un} })-[:has_session]->(s:session { id:{si} })"
+    ***REMOVED***MySQL database. Need to create nodes individually before linking or 
+    ***REMOVED***else the entire structure will throw an error due to uniqueness 
+    ***REMOVED***constraints on the username/id in user/session.
+    cypher = "MERGE (u:user { username:{un} }) MERGE (s:session { id:{si} }) MERGE (u)-[:has_session]->(s)"
 
     tx = cypher_conn.begin()
     tx.run(cypher, parameters={'un':username, 'si':session_id})

@@ -320,7 +320,6 @@ def get_status_user_unauthorized():
     if 'username' in request.cookies:
         if 'HTTP_X_CSRFTOKEN' in request.environ:
             if request.environ['HTTP_X_CSRFTOKEN']:
-                print(request.environ)
 
                 response = '''
                     {{
