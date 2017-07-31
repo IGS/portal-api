@@ -13,7 +13,7 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
-from query import establish_session
+from query import establish_session,disconnect_session
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -289,9 +289,9 @@ def login():
         if request.form['username'] != 'admin' or request.form['password'] != 'secret':
             error = 'Invalid credentials'
         else:
+            new_session = establish_session(request.form['username']) ***REMOVED***establish the session
             flash('You were successfully logged in')
             response = make_response(redirect(access_origin[0]))
-            new_session = establish_session(request.form['username']) ***REMOVED***establish the session
             response.set_cookie('csrftoken',new_session)
             response.set_cookie('username',request.form['username'])
             return response
@@ -303,7 +303,14 @@ def login():
 
 @application.route('/status/logout', methods=['GET','OPTIONS','POST'])
 def logout():
-    return redirect(request.referrer)
+
+    ***REMOVED***nullify all the info both in Neo4j and stored in the UI for this session
+    disconnect_session(request.cookies['csrftoken']) 
+    response = make_response(redirect(request.referrer))
+    response.set_cookie('csrftoken','')
+    response.set_cookie('username','')
+
+    return response
 
 @application.route('/status', methods=['GET','OPTIONS','POST'])
 def get_status():

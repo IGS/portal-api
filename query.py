@@ -81,11 +81,13 @@ cypher_conn = Graph(password = neo4j_pw)
 ***REMOVED***FUNCTIONS FOR MANAGING USER SESSIONS AND QUERY HISTORY #
 ##########################################################
 
+***REMOVED***Establish a "session" node in the Neo4j DB to consider the user logged in. 
+***REMOVED***Note that only ONE session will be allowed per user at a given time. 
 def establish_session(username):
 
     session_id = hashlib.sha256(username+str(time.time())).hexdigest()
 
-    unique_session = True ***REMOVED***loop until we get a unique session_id
+    unique_session = True ***REMOVED***loop until we get a unique session_id regardless of user
     while unique_session:
         if cypher_conn.find_one("session", property_key='id', property_value=session_id):
             session_id = hashlib.sha256(username+str(time.time())).hexdigest()
@@ -96,13 +98,27 @@ def establish_session(username):
     ***REMOVED***MySQL database. Need to create nodes individually before linking or 
     ***REMOVED***else the entire structure will throw an error due to uniqueness 
     ***REMOVED***constraints on the username/id in user/session.
-    cypher = "MERGE (u:user { username:{un} }) MERGE (s:session { id:{si} }) MERGE (u)-[:has_session]->(s)"
+    create_new_session = "MERGE (u:user { username:{un} }) MERGE (s:session { id:{si}, created_at:TIMESTAMP() }) MERGE (u)-[:has_session]->(s)"
+    remove_old_session = "MATCH (s:session)<-[:has_session]-(u:user) WHERE s.id <> {si} DETACH DELETE s"
 
     tx = cypher_conn.begin()
-    tx.run(cypher, parameters={'un':username, 'si':session_id})
+    tx.run(remove_old_session, parameters={'si':session_id})
+    tx.run(create_new_session, parameters={'un':username, 'si':session_id})
     tx.commit()
 
     return session_id
+
+***REMOVED***If the user logs out, then disconnect deliberately here. The auto-loader
+***REMOVED***should handle timeout disconnects.
+def disconnect_session(session_id):
+
+    cypher = "MATCH (s:session { id:{si} }) DETACH DELETE s"
+
+    tx = cypher_conn.begin()
+    tx.run(cypher, parameters={'si':session_id})
+    tx.commit()
+
+    return
 
 ####################################
 ***REMOVED***FUNCTIONS FOR GETTING NEO4J DATA #
