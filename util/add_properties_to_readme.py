@@ -36,7 +36,7 @@ def main():
 
     with open(args.outfile,'w') as out:
         for k,v in sorted_dict.items():
-            out.write("* {0} - {1}\n".format(k,v))
+            out.write("* {0} - {1}\n".format(k.replace('\"','**'),v))
 
 
 if __name__ == '__main__':
