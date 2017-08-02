@@ -15,7 +15,7 @@ from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_cou
 from query import get_manifest_data,get_metadata
 from query import establish_session,disconnect_session,get_username
 from autocomplete_map import gql_map
-from conf import access_origin,be_port,secret_key
+from conf import access_origin,be_port,secret_key,be_loc
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
 import graphene
 import json, urllib2, urllib, re
@@ -29,7 +29,8 @@ CORS(application, origins=access_origin, supports_credentials=True, methods=['GE
 
 @application.route('/gql/_mapping', methods=['GET','OPTIONS','POST'])
 def get_maps():
-    res = jsonify({"project.name": gql_map['project_name'],
+    gql = jsonify({
+        "project.name": gql_map['project_name'],
         "project.subtype": gql_map['project_subtype'],
         "study.center": gql_map['study_center'],
         "study.contact": gql_map['study_contact'],
@@ -69,7 +70,7 @@ def get_maps():
         "file.id": gql_map['file_id'],
         "tag": gql_map['tag']
         })
-    return res
+    return gql
 
 # Note the multiple endpoints going to the same "cases endpoint to accommodate GDC syntax"
 @application.route('/cases', methods=['GET','OPTIONS','POST'])
@@ -84,7 +85,7 @@ def get_cases():
     from_num = request.args.get('from')
     size = request.args.get('size')
     order = request.args.get('sort')
-    url = "http://localhost:{0}/ac_schema".format(be_port)
+    url = "{0}/ac_schema".format(be_loc)
 
     if filters == q1_query: # return the front page data without hitting neo4j
         return make_json_response(q1_cases)
@@ -187,7 +188,7 @@ def get_cases():
 def get_case_files(case_id):
 
     if not request.args.get('expand'):
-        url = "http://localhost:{0}/files_schema".format(be_port)
+        url = "{0}/files_schema".format(be_loc)
 
         files_gql = '''
             {{
@@ -214,7 +215,7 @@ def get_case_files(case_id):
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
         return make_json_response(data)
     else:
-        url = "http://localhost:{0}/indiv_sample_schema".format(be_port)
+        url = "{0}/indiv_sample_schema".format(be_loc)
 
         sample_gql = '''
             {{
@@ -239,7 +240,7 @@ def get_case_files(case_id):
 @application.route('/files/<file_id>', methods=['GET','OPTIONS','POST'])
 def get_file_metadata(file_id):
 
-    url = "http://localhost:{0}/indiv_files_schema".format(be_port)
+    url = "{0}/indiv_files_schema".format(be_loc)
 
     idv_file_gql = '''
         {{
@@ -353,7 +354,7 @@ def get_status_api_data():
 def get_files():
 
     filters = ""
-    url = "http://localhost:{0}/table_schema".format(be_port)
+    url = "{0}/table_schema".format(be_loc)
 
     table_schema_gql = '''
         {{
@@ -581,7 +582,7 @@ def get_annotation():
 @application.route('/ui/search/summary', methods=['GET','OPTIONS','POST'])
 def get_ui_search_summary():
 
-    url = "http://localhost:{0}/sum_schema".format(be_port)
+    url = "{0}/sum_schema".format(be_loc)
 
     sum_gql = '''
         {0} {{
