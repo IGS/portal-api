@@ -13,7 +13,7 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
-from query import establish_session,disconnect_session,get_username
+from query import establish_session,disconnect_session,get_username,save_query
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key,be_loc
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -82,6 +82,7 @@ def get_cases():
         return 'placeholder' # return a value when the cart page sends no args
 
     filters = request.args.get('filters')
+    unmodified_filters = filters
     from_num = request.args.get('from')
     size = request.args.get('size')
     order = request.args.get('sort')
@@ -181,6 +182,15 @@ def get_cases():
         response = urllib2.urlopen(url,data=urllib.urlencode(query))
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
+
+        if request.args.get('save'):
+            if request.args.get('save') == 'yes':
+                # Not sure what's up with the JSON lib and parsing this, just 
+                # hacking at it for now. Should render an exact copy of what
+                # dislays in the advanced query input box. 
+                query = re.search(r'query":"(.*)"}',unmodified_filters.replace('\\','')).group(1)
+                save_query(request.environ['HTTP_X_CSRFTOKEN'],request.environ['HTTP_REFERER'],query,re.search(r'"total":(\d+)',data).group(1),'s')
+
         return make_json_response(data)
 
 # Route for specific cases endpoints that associates with various files
@@ -291,7 +301,7 @@ def login():
             error = 'Invalid credentials'
         else:
             new_session = establish_session(request.form['username']) # establish the session
-            flash('You were successfully logged in')
+            #flash('You were successfully logged in')
             response = make_response(redirect(access_origin[0]))
             response.set_cookie('csrftoken',new_session)
             return response
@@ -449,6 +459,11 @@ def get_files():
     response = urllib2.urlopen(url,data=urllib.urlencode(query))
     r = response.read()
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
+
+    if request.args.get('save'):
+        if request.args.get('save') == 'yes':
+            save_query(request.environ['HTTP_X_CSRFTOKEN'],request.environ['HTTP_REFERER'],'',re.search(r'"total":(\d+)',data).group(1),'f')
+
     return make_json_response(data)
 
 pdata = get_all_proj_data()
