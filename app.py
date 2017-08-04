@@ -28,6 +28,11 @@ application.debug = False
 #application.debug = True
 CORS(application, origins=access_origin, supports_credentials=True, methods=['GET','OPTIONS','POST'])
 
+@application.before_request
+def before():
+    if request.method == 'OPTIONS':
+        return 'OK'
+
 @application.route('/gql/_mapping', methods=['GET','OPTIONS','POST'])
 def get_maps():
     gql = jsonify({
