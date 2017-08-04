@@ -13,7 +13,8 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
-from query import establish_session,disconnect_session,get_username,save_query
+from query import establish_session,disconnect_session,get_username
+from query import save_query_sample_data,save_query_file_data
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key,be_loc
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
@@ -183,13 +184,14 @@ def get_cases():
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
 
-        if request.args.get('save'):
-            if request.args.get('save') == 'yes':
+        save_query = request.args.get('save')
+        if save_query and save_query == 'yes':
+            if 'HTTP_X_CSRFTOKEN' in request.environ:
                 ***REMOVED***Not sure what's up with the JSON lib and parsing this, just 
                 ***REMOVED***hacking at it for now. Should render an exact copy of what
                 ***REMOVED***dislays in the advanced query input box. 
                 query = re.search(r'query":"(.*)"}',unmodified_filters.replace('\\','')).group(1)
-                save_query(request.environ['HTTP_X_CSRFTOKEN'],request.environ['HTTP_REFERER'],query,re.search(r'"total":(\d+)',data).group(1),'s')
+                save_query_sample_data(request.environ['HTTP_X_CSRFTOKEN'],request.environ['HTTP_REFERER'],query,re.search(r'"total":(\d+)',data).group(1))
 
         return make_json_response(data)
 
@@ -460,9 +462,9 @@ def get_files():
     r = response.read()
     data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
 
-    if request.args.get('save'):
-        if request.args.get('save') == 'yes':
-            save_query(request.environ['HTTP_X_CSRFTOKEN'],request.environ['HTTP_REFERER'],'',re.search(r'"total":(\d+)',data).group(1),'f')
+    save_query = request.args.get('save')
+    if save_query and save_query == 'yes':
+        save_query_file_data(request.environ['HTTP_REFERER'],re.search(r'"total":(\d+)',data).group(1))
 
     return make_json_response(data)
 
