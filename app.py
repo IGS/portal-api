@@ -13,7 +13,7 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
-from query import establish_session,disconnect_session,get_username
+from query import establish_session,disconnect_session,get_user_info
 from query import save_query_sample_data,save_query_file_data
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key,be_loc
@@ -350,13 +350,24 @@ def get_status_user_unauthorized():
                         "gdc_ids": {{
                             "TCGA-LAML": []
                         }}
-                    }}
+                    }},
+                    "queries": {1},
+                    "hrefs": {2},
+                    "scounts": {3},
+                    "fcounts": {4}
                 }}
             '''
 
-            username = get_username(request.environ['HTTP_X_CSRFTOKEN'])
-            if username: # if successfully logged in, should be in DB
-                return make_json_response(response.format(username))
+            user_info = get_user_info(request.environ['HTTP_X_CSRFTOKEN'])
+            if user_info['username']: # if successfully logged in, should be in DB
+                return make_json_response(
+                    response.format(user_info['username'],
+                        json.dumps(user_info['queries']),
+                        json.dumps(user_info['hrefs']),
+                        json.dumps(user_info['scounts']),
+                        json.dumps(user_info['fcounts'])
+                        )
+                    )
 
     return 'Not yet logged in'
 
