@@ -128,36 +128,35 @@ def get_username(session_id):
     else:
         return
 
-# Given a session ID, reference URL, query, a count for how many samples/files,
-# and either a samples or files identifier, load into Neo4j that this user has
-# made this query before and the number of results returned from it. 
-def save_query(session_id,reference_url,query,count,s_or_f):
+# Given a session ID, reference URL, query, a count for how many samples, load
+# into Neo4j that this user has made this query before and the number of 
+# results returned from it. 
+def save_query_sample_data(session_id,reference_url,query,count):
 
     # If a sample, set the reference URL and sample count
-    if s_or_f == 's':
-        cypher = """
-            MATCH (s:session)<-[:has_session]-(u:user) 
-            WHERE s.id = {si} 
-            WITH u
-            MERGE (q:query { url:{url} })
-            SET q.query_str={qs}, q.s_count={sc}
-            WITH q,u
-            MERGE (u)-[:saved_query]->(q)
-            """
-        cypher_conn.run(cypher, parameters={'si':session_id,'url':reference_url,'qs':query,'sc':count})
+    cypher = """
+        MATCH (s:session)<-[:has_session]-(u:user) 
+        WHERE s.id = {si} 
+        WITH u
+        MERGE (q:query { url:{url} })
+        SET q.query_str={qs}, q.s_count={sc}
+        WITH q,u
+        MERGE (u)-[:saved_query]->(q)
+        """
+    cypher_conn.run(cypher, parameters={'si':session_id,'url':reference_url,'qs':query,'sc':count})
 
-    # If a file, just set the file count
-    elif s_or_f == 'f':
-        cypher = """
-            MATCH (s:session)<-[:has_session]-(u:user) 
-            WHERE s.id = {si} 
-            WITH u
-            MERGE (q:query { url:{url} })
-            SET q.f_count={fc}
-            WITH q,u
-            MERGE (u)-[:saved_query]->(q)
-            """
-        cypher_conn.run(cypher, parameters={'si':session_id,'url':reference_url,'fc':count})
+    return
+
+# Simply append file count data to this particular query node. All other 
+# information will be handled by the sample data function 
+# save_query_sample_data().
+def save_query_file_data(reference_url,count):
+
+    cypher = """
+        MERGE (q:query { url:{url} })
+        SET q.f_count={fc}
+        """
+    cypher_conn.run(cypher, parameters={'url':reference_url,'fc':count})
 
     return
 
