@@ -118,13 +118,23 @@ def disconnect_session(session_id):
     return
 
 ***REMOVED***Given a session ID and see if it checks out with what was set in the cookies
-def get_username(session_id):
+def get_user_info(session_id):
 
-    cypher = "MATCH (s:session)<-[:has_session]-(u:user) WHERE s.id = {si} RETURN u.username"
-    username = cypher_conn.run(cypher, parameters={'si':session_id}).evaluate()
+    user_info = {'username':"",'queries':[],'hrefs':[],'scounts':[],'fcounts':[]}
 
-    if username:
-        return username
+    cypher = "MATCH (s:session)<-[:has_session]-(u:user)-[:saved_query]->(q:query) WHERE s.id = {si} RETURN u.username AS username,q"
+    results = cypher_conn.run(cypher, parameters={'si':session_id}).data()
+
+    user_info['username'] = results[0]['username']
+    
+    for x in range(0,len(results)):
+        user_info['queries'].append(results[x]['q']['query_str'])
+        user_info['hrefs'].append(results[x]['q']['url'])
+        user_info['scounts'].append(results[x]['q']['s_count'])
+        user_info['fcounts'].append(results[x]['q']['f_count'])
+
+    if len(user_info['username']) > 0:
+        return user_info
     else:
         return
 
@@ -143,7 +153,10 @@ def save_query_sample_data(session_id,reference_url,query,count):
         WITH q,u
         MERGE (u)-[:saved_query]->(q)
         """
-    cypher_conn.run(cypher, parameters={'si':session_id,'url':reference_url,'qs':query,'sc':count})
+    ***REMOVED***Note the trimming of the save parameter from the reference URL, this is 
+    ***REMOVED***so that when a user clicks a query to go back to they don't re-invoke
+    ***REMOVED***all this save functionality as it's unnecessary at that point.
+    cypher_conn.run(cypher, parameters={'si':session_id,'url':reference_url.replace('save=yes',''),'qs':query,'sc':count})
 
     return
 
