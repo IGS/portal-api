@@ -122,16 +122,23 @@ def get_user_info(session_id):
 
     user_info = {'username':"",'queries':[],'hrefs':[],'scounts':[],'fcounts':[]}
 
-    cypher = "MATCH (s:session)<-[:has_session]-(u:user)-[:saved_query]->(q:query) WHERE s.id = {si} RETURN u.username AS username,q"
+    cypher = """
+        MATCH (s:session)<-[:has_session]-(u:user) 
+        WHERE s.id = {si}
+        WITH u 
+        OPTIONAL MATCH (u)-[:saved_query]->(q:query)  
+        RETURN u.username AS username,q
+    """
     results = cypher_conn.run(cypher, parameters={'si':session_id}).data()
 
-    user_info['username'] = results[0]['username']
-    
-    for x in range(0,len(results)):
-        user_info['queries'].append(results[x]['q']['query_str'])
-        user_info['hrefs'].append(results[x]['q']['url'])
-        user_info['scounts'].append(results[x]['q']['s_count'])
-        user_info['fcounts'].append(results[x]['q']['f_count'])
+    user_info['username'] = results[0]['username'] # guaranteed to be here
+
+    if results[0]['q']:
+        for x in range(0,len(results)):
+            user_info['queries'].append(results[x]['q']['query_str'])
+            user_info['hrefs'].append(results[x]['q']['url'])
+            user_info['scounts'].append(results[x]['q']['s_count'])
+            user_info['fcounts'].append(results[x]['q']['f_count'])
 
     if len(user_info['username']) > 0:
         return user_info
@@ -169,7 +176,7 @@ def save_query_file_data(reference_url,count):
         MERGE (q:query { url:{url} })
         SET q.f_count={fc}
         """
-    cypher_conn.run(cypher, parameters={'url':reference_url,'fc':count})
+    cypher_conn.run(cypher, parameters={'url':reference_url.replace('save=yes',''),'fc':count})
 
     return
 
