@@ -1,16 +1,16 @@
 {% extends "layout.html" %}
 {% block body %}
-  <h1>Login</h1>
-  {% if error %}
-    <p class=error><strong>Error:</strong> {{ error }}
-  {% endif %}
-  <form method=post>
-    <dl>
-      <dt>Username:
-      <dd><input type=text name=username value="{{request.form.username }}">
-      <dt>Password:
-      <dd><input type=password name=password>
-    </dl>
-    <p><input type=submit value=Login></p>
-  </form>
+<div class="login">
+  <div class="center">
+    <h1 id="login_header">HMP Portal Login</h1>
+    {% if error %}
+      <p class=error><strong>Error:</strong> {{ error }}
+    {% endif %}
+    <form method=post>
+      <input class="w3-input" id="un" type="text" placeholder="username" name=username value="{{request.form.username }}">
+      <input class="w3-input" id="pw" type=password placeholder="password" name="password" value="{{request.form.password }}">
+      <button class="w3-btn w3-green" type="submit" id="login_btn" value=Login>Login</button>
+    </form>
+  </div>
+</div>
 {% endblock %}
