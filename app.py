@@ -17,9 +17,11 @@ from query import establish_session,disconnect_session,get_user_info
 from query import save_query_sample_data,save_query_file_data
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key,be_loc
+from conf import mysql_h,mysql_db,mysql_un,mysql_pw
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
 import graphene
 import json, urllib2, urllib, re
+import mysql.connector, hashlib
 from flask_cors import CORS
 
 application = Flask(__name__)
@@ -304,7 +306,29 @@ def login():
     error = None
 
     if request.method == 'POST':
-        if request.form['username'] != 'admin' or request.form['password'] != 'secret':
+
+        config = {
+            'user': mysql_un,
+            'password': mysql_pw,
+            'host': mysql_h,
+            'database': mysql_db
+        }
+
+        username = request.form['username']
+        sha1_pw = hashlib.sha1(request.form['password']).hexdigest()
+
+        # Now hit MySQL to see if these are valid 
+        cnx = mysql.connector.connect(**config)
+
+        cursor = cnx.cursor()
+        query = ("SELECT password FROM hmp_portal WHERE username = %s")
+        cursor.execute(query,(username,))
+
+        pw = str(cursor.fetchone()[0]) # convert from tuple/unicode to plain string
+
+        cnx.close()
+
+        if sha1_pw != pw:
             error = 'Invalid credentials'
         else:
             new_session = establish_session(request.form['username']) # establish the session
