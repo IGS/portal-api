@@ -324,24 +324,24 @@ def login():
         query = ("SELECT password FROM hmp_portal WHERE username = %s")
         cursor.execute(query,(username,))
 
-        pw = str(cursor.fetchone()[0]) # convert from tuple/unicode to plain string
+        pw = cursor.fetchone()
+
+        if pw:
+            pw = str(pw[0]) # convert from tuple/unicode to plain string if we got a record
 
         cnx.close()
 
         if sha1_pw != pw:
             error = 'Invalid credentials'
-        else:
+        elif pw and sha1_pw == pw: # don't allow null=null
             new_session = establish_session(request.form['username']) # establish the session
             #flash('You were successfully logged in')
             response = make_response(redirect(access_origin[0]))
             response.set_cookie('csrftoken',new_session)
             return response
-            #response = make_response(redirect(access_origin[0]))
-            #session['username'] = 'admin'
-            #return response
-        
-    return render_template('login.html',error=error)
 
+    return render_template('login.html',error=error)
+    
 @application.route('/status/logout', methods=['GET','OPTIONS','POST'])
 def logout():
 
