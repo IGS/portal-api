@@ -2,6 +2,10 @@
 # auto-complete field. Namely, the description, the doc_type, the
 # field, the full name, and the type of data.
 
+# "type" helps determine the comparison operators that are provided during 
+# auto-complete. Can use "integer" to account for numerical comparisons and 
+# "string" for other text searches.
+
 gql_map = {}
 
 # Project props
@@ -92,6 +96,7 @@ gql_map['sample_samp_mat_process'] = {"description": "Any processing applied to 
 gql_map['sample_size'] = {"description": "Amount or size of sample (volume, mass or area) that was collected", "doc_type": "cases", "field": "sample samp_size", "full": "sample.samp_size", "type": "string"}
 gql_map['sample_subtype'] = {"description": "The subtype of the sample", "doc_type": "cases", "field": "sample subtype", "full": "sample.subtype", "type": "string"}
 gql_map['sample_supersite'] = {"description": "Body supersite from which the sample was obtained", "doc_type": "cases", "field": "sample supersite", "full": "sample.supersite", "type": "string"}
+gql_map['sample_fecalcal'] = {"description": "FecalCal result, exists if measured for the sample", "doc_type": "cases", "field": "sample FecalCal", "full": "sample.fecalcal", "type": "integer"}
 
 # File props (includes everything below Sample node in OSDF schema)
 gql_map['file_id'] = {"description": "The iHMP ID of the file", "doc_type": "files", "field": "file ID", "full": "file.id", "type": "string"}

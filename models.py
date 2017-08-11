@@ -98,6 +98,7 @@ class Aggregations(graphene.ObjectType): # Collecting lists of buckets (BucketCo
     sample_material = graphene.Field(BucketCounter, name="sample_material")
     sample_biome = graphene.Field(BucketCounter, name="sample_biome")
     sample_id = graphene.Field(BucketCounter, name="sample_id")
+    sample_fecalcal = graphene.Field(BucketCounter, name="sample_fecalcal")
     
     file_id = graphene.Field(BucketCounter, name="file_id")
     file_format = graphene.Field(BucketCounter, name="file_format")

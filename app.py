@@ -73,6 +73,7 @@ def get_maps():
         "sample.size": gql_map['sample_size'],
         "sample.subtype": gql_map['sample_subtype'],
         "sample.supersite": gql_map['sample_supersite'], 
+        "sample.fecalcal": gql_map['sample_fecalcal'], 
         "file.format": gql_map['file_format'],
         "file.type": gql_map['file_type'],
         "file.id": gql_map['file_id'],
@@ -329,6 +330,7 @@ def login():
         if pw:
             pw = str(pw[0]) # convert from tuple/unicode to plain string if we got a record
 
+        cursor.close()
         cnx.close()
 
         if sha1_pw != pw:
