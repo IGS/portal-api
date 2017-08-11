@@ -52,6 +52,7 @@ The list of properties available to search on is actively growing. Below you can
 * **sample.collection_date** - The time of sampling, either as an instance (single point in time) or interval
 * **sample.env_package** - Controlled vocabulary of MIGS/MIMS environmental packages
 * **sample.feature** - Environmental feature level includes geographic environmental features
+* **sample.fecalcal** - FecalCal result, exists if measured for the sample
 * **sample.geo_loc_name** - The geographical origin of the sample as defined by the country or sea name followed by specific region name
 * **sample.id** - The iHMP ID of the sample
 * **sample.lat_lon** - Latitude/longitude in WGS 84 coordinates

@@ -741,17 +741,13 @@ def get_manifest():
 
 @application.route('/status/api/files', methods=['GET','OPTIONS','POST'])
 def get_cart_metadata():
-    string = 'sample_id\tsubject_id\tsample_body_site\tsubject_gender\tvisit_number\tsubject_race\tstudy_full_name\tproject_name' ***REMOVED***header
 
     filters = json.loads(request.form.get('filters')) ***REMOVED***use json lib to parse the nested dict
     ids = json.dumps(filters['content'][0]['content']['value'])
 
     data = get_metadata(ids)
 
-    for result in data:
-        string += result
-
-    response = make_response(string)
+    response = make_response(data)
 
     ***REMOVED***If we've processed the data, reset the cookie key for the cart.
     cookie = request.form.get('downloadCookieKey')
