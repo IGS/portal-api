@@ -700,24 +700,43 @@ def get_metadata(id_list):
     cquery = "MATCH (F:file)-[:derived_from]->(S:sample)-[:extracted_from]->(J:subject) WHERE F.id IN {0} RETURN S,J".format(id_list)
     res = process_cquery_http(cquery)
 
+    metadata = [
+        'sample_id',
+        'subject_id',
+        'sample_body_site',
+        'subject_gender',
+        'visit_number',
+        'subject_race',
+        'study_full_name',
+        'project_name',
+        'fecalcal'
+    ]
+    header = ('\t').join(metadata)
+
     outlist = []
 
-    # Grab the ID, file URL, md5, and size
-    for entry in res:
-        # Using information we know will exist, simply call the result no need to assign to variable
-        outlist.append(
-            "\n{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(
-                entry['S']['id'],
-                entry['J']['id'],
-                entry['S']['body_site'],
-                entry['J']['gender'],
-                entry['S']['visit_visit_number'],
-                entry['J']['race'],
-                entry['S']['study_full_name'],
-                entry['J']['project_name'])
-                )
+    outlist.append(header)
 
-    return outlist
+    for entry in res:
+        md = []
+
+        # These will all be in the result no matter what
+        md.append(entry['S']['id'])
+        md.append(entry['J']['id'])
+        md.append(entry['S']['body_site'])
+        md.append(entry['J']['gender'])
+        md.append(str(entry['S']['visit_visit_number']))
+        md.append(entry['J']['race'])
+        md.append(entry['S']['study_full_name'])
+        md.append(entry['J']['project_name'])
+
+        # These are variable metadata and may not be present, be careful to
+        # convert numbers to strings
+        md.append(str(entry['S']['fecalcal'])) if 'fecalcal' in entry['S'] else md.append("NA")
+
+        outlist.append(("\t").join(md))
+
+    return ("\n").join(outlist)
 
 # Makes sure we generate a unique token
 def check_token(token,ids):
