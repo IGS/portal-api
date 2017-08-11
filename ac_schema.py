@@ -23,6 +23,7 @@ samF = get_buckets("VSS.feature","no","")
 samID = get_buckets("VSS.id","no","")
 samM = get_buckets("VSS.material","no","")
 samB = get_buckets("VSS.biome","no","")
+samFC = get_buckets("VSS.fecalcal","no","")
 stuS = get_buckets("VSS.study_subtype","no","")
 stuC = get_buckets("VSS.study_center","no","")
 stuN = get_buckets("VSS.study_name","no","")
@@ -71,6 +72,7 @@ class Query(graphene.ObjectType):
             sample_material=samM,
             sample_id=samID,
             sample_biome=samB,
+            sample_fecalcal=samFC,
             file_format=fileF,
             file_type=fileNT,
             file_id=fileID,
