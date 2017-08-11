@@ -57,7 +57,8 @@ returns = {
 }
 
 # The loader missed some of these decimals/floats, convert here. Should fix
-# in loader but leaving here due to time constraint.
+# in loader but leaving here due to time constraint. Need to ensure what is being
+# passed by OSDF is indeed a numerical value.
 strings_to_nums = {
     "VSS.fecalcal": "toFloat(VSS.fecalcal)"
 }
@@ -429,8 +430,6 @@ def get_pie_chart_summary(cy):
             cquery = build_cypher(cy,"null","null","null","{0}_detailed".format(chart))
         else:
             cquery = build_adv_cypher(cy,"null","null","null","{0}_detailed".format(chart))
-
-        print(cquery)
 
         res = tx.run(cquery)
         for record in res:
@@ -975,6 +974,7 @@ def build_cypher(whereFilters,order,start,size,rtype):
 
     retval1 = returns[rtype] # actual RETURN portion of statement
 
+    # FIX IN LOADER TO MAKE TYPES CONSISTENT
     for k,v in strings_to_nums.items():
         where = where.replace(k,v)
 
@@ -1051,6 +1051,7 @@ def build_adv_cypher(whereFilters,order,start,size,rtype):
 
     retval1 = returns[rtype] # actual RETURN portion of statement
 
+    # FIX IN LOADER TO MAKE TYPES CONSISTENT
     for k,v in strings_to_nums.items():
         where = where.replace(k,v)
 
