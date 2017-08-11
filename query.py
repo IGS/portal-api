@@ -56,6 +56,12 @@ returns = {
     'file_node_type_detailed': base_detailed_return.format('F.node_type')
 }
 
+***REMOVED***The loader missed some of these decimals/floats, convert here. Should fix
+***REMOVED***in loader but leaving here due to time constraint.
+strings_to_nums = {
+    "VSS.fecalcal": "toFloat(VSS.fecalcal)"
+}
+
 ***REMOVED***This populates the values in the side table of facet search. Want to let users
 ***REMOVED***know how many samples per category in a given property. 
 count_props_dict = {
@@ -423,6 +429,8 @@ def get_pie_chart_summary(cy):
             cquery = build_cypher(cy,"null","null","null","{0}_detailed".format(chart))
         else:
             cquery = build_adv_cypher(cy,"null","null","null","{0}_detailed".format(chart))
+
+        print(cquery)
 
         res = tx.run(cquery)
         for record in res:
@@ -967,6 +975,9 @@ def build_cypher(whereFilters,order,start,size,rtype):
 
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
 
+    for k,v in strings_to_nums.items():
+        where = where.replace(k,v)
+
     if rtype.endswith('detailed'): ***REMOVED***sum schema handling
         if whereFilters != "":
             return "{0} WHERE {1} {2}".format(traversal,where,retval1)
@@ -1039,6 +1050,9 @@ def build_adv_cypher(whereFilters,order,start,size,rtype):
     traversal = which_traversal(where)
 
     retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
+
+    for k,v in strings_to_nums.items():
+        where = where.replace(k,v)
 
     if rtype.endswith('detailed'): ***REMOVED***sum schema handling
         if whereFilters != "":
