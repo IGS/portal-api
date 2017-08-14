@@ -1,67 +1,343 @@
 ***REMOVED***This module contains all the information needed for populating the 
 ***REMOVED***auto-complete field. Namely, the description, the doc_type, the
 ***REMOVED***field, the full name, and the type of data.
-
+#
 ***REMOVED***"type" helps determine the comparison operators that are provided during 
 ***REMOVED***auto-complete. Can use "integer" to account for numerical comparisons and 
 ***REMOVED***"string" for other text searches.
+#
+***REMOVED***Note that in order for these to truly become searchable, must accommodate 
+***REMOVED***them at the '/gql/_mapping' endpoint in app.py and in GraphQL. Commit: 
+***REMOVED***https://github.com/jmatsumura/ihmp_portal_api/commit/f829c5f8baf2e0772324cfbc758144f6d5e57f54
+***REMOVED***can show the minimum that needs to be changed. Abnormal values may need some
+***REMOVED***additional handling in query.py in order to properly search the value in Neo4j.
 
 gql_map = {}
 
 ***REMOVED***Project props
-gql_map['project_name'] = {"description": "The name of the project within which the sequencing was organized", "doc_type": "cases", "field": "project name", "full": "project.name", "type": "string"}
-gql_map['project_subtype'] = {"description": "The subtype of the project", "doc_type": "cases", "field": "project subtype", "full": "project.subtype", "type": "string"}
+gql_map['project_name'] = {
+    "description": "The name of the project within which the sequencing was organized", 
+    "doc_type": "cases", 
+    "field": "project name", 
+    "full": "project.name", 
+    "type": "string"
+    }
+gql_map['project_subtype'] = {
+    "description": "The subtype of the project", 
+    "doc_type": "cases", 
+    "field": "project subtype", 
+    "full": "project.subtype", 
+    "type": "string"
+    }
 
 ***REMOVED***Study props
-gql_map['study_center'] = {"description": "The study's sequencing center", "doc_type": "cases", "field": "study center", "full": "study.center", "type": "string"}
-gql_map['study_contact'] = {"description": "The study's primary contact at the sequencing center", "doc_type": "cases", "field": "study contact", "full": "study.contact", "type": "string"}
-gql_map['study_description'] = {"description": "A longer description of the study", "doc_type": "cases", "field": "study description", "full": "study.description", "type": "string"}
-gql_map['study_name'] = {"description": "The name of the study", "doc_type": "cases", "field": "study_name", "full": "study.name", "type": "string"}
-gql_map['study_srp_id'] = {"description": "NCBI Sequence Read Archive (SRA) project ID", "doc_type": "cases", "field": "study SRP ID", "full": "study.srp_id", "type": "string"}
-gql_map['study_subtype'] = {"description": "The subtype of the study", "doc_type": "cases", "field": "study subtype", "full": "study.subtype", "type": "string"}
+gql_map['study_center'] = {
+    "description": "The study's sequencing center", 
+    "doc_type": "cases", 
+    "field": "study center", 
+    "full": "study.center", 
+    "type": "string"
+    }
+gql_map['study_contact'] = {
+    "description": "The study's primary contact at the sequencing center", 
+    "doc_type": "cases", 
+    "field": "study contact", 
+    "full": "study.contact", 
+    "type": "string"
+    }
+gql_map['study_description'] = {
+    "description": "A longer description of the study", 
+    "doc_type": "cases", 
+    "field": "study description", 
+    "full": "study.description", 
+    "type": "string"
+    }
+gql_map['study_name'] = {
+    "description": "The name of the study", 
+    "doc_type": "cases", 
+    "field": "study_name", 
+    "full": "study.name", 
+    "type": "string"
+    }
+gql_map['study_srp_id'] = {
+    "description": "NCBI Sequence Read Archive (SRA) project ID", 
+    "doc_type": "cases", 
+    "field": "study SRP ID", 
+    "full": "study.srp_id", 
+    "type": "string"
+    }
+gql_map['study_subtype'] = {
+    "description": "The subtype of the study", 
+    "doc_type": "cases", 
+    "field": "study subtype", 
+    "full": "study.subtype", 
+    "type": "string"
+    }
 
 ***REMOVED***Subject props
-gql_map['subject_gender'] = {"description": "The subject's sex", "doc_type": "cases", "field": "subject gender", "full": "subject.gender", "type": "string"}
-gql_map['subject_race'] = {"description": "The subject's race/ethnicity", "doc_type": "cases", "field": "subject race", "full": "subject.race", "type": "string"}
-gql_map['subject_subtype'] = {"description": "The subtype of the subject", "doc_type": "cases", "field": "subject subtype", "full": "subject.subtype", "type": "string"}
-gql_map['subject_uuid'] = {"description": "The subject's UUID", "doc_type": "cases", "field": "subject UUID", "full": "subject.uuid", "type": "string"}
-gql_map['subject_id'] = {"description": "The subject's per-study ID (can view in individual sample page)", "doc_type": "cases", "field": "subject ID", "full": "subject.id", "type": "string"}
+gql_map['subject_gender'] = {
+    "description": "The subject's sex", 
+    "doc_type": "cases", 
+    "field": "subject gender", 
+    "full": "subject.gender", 
+    "type": "string"
+    }
+gql_map['subject_race'] = {
+    "description": "The subject's race/ethnicity", 
+    "doc_type": "cases", 
+    "field": "subject race", 
+    "full": "subject.race", 
+    "type": "string"
+    }
+gql_map['subject_subtype'] = {
+    "description": "The subtype of the subject", 
+    "doc_type": "cases", 
+    "field": "subject subtype", 
+    "full": "subject.subtype", 
+    "type": "string"
+    }
+gql_map['subject_uuid'] = {
+    "description": "The subject's UUID", 
+    "doc_type": "cases", 
+    "field": "subject UUID", 
+    "full": "subject.uuid", 
+    "type": "string"
+    }
+gql_map['subject_id'] = {
+    "description": "The subject's per-study ID (can view in individual sample page)", 
+    "doc_type": "cases", 
+    "field": "subject ID", 
+    "full": "subject.id", 
+    "type": "string"
+    }
 
 ***REMOVED***Subject attribute props
-gql_map['subject_attr_aerobics'] = {"description": "What is patient's baseline aerobic exercise level; type, minutes/week", "doc_type": "cases", "field": "SubjectAttr_aerobics", "full": "SubjectAttr_aerobics", "type": "string"}
-gql_map['subject_attr_alcohol'] = {"description": "What is patient's baseline alcohol consumption; type, drinks/week", "doc_type": "cases", "field": "SubjectAttr_alcohol", "full": "SubjectAttr_alcohol", "type": "string"}
-gql_map['subject_attr_allergies'] = {"description": "Does patient have allergies?", "doc_type": "cases", "field": "SubjectAttr_allergies", "full": "SubjectAttr_allergies", "type": "string"}
-gql_map['subject_attr_asthma'] = {"description": "Does patient have asthma? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_asthma", "full": "SubjectAttr_asthma", "type": "string"}
-gql_map['subject_attr_cad'] = {"description": "Does patient have coronary artery disease/myocardial infarction? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_cad", "full": "SubjectAttr_cad", "type": "string"}
-gql_map['subject_attr_chf'] = {"description": "Does patient have chronic heart failure? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_chf", "full": "SubjectAttr_chf", "type": "string"}
-gql_map['subject_attr_comment'] = {"description": "Free-text comment", "doc_type": "cases", "field": "SubjectAttr_comment", "full": "SubjectAttr_comment", "type": "string"}
-gql_map['subject_attr_contact'] = {"description": "Does patient agree to be contacted in the future?", "doc_type": "cases", "field": "SubjectAttr_contact", "full": "SubjectAttr_contact", "type": "string"}
-gql_map['subject_attr_diabetes'] = {"description": "Does patient have diabetes (including gestational)? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_diabetes", "full": "SubjectAttr_diabetes", "type": "string"}
-gql_map['subject_attr_education'] = {"description": "Subject's highest level of educatio", "doc_type": "cases", "field": "SubjectAttr_education", "full": "SubjectAttr_education", "type": "string"}
-gql_map['subject_attr_family_history'] = {"description": "Family history of hereditary diseases or physiological conditions", "doc_type": "cases", "field": "SubjectAttr_family_history", "full": "SubjectAttr_family_history", "type": "string"}
-gql_map['subject_attr_gallbladder'] = {"description": "Does patient have gallbladder disease? Yes/No, duration, clarification", "doc_type": "cases", "field": "SubjectAttr_gallbladder", "full": "SubjectAttr_gallbladder", "type": "string"}
-gql_map['subject_attr_hyperlipidemia'] = {"description": "Does patient have hyperlipidemia? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_hyperlipidemia", "full": "SubjectAttr_hyperlipidemia", "type": "string"}
-gql_map['subject_attr_hypertension'] = {"description": "Does patient have hypertension? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_hypertension", "full": "SubjectAttr_hypertension", "type": "string"}
-gql_map['subject_attr_illicit_drug'] = {"description": "What is patient's baseline illicit drug history?", "doc_type": "cases", "field": "SubjectAttr_ilicit_drug", "full": "SubjectAttr_ilicit_drug", "type": "string"}
-gql_map['subject_attr_kidney'] = {"description": "Does patient have kidney disease? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_kidney", "full": "SubjectAttr_kidney", "type": "string"}
-gql_map['subject_attr_liver'] = {"description": "Does patient have liver disease? Yes/No, duration, clarification", "doc_type": "cases", "field": "SubjectAttr_liver", "full": "SubjectAttr_liver", "type": "string"}
-gql_map['subject_attr_lmp'] = {"description": "When was patient's last menstrual period, if applicable", "doc_type": "cases", "field": "SubjectAttr_lmp", "full": "SubjectAttr_lmp", "type": "string"}
-gql_map['subject_attr_occupation'] = {"description": "Subject's occupation", "doc_type": "cases", "field": "SubjectAttr_occupation", "full": "SubjectAttr_occupation", "type": "string"}
-gql_map['subject_attr_osa'] = {"description": "Does patient have obstructive sleep apnea? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_osa", "full": "SubjectAttr_osa", "type": "string"}
-gql_map['subject_attr_pancreatitis'] = {"description": "Does patient have pancreatitis? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_pancreatitis", "full": "SubjectAttr_pancreatitis", "type": "string"}
-gql_map['subject_attr_postmenopausal'] = {"description": "Is patient postmenopausal? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_postmenopausal", "full": "SubjectAttr_postmenopausal", "type": "string"}
-gql_map['subject_attr_pvd'] = {"description": "Does patient have peripheral vascular disease? Yes/No, duration", "doc_type": "cases", "field": "SubjectAttr_pvd", "full": "SubjectAttr_pvd", "type": "string"}
-gql_map['subject_attr_rx'] = {"description": "List all prescriptions and over the counter medication patient is taking at start of study", "doc_type": "cases", "field": "SubjectAttr_rx", "full": "SubjectAttr_rx", "type": "string"}
-gql_map['subject_attr_subtype'] = {"description": "The subtype of the Visit Attribute", "doc_type": "cases", "field": "SubjectAttr_subtype", "full": "SubjectAttr_subtype", "type": "string"}
-gql_map['subject_attr_survey_id'] = {"description": "Center specific survey identifier", "doc_type": "cases", "field": "SubjectAttr_survey_id", "full": "SubjectAttr_survey_id", "type": "string"}
-gql_map['subject_attr_tobacco'] = {"description": "What is patient's baseline tobacco use, measured as number of packs per day x years smoked", "doc_type": "cases", "field": "SubjectAttr_tobacco", "full": "SubjectAttr_tobacco", "type": "string"}
+gql_map['subject_aerobics'] = {
+    "description": "What is patient's baseline aerobic exercise level; type, minutes/week", 
+    "doc_type": "cases", 
+    "field": "subject aerobics", 
+    "full": "subject.aerobics", 
+    "type": "string"
+    }
+gql_map['subject_alcohol'] = {
+    "description": "What is patient's baseline alcohol consumption; type, drinks/week", 
+    "doc_type": "cases", 
+    "field": "subject alcohol", 
+    "full": "subject.alcohol", 
+    "type": "string"
+    }
+gql_map['subject_allergies'] = {
+    "description": "Does patient have allergies?", 
+    "doc_type": "cases", 
+    "field": "subject allergies", 
+    "full": "subject.allergies",
+    "type": "string"
+    }
+gql_map['subject_asthma'] = {
+    "description": "Does patient have asthma? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject asthma", 
+    "full": "subject.asthma", 
+    "type": "string"
+    }
+gql_map['subject_cad'] = {
+    "description": "Does patient have coronary artery disease/myocardial infarction? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject cad", 
+    "full": "subject.cad", 
+    "type": "string"
+    }
+gql_map['subject_chf'] = {
+    "description": "Does patient have chronic heart failure? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject chf", 
+    "full": "subject.chf", 
+    "type": "string"
+    }
+gql_map['subject_comment'] = {
+    "description": "Free-text comment", 
+    "doc_type": "cases", 
+    "field": "subject comment", 
+    "full": "subject.comment", 
+    "type": "string"
+    }
+gql_map['subject_contact'] = {
+    "description": "Does patient agree to be contacted in the future?", 
+    "doc_type": "cases", 
+    "field": "subject contact", 
+    "full": "subject.contact", 
+    "type": "string"
+    }
+gql_map['subject_diabetes'] = {
+    "description": "Does patient have diabetes (including gestational)? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject diabetes", 
+    "full": "subject.diabetes", 
+    "type": "string"
+    }
+gql_map['subject_education'] = {
+    "description": "Subject's highest level of educatio", 
+    "doc_type": "cases", 
+    "field": "subject education", 
+    "full": "subject.education", 
+    "type": "string"
+    }
+gql_map['subject_family_history'] = {
+    "description": "Family history of hereditary diseases or physiological conditions", 
+    "doc_type": "cases", 
+    "field": "subject family_history", 
+    "full": "subject.family_history", 
+    "type": "string"
+    }
+gql_map['subject_gallbladder'] = {
+    "description": "Does patient have gallbladder disease? Yes/No, duration, clarification", 
+    "doc_type": "cases", 
+    "field": "subject gallbladder", 
+    "full": "subject.gallbladder", 
+    "type": "string"
+    }
+gql_map['subject_hyperlipidemia'] = {
+    "description": "Does patient have hyperlipidemia? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject hyperlipidemia", 
+    "full": "subject.hyperlipidemia", 
+    "type": "string"
+    }
+gql_map['subject_hypertension'] = {
+    "description": "Does patient have hypertension? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject hypertension", 
+    "full": "subject.hypertension", 
+    "type": "string"
+    }
+gql_map['subject_illicit_drug'] = {
+    "description": "What is patient's baseline illicit drug history?", 
+    "doc_type": "cases", 
+    "field": "subject ilicit_drug", 
+    "full": "subject.ilicit_drug", 
+    "type": "string"
+    }
+gql_map['subject_kidney'] = {
+    "description": "Does patient have kidney disease? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject kidney", 
+    "full": "subject.kidney", 
+    "type": "string"
+    }
+gql_map['subject_liver'] = {
+    "description": "Does patient have liver disease? Yes/No, duration, clarification", 
+    "doc_type": "cases", 
+    "field": "subject liver", 
+    "full": "subject.liver", 
+    "type": "string"
+    }
+gql_map['subject_lmp'] = {
+    "description": "When was patient's last menstrual period, if applicable", 
+    "doc_type": "cases", 
+    "field": "subject lmp", 
+    "full": "subject.lmp", 
+    "type": "string"
+    }
+gql_map['subject_occupation'] = {
+    "description": "Subject's occupation", 
+    "doc_type": "cases", 
+    "field": "subject occupation", 
+    "full": "subject.occupation", 
+    "type": "string"
+    }
+gql_map['subject_osa'] = {
+    "description": "Does patient have obstructive sleep apnea? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject osa", 
+    "full": "subject.osa", 
+    "type": "string"
+    }
+gql_map['subject_pancreatitis'] = {
+    "description": "Does patient have pancreatitis? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject pancreatitis", 
+    "full": "subject.pancreatitis", 
+    "type": "string"
+    }
+gql_map['subject_postmenopausal'] = {
+    "description": "Is patient postmenopausal? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject postmenopausal", 
+    "full": "subject.postmenopausal", 
+    "type": "string"
+    }
+gql_map['subject_pvd'] = {
+    "description": "Does patient have peripheral vascular disease? Yes/No, duration", 
+    "doc_type": "cases", 
+    "field": "subject pvd", 
+    "full": "subject.pvd", 
+    "type": "string"
+    }
+gql_map['subject_rx'] = {
+    "description": "List all prescriptions and over the counter medication patient is taking at start of study", 
+    "doc_type": "cases", 
+    "field": "subject rx", 
+    "full": "subject.rx", 
+    "type": "string"
+    }
+gql_map['subject_subtype'] = {
+    "description": "The subtype of the Visit Attribute", 
+    "doc_type": "cases", 
+    "field": "subject subtype", 
+    "full": "subject.subtype", 
+    "type": "string"
+    }
+gql_map['subject_survey_id'] = {
+    "description": "Center specific survey identifier", 
+    "doc_type": "cases", 
+    "field": "subject survey_id", 
+    "full": "subject.survey_id", 
+    "type": "string"
+    }
+gql_map['subject_tobacco'] = {
+    "description": "What is patient's baseline tobacco use, measured as number of packs per day x years smoked", 
+    "doc_type": "cases", 
+    "field": "subject tobacco", 
+    "full": "subject.tobacco", 
+    "type": "string"
+    }
 
 ***REMOVED***Visit props
-gql_map['visit_date'] = {"description": "Date when the visit occurred", "doc_type": "cases", "field": "visit date", "full": "visit.date", "type": "string"}
-gql_map['visit_id'] = {"description": "The identifier used by the sequence center to uniquely identify the visit", "doc_type": "cases", "field": "visit ID", "full": "visit.id", "type": "long"}
-gql_map['visit_interval'] = {"description": "The amount of time since the last visit (in days)", "doc_type": "cases", "field": "visit interval", "full": "visit.interval", "type": "integer"}
-gql_map['visit_number'] = {"description": "A sequential number that is assigned as visits occur for a subject", "doc_type": "cases", "field": "visit number", "full": "visit.number", "type": "integer"}
-gql_map['visit_subtype'] = {"description": "The subtype of the visit", "doc_type": "cases", "field": "visit subtype", "full": "visit.subtype", "type": "integer"}
+gql_map['visit_date'] = {
+    "description": "Date when the visit occurred", 
+    "doc_type": "cases", 
+    "field": "visit date", 
+    "full": "visit.date", 
+    "type": "string"
+    }
+gql_map['visit_id'] = {
+    "description": "The identifier used by the sequence center to uniquely identify the visit", 
+    "doc_type": "cases", 
+    "field": "visit ID", 
+    "full": "visit.id", 
+    "type": "long"
+    }
+gql_map['visit_interval'] = {
+    "description": "The amount of time since the last visit (in days)", 
+    "doc_type": "cases", 
+    "field": "visit interval", 
+    "full": "visit.interval", 
+    "type": "integer"
+    }
+gql_map['visit_number'] = {
+    "description": "A sequential number that is assigned as visits occur for a subject", 
+    "doc_type": "cases", 
+    "field": "visit number", 
+    "full": "visit.number", 
+    "type": "integer"
+    }
+gql_map['visit_subtype'] = {
+    "description": "The subtype of the visit", 
+    "doc_type": "cases", 
+    "field": "visit subtype", 
+    "full": "visit.subtype", 
+    "type": "integer"
+    }
 
 ***REMOVED***Visit attribute props
 gql_map['visit_attr_clinical_patient'] = {"description": "Clinical patient data", "doc_type": "cases", "field": "VisitAttr_clinical_patient", "full": "VisitAttr_clinical_patient", "type": "string"}
@@ -79,34 +355,173 @@ gql_map['visit_attr_survey_id'] = {"description": "Center specific survey identi
 gql_map['visit_attr_tests'] = {"description": "Tests metadata", "doc_type": "cases", "field": "VisitAttr_tests", "full": "VisitAttr_tests", "type": "string"}
 
 ***REMOVED***Sample props. Note that this contains data within mixs nested JSON of OSDF.
-gql_map['sample_id'] = {"description": "The iHMP ID of the sample", "doc_type": "cases", "field": "sample ID", "full": "sample.id", "type": "string"}
-gql_map['sample_biome'] = {"description": "Biomes are defined based on factors such as plant structures, leaf types, plant spacing, and other factors like climate", "doc_type": "cases", "field": "sample biome", "full": "sample.biome", "type": "string"}
-gql_map['sample_body_product'] = {"description": "Substance produced by the body, e.g. stool, mucus, where the sample was obtained from", "doc_type": "cases", "field": "sample body product", "full": "sample.body_product", "type": "string"}
-gql_map['sample_collection_date'] = {"description": "The time of sampling, either as an instance (single point in time) or interval", "doc_type": "cases", "field": "sample collection date", "full": "sample.collection_date", "type": "string"}
-gql_map['sample_env_package'] = {"description": "Controlled vocabulary of MIGS/MIMS environmental packages", "doc_type": "cases", "field": "sample env_package", "full": "sample.env_package", "type": "string"}
-gql_map['sample_feature'] = {"description": "Environmental feature level includes geographic environmental features", "doc_type": "cases", "field": "sample feature", "full": "sample.feature", "type": "string"}
-gql_map['sample_body_site'] = {"description": "Body site from which the sample was obtained using the FMA ontology", "doc_type": "cases", "field": "sample body site", "full": "sample.body_site", "type": "string"}
-gql_map['sample_geo_loc_name'] = {"description": "The geographical origin of the sample as defined by the country or sea name followed by specific region name", "doc_type": "cases", "field": "sample geo_loc_name", "full": "sample.geo_loc_name", "type": "string"}
-gql_map['sample_lat_lon'] = {"description": "Latitude/longitude in WGS 84 coordinates", "doc_type": "cases", "field": "sample lat_lon", "full": "sample.lat_lon", "type": "string"}
-gql_map['sample_material'] = {"description": "Matter that was displaced by the sample, before the sampling event", "doc_type": "cases", "field": "sample material", "full": "sample.material", "type": "string"}
-gql_map['sample_project_name'] = {"description": "Name of the project within which the sequencing was organized", "doc_type": "cases", "field": "sample project name", "full": "sample.project_name", "type": "string"}
-gql_map['sample_rel_to_oxygen'] = {"description": "Whether the organism is an aerobe or anaerobe", "doc_type": "cases", "field": "sample rel_to_oxygen", "full": "sample.rel_to_oxygen", "type": "string"}
-gql_map['sample_samp_collect_device'] = {"description": "The method or device employed for collecting the sample", "doc_type": "cases", "field": "sample.samp_collect_device", "full": "sample.samp_collect_device", "type": "string"}
-gql_map['sample_samp_mat_process'] = {"description": "Any processing applied to the sample during or after retrieving the sample from environment", "doc_type": "cases", "field": "sample mat_process", "full": "sample.mat_process", "type": "string"}
-gql_map['sample_size'] = {"description": "Amount or size of sample (volume, mass or area) that was collected", "doc_type": "cases", "field": "sample samp_size", "full": "sample.samp_size", "type": "string"}
-gql_map['sample_subtype'] = {"description": "The subtype of the sample", "doc_type": "cases", "field": "sample subtype", "full": "sample.subtype", "type": "string"}
-gql_map['sample_supersite'] = {"description": "Body supersite from which the sample was obtained", "doc_type": "cases", "field": "sample supersite", "full": "sample.supersite", "type": "string"}
-gql_map['sample_fecalcal'] = {"description": "FecalCal result, exists if measured for the sample", "doc_type": "cases", "field": "sample FecalCal", "full": "sample.fecalcal", "type": "integer"}
+gql_map['sample_id'] = {
+    "description": "The iHMP ID of the sample", 
+    "doc_type": "cases", 
+    "field": "sample ID", 
+    "full": "sample.id", 
+    "type": "string"
+    }
+gql_map['sample_biome'] = {
+    "description": "Biomes are defined based on factors such as plant structures, leaf types, plant spacing, and other factors like climate", 
+    "doc_type": "cases", 
+    "field": "sample biome", 
+    "full": "sample.biome", 
+    "type": "string"
+    }
+gql_map['sample_body_product'] = {
+    "description": "Substance produced by the body, e.g. stool, mucus, where the sample was obtained from", 
+    "doc_type": "cases", 
+    "field": "sample body product", 
+    "full": "sample.body_product", 
+    "type": "string"
+    }
+gql_map['sample_collection_date'] = {
+    "description": "The time of sampling, either as an instance (single point in time) or interval", 
+    "doc_type": "cases", 
+    "field": "sample collection date", 
+    "full": "sample.collection_date", 
+    "type": "string"
+    }
+gql_map['sample_env_package'] = {
+    "description": "Controlled vocabulary of MIGS/MIMS environmental packages", 
+    "doc_type": "cases", 
+    "field": "sample env_package", 
+    "full": "sample.env_package", 
+    "type": "string"
+    }
+gql_map['sample_feature'] = {
+    "description": "Environmental feature level includes geographic environmental features", 
+    "doc_type": "cases", 
+    "field": "sample feature", 
+    "full": "sample.feature", 
+    "type": "string"
+    }
+gql_map['sample_body_site'] = {
+    "description": "Body site from which the sample was obtained using the FMA ontology", 
+    "doc_type": "cases", 
+    "field": "sample body site", 
+    "full": "sample.body_site", 
+    "type": "string"
+    }
+gql_map['sample_geo_loc_name'] = {
+    "description": "The geographical origin of the sample as defined by the country or sea name followed by specific region name", 
+    "doc_type": "cases", 
+    "field": "sample geo_loc_name", 
+    "full": "sample.geo_loc_name", 
+    "type": "string"
+    }
+gql_map['sample_lat_lon'] = {
+    "description": "Latitude/longitude in WGS 84 coordinates", 
+    "doc_type": "cases", 
+    "field": "sample lat_lon", 
+    "full": "sample.lat_lon", 
+    "type": "string"
+    }
+gql_map['sample_material'] = {
+    "description": "Matter that was displaced by the sample, before the sampling event", 
+    "doc_type": "cases", 
+    "field": "sample material", 
+    "full": "sample.material", 
+    "type": "string"
+    }
+gql_map['sample_project_name'] = {
+    "description": "Name of the project within which the sequencing was organized", 
+    "doc_type": "cases", 
+    "field": "sample project name", 
+    "full": "sample.project_name", 
+    "type": "string"
+    }
+gql_map['sample_rel_to_oxygen'] = {
+    "description": "Whether the organism is an aerobe or anaerobe", 
+    "doc_type": "cases", 
+    "field": "sample rel_to_oxygen", 
+    "full": "sample.rel_to_oxygen", 
+    "type": "string"
+    }
+gql_map['sample_samp_collect_device'] = {
+    "description": "The method or device employed for collecting the sample", 
+    "doc_type": "cases", 
+    "field": "sample.samp_collect_device", 
+    "full": "sample.samp_collect_device", 
+    "type": "string"
+    }
+gql_map['sample_samp_mat_process'] = {
+    "description": "Any processing applied to the sample during or after retrieving the sample from environment", 
+    "doc_type": "cases", 
+    "field": "sample mat_process", 
+    "full": "sample.mat_process", 
+    "type": "string"
+    }
+gql_map['sample_size'] = {
+    "description": "Amount or size of sample (volume, mass or area) that was collected", 
+    "doc_type": "cases", 
+    "field": "sample samp_size", 
+    "full": "sample.samp_size", 
+    "type": "string"
+    }
+gql_map['sample_subtype'] = {
+    "description": "The subtype of the sample", 
+    "doc_type": "cases", 
+    "field": "sample subtype", 
+    "full": "sample.subtype", 
+    "type": "string"
+    }
+gql_map['sample_supersite'] = {
+    "description": "Body supersite from which the sample was obtained", 
+    "doc_type": "cases", 
+    "field": "sample supersite", 
+    "full": "sample.supersite", 
+    "type": "string"
+    }
+gql_map['sample_fecalcal'] = {
+    "description": "FecalCal result, exists if measured for the sample", 
+    "doc_type": "cases", 
+    "field": "sample FecalCal", 
+    "full": "sample.fecalcal", 
+    "type": "integer"
+    }
 
 ***REMOVED***File props (includes everything below Sample node in OSDF schema)
-gql_map['file_id'] = {"description": "The iHMP ID of the file", "doc_type": "files", "field": "file ID", "full": "file.id", "type": "string"}
-gql_map['file_format'] = {"description": "The format of the file", "doc_type": "files", "field": "file format", "full": "file.format", "type": "string"}
-gql_map['file_type'] = {"description": "The node type of the file", "doc_type": "files", "field": "file type", "full": "file.type", "type": "string"}
-gql_map['file_annotation_pipeline'] = {"description": "The annotation pipeline used to generate the file", "doc_type": "files", "field": "file annotation pipeline", "full": "file.annotation_pipeline", "type": "string"}
-gql_map['file_matrix_type'] = {"description": "The type of matrix format present in the file", "doc_type": "files", "field": "file matrix type", "full": "file.matrix_type", "type": "string"}
+gql_map['file_id'] = {
+    "description": "The iHMP ID of the file", 
+    "doc_type": "files", 
+    "field": "file ID", 
+    "full": "file.id", 
+    "type": "string"
+    }
+gql_map['file_format'] = {
+    "description": "The format of the file", 
+    "doc_type": "files", 
+    "field": "file format", 
+    "full": "file.format", 
+    "type": "string"
+    }
+gql_map['file_type'] = {
+    "description": "The node type of the file", 
+    "doc_type": "files", 
+    "field": "file type", 
+    "full": "file.type", 
+    "type": "string"
+    }
+gql_map['file_annotation_pipeline'] = {
+    "description": "The annotation pipeline used to generate the file", 
+    "doc_type": "files", 
+    "field": "file annotation pipeline", 
+    "full": "file.annotation_pipeline", 
+    "type": "string"
+    }
+gql_map['file_matrix_type'] = {
+    "description": "The type of matrix format present in the file", 
+    "doc_type": "files", 
+    "field": "file matrix type", 
+    "full": "file.matrix_type", 
+    "type": "string"
+    }
 
 ***REMOVED***These are now all contained within the "Tags" node so auto-complete for the 
-***REMOVED***respective terms should be achieved by searching there. 
+***REMOVED***respective terms should be achieved by searching there. Saving in case the logic
+***REMOVED***is to be changed later and these become separate nodes. 
 ***REMOVED***MIMARKS
 gql_map['mimarks_adapters'] = {"description": "MIMARKS - Adapters provide priming sequences for both amplification and sequencing of the sample-library fragments", "doc_type": "cases", "field": "File_adapters", "full": "file.adapters", "type": "string"}
 gql_map['mimarks_biome'] = {"description": "MIMARKS - Biomes are defined based on factors such as plant structures, leaf types, plant spacing, and other factors like climate", "doc_type": "cases", "field": "File_biome", "full": "file.biome", "type": "string"}
