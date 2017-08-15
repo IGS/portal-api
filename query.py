@@ -105,12 +105,29 @@ def establish_session(username):
     ***REMOVED***MySQL database. Need to create nodes individually before linking or 
     ***REMOVED***else the entire structure will throw an error due to uniqueness 
     ***REMOVED***constraints on the username/id in user/session.
-    create_new_session = "MERGE (u:user { username:{un} }) MERGE (s:session { id:{si}, created_at:TIMESTAMP() }) MERGE (u)-[:has_session]->(s)"
-    remove_old_session = "MATCH (s:session)<-[:has_session]-(u:user) WHERE s.id <> {si} DETACH DELETE s"
+    create_new_session = """
+        MERGE (u:user { username:{un} }) 
+        MERGE (s:session { id:{si}, created_at:TIMESTAMP() }) 
+        MERGE (u)-[:has_session]->(s)
+    """
+    
+    ***REMOVED***Modify this to limit how many logins a single user can have across instances
+    concurrent_sessions = 2
+    
+    remove_old_session = """
+        MATCH (s:session)<-[:has_session]-(u:user) 
+        WHERE u.username={un} 
+        WITH s ORDER BY s.created_at DESC LIMIT {cs} 
+        WITH COLLECT(s.id) AS newest_sessions 
+        MATCH (s:session)<-[:has_session]-(u:user) 
+        WHERE u.username={un} 
+        AND NOT s.id IN newest_sessions 
+        DETACH DELETE s
+    """
 
     tx = cypher_conn.begin()
-    tx.run(remove_old_session, parameters={'si':session_id})
     tx.run(create_new_session, parameters={'un':username, 'si':session_id})
+    tx.run(remove_old_session, parameters={'un':username, 'cs':concurrent_sessions})
     tx.commit()
 
     return session_id
@@ -138,14 +155,18 @@ def get_user_info(session_id):
     """
     results = cypher_conn.run(cypher, parameters={'si':session_id}).data()
 
-    user_info['username'] = results[0]['username'] ***REMOVED***guaranteed to be here
+    ***REMOVED***Need to check here in case a user has been "logged out" by having too 
+    ***REMOVED***many sessions.
+    if results:
+        if results[0]['username']:
+            user_info['username'] = results[0]['username']
 
-    if results[0]['q']:
-        for x in range(0,len(results)):
-            user_info['queries'].append(results[x]['q']['query_str'])
-            user_info['hrefs'].append(results[x]['q']['url'])
-            user_info['scounts'].append(results[x]['q']['s_count'])
-            user_info['fcounts'].append(results[x]['q']['f_count'])
+        if results[0]['q']:
+            for x in range(0,len(results)):
+                user_info['queries'].append(results[x]['q']['query_str'])
+                user_info['hrefs'].append(results[x]['q']['url'])
+                user_info['scounts'].append(results[x]['q']['s_count'])
+                user_info['fcounts'].append(results[x]['q']['f_count'])
 
     if len(user_info['username']) > 0:
         return user_info

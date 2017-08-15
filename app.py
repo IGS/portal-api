@@ -385,7 +385,7 @@ def get_status_user_unauthorized():
             '''
 
             user_info = get_user_info(request.environ['HTTP_X_CSRFTOKEN'])
-            if user_info['username']: ***REMOVED***if successfully logged in, should be in DB
+            if user_info['username'] != "": ***REMOVED***if successfully logged in, should be in DB
                 return make_json_response(
                     response.format(user_info['username'],
                         json.dumps(user_info['queries']),
