@@ -732,8 +732,8 @@ def get_metadata(id_list):
         'sample_id',
         'subject_id',
         'sample_body_site',
-        'subject_gender',
         'visit_number',
+        'subject_gender',
         'subject_race',
         'study_full_name',
         'project_name',
@@ -748,18 +748,19 @@ def get_metadata(id_list):
     for entry in res:
         md = []
 
-        ***REMOVED***These will all be in the result no matter what
+        ***REMOVED***Prevent missing data points in any of these properties as there have
+        ***REMOVED***been cases of missing keys which cause a crash in the metadata download. 
+        ***REMOVED***Those without 'ifs' are guaranteed by cutlass. Also note that any 
+        ***REMOVED***numbers need to be converted to strings in order to join str list. 
         md.append(entry['S']['id'])
         md.append(entry['J']['id'])
         md.append(entry['S']['body_site'])
-        md.append(entry['J']['gender'])
         md.append(str(entry['S']['visit_visit_number']))
-        md.append(entry['J']['race'])
+        md.append(entry['J']['gender'])
+        ***REMOVED***Match missing 'race' it up with the 'unknown' value already present in some of the data
+        md.append(str(entry['J']['race'])) if 'race' in entry['J'] else md.append("unknown") 
         md.append(entry['S']['study_full_name'])
         md.append(entry['J']['project_name'])
-
-        ***REMOVED***These are variable metadata and may not be present, be careful to
-        ***REMOVED***convert numbers to strings
         md.append(str(entry['S']['fecalcal'])) if 'fecalcal' in entry['S'] else md.append("NA")
 
         outlist.append(("\t").join(md))
