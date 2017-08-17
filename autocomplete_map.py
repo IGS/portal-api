@@ -985,7 +985,7 @@ gql_map['visit_hosp'] = {
     "type": "string"
 }
 gql_map['visit_cancer'] = {
-    "description": "Has patient been diagnosed with cancer? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient been diagnosed with cancer? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit cancer", 
     "full": "visit.cancer", 
@@ -999,7 +999,7 @@ gql_map['visit_stool_soft'] = {
     "type": "integer"
 }
 gql_map['visit_surgery'] = {
-    "description": "Has patient undergone surgery? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient undergone surgery? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit surgery", 
     "full": "visit.surgery", 
@@ -1027,7 +1027,7 @@ gql_map['visit_preg_plans'] = {
     "type": "string"
 }
 gql_map['visit_chronic_dis'] = {
-    "description": "Has patient suffered from a chronic disease? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient suffered from a chronic disease? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit chronic dis", 
     "full": "visit.chronic_dis", 
@@ -1076,7 +1076,7 @@ gql_map['visit_leg_edema'] = {
     "type": "string"
 }
 gql_map['visit_fever'] = {
-    "description": "Has patient suffered from fever? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient suffered from fever? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit fever", 
     "full": "visit.fever", 
@@ -1097,7 +1097,7 @@ gql_map['visit_urgency_def'] = {
     "type": "string"
 }
 gql_map['visit_diag_other'] = {
-    "description": "Has patient been diagnosed with some other disorder? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient been diagnosed with some other disorder? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit diag other", 
     "full": "visit.diag_other", 
@@ -1118,14 +1118,14 @@ gql_map['visit_self_condition'] = {
     "type": "string"
 }
 gql_map['visit_weight_change'] = {
-    "description": "Has patient suffered from weight gain or loss? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient suffered from weight gain or loss? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit weight change", 
     "full": "visit.weight_change", 
     "type": "string"
 }
 gql_map['visit_acute_dis'] = {
-    "description": "Has patient suffered from an acute disease? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I receievd a heart surgery on 02/12/2012).", 
+    "description": "Has patient suffered from an acute disease? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).", 
     "doc_type": "cases", 
     "field": "visit acute dis", 
     "full": "visit.acute_dis", 
