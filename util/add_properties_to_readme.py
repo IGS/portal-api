@@ -9,7 +9,7 @@ import argparse,re
 
 def main():
 
-    parser = argparse.ArgumentParser(description='Script to isolate all reads and where they aligned to given a BAM file.')
+    parser = argparse.ArgumentParser(description='Script to isolate the properties from the currently active GQL map and put them in the README.')
     parser.add_argument('--app', '-a', type=str, help='Path to app.py which has the /gql/_mapping route.')
     parser.add_argument('--outfile', '-o', type=str, help='Name of the outfile to populate content with.')
     args = parser.parse_args()
