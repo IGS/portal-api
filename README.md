@@ -35,7 +35,7 @@ project.name = "Human Microbiome Project (HMP)"
 ```
 The results of this query will be only those samples and files that are associated with the project name "Human Microbiome Project (HMP)". 
 
-Try type this query in the interface and observe how auto-complete helps along the way. Auto-complete should be used for every query as it pulls directly from the database and makes sure you are searching by a valid `property`, `comparison operator`, and `value`. Thus, if you use auto-complete and find no results in your query, you know you have entered combinations of `property`+`comparison operator`+`value` which do not exist.
+Try type this query in the interface and observe how auto-complete helps along the way. Auto-complete should be used for every query as it pulls directly from the database and makes sure you are searching by a valid `property`, `comparison operator`, and `value`. Thus, if you use auto-complete and find no results in your query, you know you have entered combinations of `property`+`comparison operator`+`value` which do not exist. It is also helpful to navigate through the `value`s found as this consists of all the values that currently exist in the database for that particular `property`. 
 
 ##***REMOVED***Available Properties
 
