@@ -816,6 +816,15 @@ def get_metadata(id_list):
     for attr in (subject_metadata + visit_metadata):
         if len(set(cols[attr])) == 1 and cols[attr][0] == "NA":
             del cols[attr] ***REMOVED***going to exist no matter what
+        else:
+            ***REMOVED***Rename the key so that the metadata file is all-encompassing and
+            ***REMOVED***describes what this metadata is tied to (subject/sample/visit)
+            if attr in subject_metadata:
+                cols["subject_{0}".format(attr)] = cols[attr]
+                del cols[attr]
+            elif not attr.startswith('visit'):
+                cols["sample_{0}".format(attr)] = cols[attr]
+                del cols[attr]                
 
     rows = []
     rows.append("\t".join(list(cols.keys()))) ***REMOVED***header
