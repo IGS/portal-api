@@ -1,5 +1,9 @@
 # HMP Portal API
 
+* [Overview](https://github.com/jmatsumura/ihmp_portal_api#overview)
+* [Advanced Search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search)
+* [Cart Metadata](https://github.com/jmatsumura/ihmp_portal_api#cart-metadata)
+
 ## Overview
 
 This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). The API is a Flask app which uses GraphQL to communicate with a Neo4j database in order to efficiently retrieve and transfer the data in a RESTful manner. 
@@ -8,11 +12,33 @@ Setup:
 1. First, make sure all dependencies are installed and start Neo4j
 2. Request an account to access [OSDF](http://osdf.igs.umaryland.edu/)
 3. Use the [loader](https://github.com/jmatsumura/iHMPDCC_new_fxns/blob/master/OSDF_to_Neo4j/couchdb2neo4j_with_tags.py) to move the data from CouchDB to Neo4j
- * Make sure your Neo4j server is started and open on the default ports (7474)
+ * Make sure your Neo4j server is started and available
  * `python couchdb2neo4j_with_tags.py --db <OSDF_URL> --neo4j_password <NEO4J_PASS>`
-4. Start your Flask app (may want to modify `conf.py` before doing this):
- * `python app.py`
-5. Can now interact with the GQL at any of end the endpoints noted at the bottom of `app.py` or install your own [local portal UI]( https://github.com/jmatsumura/portal-ui)
+4. Start your Flask app (must create a `conf.py` before doing this):
+ * `conf.py` requires:
+   * app_root - the path to the location of this repository
+   * access_origin - a list of origins to accept requests from
+   * be_port - the port to run this API on
+   * be_loc - the IP:PORT that the API is accessible on 
+   * secret_key - a complex and private string for Flask to sign sessions/cookies with
+   * neo4j_ip - IP of where Neo4j is running
+   * neo4j_bolt - port for Neo4j bolt connection
+   * neo4j_http - port for Neo4j http connection
+   * neo4j_un - username to access Neo4j database
+   * neo4j_pw - password to access Neo4j database
+     * All MySQL variables in the conf are needed if logins are to be supported, fill with dummy values if logging in is not required
+   * mysql_h - host of the MySQL authentication server
+   * mysql_db - name of the DB that houses the username+password rows
+   * mysql_un - username to access MySQL database
+   * mysql_pw - password to access MySQL database
+ * Once `conf.py` is made, use the command `python app.py`
+5. Can now interact with the GQL at any of the following endpoints or setup your own [portal UI]( https://github.com/jmatsumura/portal-ui)
+ * `/sum_schema`
+ * `/ac_schema`
+ * `/files_schema`
+ * `/table_schema`
+ * `/indiv_files_schema`
+ * `/indiv_sample_schema`
 
 Dependencies:
 * [Neo4j 3.0.0](https://neo4j.com/release-notes/neo4j-3-0-0/)
@@ -20,6 +46,9 @@ Dependencies:
   * [Flask](http://flask.pocoo.org/docs/0.12/installation/)
   * [graphene](http://docs.graphene-python.org/en/latest/quickstart/)
   * [py2neo](http://py2neo.org/v3/)
+  * [MySQL connector](https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html)
+
+[Short video](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API
 
 ## Advanced Search
 
@@ -81,3 +110,17 @@ The list of properties available to search on is actively growing. Below you can
 * **visit.interval** - The amount of time since the last visit (in days)
 * **visit.number** - A sequential number that is assigned as visits occur for a subject
 * **visit.subtype** - The subtype of the visit
+
+## Cart Metadata
+
+On the cart page of the UI, one can download both a manifest of their samples+files of interest as well as metadata for these same entities. The manifest is to be used in conjunction with the [HMP client](https://github.com/IGS/hmp_client) to efficiently download all the files. The metadata serves as an additional source of input for analysis. The metadata, which is tab-separated, will always consist of a minimum set of (in this order):
+ * **sample_id**
+ * **subject_id**
+ * **sample_body_site**
+ * **visit_number**
+ * **subject_gender**
+ * **subject_race**
+ * **study_full_name**
+ * **project_name**
+
+Additional columns may be present in the metadata file if at least one of the samples present has a non-null value for the metadata. 
