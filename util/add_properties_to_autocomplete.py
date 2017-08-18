@@ -57,7 +57,7 @@ def build_information_dict(field,desc,attr_type):
 
     info["description"] = desc
     info["doc_type"] = "cases" # relic from GDC
-    info["field"] = field.replace("_"," ")
+    info["field"] = field.replace("_",".",1)
     info["full"] = field.replace("_",".",1)
     info["type"] = "string" if attr_type in str_set else "integer"
 
