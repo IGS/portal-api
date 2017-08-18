@@ -6,9 +6,11 @@
 
 #***REMOVED***Overview
 
-This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). The API is a Flask app which uses GraphQL to communicate with a Neo4j database in order to efficiently retrieve and transfer the data in a RESTful manner. 
+This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). [Short walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API.
 
-Setup:
+The API is a Flask app which uses GraphQL to communicate with a Neo4j database in order to efficiently retrieve and transfer the data in a RESTful manner. 
+
+##***REMOVED***Setup
 1. First, make sure all dependencies are installed and start Neo4j
 2. Request an account to access [OSDF](http://osdf.igs.umaryland.edu/)
 3. Use the [loader](https://github.com/jmatsumura/iHMPDCC_new_fxns/blob/master/OSDF_to_Neo4j/couchdb2neo4j_with_tags.py) to move the data from CouchDB to Neo4j
@@ -40,15 +42,13 @@ Setup:
  * `/indiv_files_schema`
  * `/indiv_sample_schema`
 
-Dependencies:
+##***REMOVED***Dependencies
 * [Neo4j 3.0.0](https://neo4j.com/release-notes/neo4j-3-0-0/)
 * [Python 2.7.10](https://www.python.org/downloads/release/python-2710/)
   * [Flask](http://flask.pocoo.org/docs/0.12/installation/)
   * [graphene](http://docs.graphene-python.org/en/latest/quickstart/)
   * [py2neo](http://py2neo.org/v3/)
   * [MySQL connector](https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html)
-
-[Short video](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API
 
 #***REMOVED***Advanced Search
 
