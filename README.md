@@ -11,7 +11,7 @@
 
 * This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). 
 * [Short walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API.
-* The API is a Flask app which uses (GraphQL)[http://graphql.org/] to communicate with a (Neo4j)[https://neo4j.com/] database in order to efficiently retrieve and transfer the data in a RESTful manner. 
+* The API is a Flask app which uses [GraphQL](http://graphql.org/) to communicate with a [Neo4j](https://neo4j.com/) database in order to efficiently retrieve and transfer the data in a RESTful manner. 
 
 ##***REMOVED***Setup
 1. First, make sure all dependencies are installed and start Neo4j
@@ -49,6 +49,7 @@
 * [Neo4j 3.0.0](https://neo4j.com/release-notes/neo4j-3-0-0/)
 * [Python 2.7.10](https://www.python.org/downloads/release/python-2710/)
   * [Flask](http://flask.pocoo.org/docs/0.12/installation/)
+  * [Flask-CORS](https://flask-cors.readthedocs.io/en/latest/)
   * [graphene](http://docs.graphene-python.org/en/latest/quickstart/)
   * [py2neo](http://py2neo.org/v3/)
   * [MySQL connector](https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html)
