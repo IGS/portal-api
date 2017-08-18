@@ -6,9 +6,9 @@
 
 ## Overview
 
-This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). [Short walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API.
-
-The API is a Flask app which uses GraphQL to communicate with a Neo4j database in order to efficiently retrieve and transfer the data in a RESTful manner. 
+* This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). 
+* [Short walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API.
+* The API is a Flask app which uses (GraphQL)[http://graphql.org/] to communicate with a (Neo4j)[https://neo4j.com/] database in order to efficiently retrieve and transfer the data in a RESTful manner. 
 
 ### Setup
 1. First, make sure all dependencies are installed and start Neo4j
@@ -123,4 +123,8 @@ On the cart page of the UI, one can download both a manifest of their samples+fi
  * **study_full_name**
  * **project_name**
 
-Additional columns may be present in the metadata file if at least one of the samples present has a non-null value for the metadata. 
+Additional columns may be present in the metadata file if at least one of the samples present has a non-null value for the metadata. All the potential metadata that will be present, if it was collected, is defined in the OSDF schema found below:
+* (subject attributes)[https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/subject_attr.json]
+* (sample attributes)[https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/sample_attr.json]
+* (visit attributes)[https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/visit_attr.json]
+* (attribute subsets)[https://github.com/ihmpdcc/osdf-schemas/tree/master/ihmp/aux]
