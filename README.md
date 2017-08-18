@@ -1,7 +1,10 @@
 ***REMOVED***HMP Portal API
 
 * [Overview](https://github.com/jmatsumura/ihmp_portal_api#overview)
+  * [Setup](https://github.com/jmatsumura/ihmp_portal_api#setup)
+  * [Dependencies](https://github.com/jmatsumura/ihmp_portal_api#dependencies)
 * [Advanced Search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search)
+  * [Available Properties](https://github.com/jmatsumura/ihmp_portal_api#available-properties)
 * [Cart Metadata](https://github.com/jmatsumura/ihmp_portal_api#cart-metadata)
 
 #***REMOVED***Overview
@@ -123,8 +126,8 @@ On the cart page of the UI, one can download both a manifest of their samples+fi
  * **study_full_name**
  * **project_name**
 
-Additional columns may be present in the metadata file if at least one of the samples present has a non-null value for the metadata. All the potential metadata that will be present, if it was collected, is defined in the OSDF schema found below:
-* (subject attributes)[https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/subject_attr.json]
-* (sample attributes)[https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/sample_attr.json]
-* (visit attributes)[https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/visit_attr.json]
-* (attribute subsets)[https://github.com/ihmpdcc/osdf-schemas/tree/master/ihmp/aux]
+Additional columns may be present in the metadata file if at least one of the samples present has a non-null value for the metadata. All potential metadata which will be present, if it was collected for the sample of interest, is defined in the [OSDF](https://github.com/IGS/OSDF) schemas found below:
+* [subject attributes](https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/subject_attr.json)
+* [sample attributes](https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/sample_attr.json)
+* [visit attributes](https://github.com/ihmpdcc/osdf-schemas/blob/master/ihmp/schemas/visit_attr.json)
+* [attribute subsets](https://github.com/ihmpdcc/osdf-schemas/tree/master/ihmp/aux)
