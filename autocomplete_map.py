@@ -280,13 +280,6 @@ gql_map['subject_rx'] = {
     "full": "subject.rx", 
     "type": "string"
     }
-gql_map['subject_subtype'] = {
-    "description": "The subtype of the Visit Attribute", 
-    "doc_type": "cases", 
-    "field": "subject subtype", 
-    "full": "subject.subtype", 
-    "type": "string"
-    }
 gql_map['subject_survey_id'] = {
     "description": "Center specific survey identifier", 
     "doc_type": "cases", 
@@ -347,12 +340,26 @@ gql_map['visit_hbi'] = {
     "full": "visit.hbi", 
     "type": "string"
 }
+gql_map['visit_hbi_total'] = {
+    "description": "Harvey-Bradshaw index (HBI) total score.", 
+    "doc_type": "cases", 
+    "field": "visit hbi total", 
+    "full": "visit.hbi_total", 
+    "type": "integer"
+}
 gql_map['visit_weight'] = {
     "description": "Subject weight at time of visit, in kg.", 
     "doc_type": "cases", 
     "field": "visit weight", 
     "full": "visit.weight", 
     "type": "integer"
+}
+gql_map['visit_weight_diff'] = {
+    "description": "Weight gain/loss since last visit.", 
+    "doc_type": "cases", 
+    "field": "visit weight diff", 
+    "full": "visit.weight_diff", 
+    "type": "string"
 }
 gql_map['visit_30m_gluc'] = {
     "description": "Glucose level 30 minutes after eating.", 
@@ -382,13 +389,6 @@ gql_map['visit_bmi'] = {
     "full": "visit.bmi", 
     "type": "integer"
 }
-gql_map['visit_weight_diff'] = {
-    "description": "Weight gain/loss since last visit.", 
-    "doc_type": "cases", 
-    "field": "visit weight diff", 
-    "full": "visit.weight_diff", 
-    "type": "string"
-}
 gql_map['visit_height'] = {
     "description": "Subject height at time of visit, in cm.", 
     "doc_type": "cases", 
@@ -401,13 +401,6 @@ gql_map['visit_fast_gluc'] = {
     "doc_type": "cases", 
     "field": "visit fast gluc", 
     "full": "visit.fast_gluc", 
-    "type": "integer"
-}
-gql_map['visit_hbi_total'] = {
-    "description": "Harvey-Bradshaw index (HBI) total score.", 
-    "doc_type": "cases", 
-    "field": "visit hbi total", 
-    "full": "visit.hbi_total", 
     "type": "integer"
 }
 gql_map['visit_sccai'] = {

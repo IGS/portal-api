@@ -1,5 +1,7 @@
 import re, json, requests, hashlib, time
 import ujson, urllib
+from collections import OrderedDict
+from autocomplete_map import gql_map
 from py2neo import Graph ***REMOVED***Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
 from models import Project,Pagination,CaseHits,IndivFiles,IndivSample,Analysis,AssociatedEntities
@@ -723,12 +725,54 @@ def get_manifest_data(id_list):
 
     return outlist
 
+***REMOVED***Load these lists on startup to use for parsing optional metadata. Notice 
+***REMOVED***that subject_ prefix is trimmed while visit_ is not. This is because 
+***REMOVED***subject is a base node while visit is not and so searching on the visit
+***REMOVED***property requires that visit prefix to work properly. 
+def filter_attr_metadata(non_attr_set,md_type):
+
+    fields = list(gql_map.keys())
+    attr_list = []
+
+    ***REMOVED***Insert additional sample_attr fields here, since fecalcal is essentially
+    ***REMOVED***on its own as the only sample metadata searchable it is handled here. 
+    if md_type == 'visit':
+        attr_list.append('fecalcal')
+
+    for field in fields:
+        if field.startswith(md_type):
+            if field not in non_attr_set:
+                if md_type == 'subject':
+                    field = field.replace('subject_','')
+                attr_list.append(field)
+
+    return attr_list
+
+subject_metadata = filter_attr_metadata(
+    {
+        'subject_gender',
+        'subject_race',
+        'subject_subtype',
+        'subject_uuid',
+        'subject_id'
+    },
+    'subject')
+visit_metadata = filter_attr_metadata(
+    {
+        'visit_date',
+        'visit_interval',
+        'visit_number',
+        'visit_subtype',
+        'visit_id'
+    },
+    'visit')
+
 def get_metadata(id_list):
 
     cquery = "MATCH (F:file)-[:derived_from]->(S:sample)-[:extracted_from]->(J:subject) WHERE F.id IN {0} RETURN S,J".format(id_list)
     res = process_cquery_http(cquery)
 
-    metadata = [
+    base_metadata = [
         'sample_id',
         'subject_id',
         'sample_body_site',
@@ -737,35 +781,53 @@ def get_metadata(id_list):
         'subject_race',
         'study_full_name',
         'project_name',
-        'fecalcal'
     ]
-    header = ('\t').join(metadata)
 
-    outlist = []
+    items = [(field, []) for field in (base_metadata + subject_metadata + visit_metadata)] ***REMOVED***essentially defaultdict of OrderedDict
+    cols = OrderedDict(items)
 
-    outlist.append(header)
-
+    ***REMOVED***first process those that are required
     for entry in res:
-        md = []
 
         ***REMOVED***Prevent missing data points in any of these properties as there have
         ***REMOVED***been cases of missing keys which cause a crash in the metadata download. 
         ***REMOVED***Those without 'ifs' are guaranteed by cutlass. Also note that any 
         ***REMOVED***numbers need to be converted to strings in order to join str list. 
-        md.append(entry['S']['id'])
-        md.append(entry['J']['id'])
-        md.append(entry['S']['body_site'])
-        md.append(str(entry['S']['visit_visit_number']))
-        md.append(entry['J']['gender'])
+        cols['sample_id'].append(entry['S']['id'])
+        cols['subject_id'].append(entry['J']['id'])
+        cols['sample_body_site'].append(entry['S']['body_site'])
+        cols['visit_number'].append(str(entry['S']['visit_visit_number']))
+        cols['subject_gender'].append(entry['J']['gender'])
         ***REMOVED***Match missing 'race' it up with the 'unknown' value already present in some of the data
-        md.append(str(entry['J']['race'])) if 'race' in entry['J'] else md.append("unknown") 
-        md.append(entry['S']['study_full_name'])
-        md.append(entry['J']['project_name'])
-        md.append(str(entry['S']['fecalcal'])) if 'fecalcal' in entry['S'] else md.append("NA")
+        cols['subject_race'].append(str(entry['J']['race'])) if 'race' in entry['J'] else cols['subject_race'].append("unknown") 
+        cols['study_full_name'].append(entry['S']['study_full_name'])
+        cols['project_name'].append(entry['J']['project_name'])
 
-        outlist.append(("\t").join(md))
+        ***REMOVED***Subject attrs
+        for attr in subject_metadata:
+            cols[attr].append(str(entry['J'][attr])) if attr in entry['J'] else cols[attr].append("NA")
 
-    return ("\n").join(outlist)
+        ***REMOVED***Visit attrs
+        for attr in visit_metadata:
+            cols[attr].append(str(entry['S'][attr])) if attr in entry['S'] else cols[attr].append("NA")
+
+    ***REMOVED***Now that we've parsed through everything in Neo4j, delete any columns that
+    ***REMOVED***solely contain "NA"s in the optional attribute fields. 
+    for attr in (subject_metadata + visit_metadata):
+        if len(set(cols[attr])) == 1 and cols[attr][0] == "NA":
+            del cols[attr] ***REMOVED***going to exist no matter what
+
+    rows = []
+    rows.append("\t".join(list(cols.keys()))) ***REMOVED***header
+
+    ***REMOVED***Create a string with all the found data to pass to the file
+    for i in range(0,len(cols['sample_id'])):
+        row = []
+        for key in cols:
+            row.append(cols[key][i])
+        rows.append(("\t").join(row))
+
+    return ("\n").join(rows)
 
 ***REMOVED***Makes sure we generate a unique token
 def check_token(token,ids):
