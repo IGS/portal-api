@@ -184,7 +184,7 @@ def get_cases():
             all_facet_aggregations = []
 
             for facet in request.args.get('facets').split(','):
-                all_facet_aggregations.append(aggregation_gql.format(facet))
+                all_facet_aggregations.append(aggregation_gql.format(facet.replace('.','_')))
 
             query = {'query':ac_gql.format(filters,size,from_num,order,(' ').join(all_facet_aggregations))}
         
