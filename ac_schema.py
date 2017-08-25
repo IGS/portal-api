@@ -30,6 +30,7 @@ stuN = get_buckets("VSS.study_name","no","")
 fileF = get_buckets("F.format","no","")
 fileID = get_buckets("F.id","no","")
 fileNT = get_buckets("F.node_type","no","")
+fileMT = get_buckets("F.matrix_type","no","")
 tagT = get_buckets("T.term","no","")
 
 class Query(graphene.ObjectType):
@@ -76,6 +77,7 @@ class Query(graphene.ObjectType):
             file_format=fileF,
             file_type=fileNT,
             file_id=fileID,
+            file_matrix_type=fileMT,
             tag_term=tagT
             )
         

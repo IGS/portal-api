@@ -77,6 +77,7 @@ def get_maps():
         "file.format": gql_map['file_format'],
         "file.type": gql_map['file_type'],
         "file.id": gql_map['file_id'],
+        "file.matrix_type": gql_map['file_matrix_type'],
         "tag": gql_map['tag']
         })
     return gql

@@ -103,6 +103,7 @@ class Aggregations(graphene.ObjectType): # Collecting lists of buckets (BucketCo
     file_id = graphene.Field(BucketCounter, name="file_id")
     file_format = graphene.Field(BucketCounter, name="file_format")
     file_type = graphene.Field(BucketCounter, name="file_type")
+    file_matrix_type = graphene.Field(BucketCounter, name="file_matrix_type")
 
     tag_term = graphene.Field(BucketCounter, name="tag_term")
 
