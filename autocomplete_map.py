@@ -1500,7 +1500,7 @@ gql_map['file_annotation_pipeline'] = {
     "type": "string"
     }
 gql_map['file_matrix_type'] = {
-    "description": "The type of matrix format present in the file", 
+    "description": "The type of data used to generate the abundance matrix", 
     "doc_type": "files", 
     "field": "file.matrix_type", 
     "full": "file.matrix_type", 
