@@ -176,10 +176,24 @@ gql_map['subject_diabetes'] = {
     "type": "string"
     }
 gql_map['subject_education'] = {
-    "description": "Subject's highest level of educatio", 
+    "description": "Subject's highest level of education", 
     "doc_type": "cases", 
     "field": "subject.education", 
     "full": "subject.education", 
+    "type": "string"
+    }
+gql_map['subject_father'] = {
+    "description": "Any heritable diseases that the father had", 
+    "doc_type": "cases", 
+    "field": "subject.father", 
+    "full": "subject.father", 
+    "type": "string"
+    }
+gql_map['subject_mother'] = {
+    "description": "Any heritable diseases that the mother had", 
+    "doc_type": "cases", 
+    "field": "subject.mother", 
+    "full": "subject.mother", 
     "type": "string"
     }
 gql_map['subject_family_history'] = {
