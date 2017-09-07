@@ -81,7 +81,7 @@ count_props_dict = {
 ***REMOVED***Get all these values from the conf
 neo4j_bolt = int(neo4j_bolt)
 neo4j_http = int(neo4j_http)
-cypher_conn = Graph(password = neo4j_pw)
+cypher_conn = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
 
 ***REMOVED***This section will have all the logic for populating the actual data in the schema (data from Neo4j)
 #graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
@@ -217,7 +217,7 @@ def save_query_file_data(reference_url,count):
 def process_cquery_http(cquery):
     headers = {'Content-Type': 'application/json'}
     data = {'statements': [{'statement': cquery, 'includeStats': False}]}
-    rq_res = requests.post(url='http://localhost:7474/db/data/transaction/commit',headers=headers, data=ujson.dumps(data), auth=(neo4j_un,neo4j_pw))
+    rq_res = requests.post(url='http://{}:7474/db/data/transaction/commit'.format(neo4j_ip),headers=headers, data=ujson.dumps(data), auth=(neo4j_un,neo4j_pw))
 
     query_res = []
     jsResp = ujson.loads(rq_res.text)
