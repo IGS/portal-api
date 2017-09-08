@@ -72,11 +72,10 @@ def get_maps():
         "sample.id": gql_map['sample_id'], 
         "sample.lat_lon": gql_map['sample_lat_lon'],
         "sample.material": gql_map['sample_material'],
-        "sample.project_name": gql_map['sample_project_name'],
         "sample.rel_to_oxygen": gql_map['sample_rel_to_oxygen'],
         "sample.samp_collect_device": gql_map['sample_samp_collect_device'],
         "sample.samp_mat_process": gql_map['sample_samp_mat_process'],
-        "sample.size": gql_map['sample_size'],
+        "sample.samp_size": gql_map['sample_samp_size'],
         "sample.subtype": gql_map['sample_subtype'],
         "sample.supersite": gql_map['sample_supersite'], 
         
