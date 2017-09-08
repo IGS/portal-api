@@ -1451,11 +1451,11 @@ gql_map['sample_samp_collect_device'] = {
 gql_map['sample_samp_mat_process'] = {
     "description": "Any processing applied to the sample during or after retrieving the sample from environment", 
     "doc_type": "cases", 
-    "field": "sample.mat_process", 
-    "full": "sample.mat_process", 
+    "field": "sample.samp_mat_process", 
+    "full": "sample.samp_mat_process", 
     "type": "string"
     }
-gql_map['sample_size'] = {
+gql_map['sample_samp_size'] = {
     "description": "Amount or size of sample (volume, mass or area) that was collected", 
     "doc_type": "cases", 
     "field": "sample.samp_size", 
@@ -1479,7 +1479,7 @@ gql_map['sample_supersite'] = {
 gql_map['sample_fecalcal'] = {
     "description": "FecalCal result, exists if measured for the sample", 
     "doc_type": "cases", 
-    "field": "sample.FecalCal", 
+    "field": "sample.fecalcal", 
     "full": "sample.fecalcal", 
     "type": "integer"
     }
