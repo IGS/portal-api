@@ -68,10 +68,10 @@ strings_to_nums = {
 ***REMOVED***This populates the values in the side table of facet search. Want to let users
 ***REMOVED***know how many samples per category in a given property. 
 count_props_dict = {
-    "PS": "MATCH (n:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
-    "VSS": "MATCH (PS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
-    "F": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(n:file) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
-    "T": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(n:tag) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts"
+    "PS": "MATCH (n:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
+    "VSS": "MATCH (PS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
+    "F": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(n:file) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
+    "T": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(n:tag) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts"
 }
 
 ###############
