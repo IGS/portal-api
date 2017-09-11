@@ -37,56 +37,10 @@ def before():
 
 @application.route('/gql/_mapping', methods=['GET','OPTIONS','POST'])
 def get_maps():
-    gql = jsonify({
-        "project.name": gql_map['project_name'],
-        "project.subtype": gql_map['project_subtype'],
-
-        "study.center": gql_map['study_center'],
-        "study.contact": gql_map['study_contact'],
-        "study.description": gql_map['study_description'],
-        "study.name": gql_map['study_name'],
-        "study.srp_id": gql_map['study_srp_id'],
-        "study.subtype": gql_map['study_subtype'],
-
-        "subject.gender": gql_map['subject_gender'],
-        "subject.id": gql_map['subject_id'],
-        "subject.race": gql_map['subject_race'],
-        "subject.subtype": gql_map['subject_subtype'],
-        "subject.uuid": gql_map['subject_uuid'],
-
-        "visit.date": gql_map['visit_date'],
-        "visit.hbi": gql_map['visit_hbi'],
-        "visit.id": gql_map['visit_id'],
-        "visit.interval": gql_map['visit_interval'],
-        "visit.number": gql_map['visit_number'],
-        "visit.subtype": gql_map['visit_subtype'],
-
-        "sample.biome": gql_map['sample_biome'],
-        "sample.body_product": gql_map['sample_body_product'],
-        "sample.body_site": gql_map['sample_body_site'],
-        "sample.collection_date": gql_map['sample_collection_date'],
-        "sample.env_package": gql_map['sample_env_package'],
-        "sample.feature": gql_map['sample_feature'],
-        "sample.fecalcal": gql_map['sample_fecalcal'], 
-        "sample.geo_loc_name": gql_map['sample_geo_loc_name'],
-        "sample.id": gql_map['sample_id'], 
-        "sample.lat_lon": gql_map['sample_lat_lon'],
-        "sample.material": gql_map['sample_material'],
-        "sample.rel_to_oxygen": gql_map['sample_rel_to_oxygen'],
-        "sample.samp_collect_device": gql_map['sample_samp_collect_device'],
-        "sample.samp_mat_process": gql_map['sample_samp_mat_process'],
-        "sample.samp_size": gql_map['sample_samp_size'],
-        "sample.subtype": gql_map['sample_subtype'],
-        "sample.supersite": gql_map['sample_supersite'], 
-        
-        "file.format": gql_map['file_format'],
-        "file.id": gql_map['file_id'],
-        "file.matrix_type": gql_map['file_matrix_type'],
-        "file.type": gql_map['file_type'],
-
-        "tag": gql_map['tag']
-        })
-    return gql
+    # consider anything in gql_map as searchable, make all keys like
+    # project_name ==> project.name to abide by UI search rules
+    mod_dict = dict((k.replace("_",".",1), v) for k, v in gql_map.items())
+    return jsonify(mod_dict)
 
 # Note the multiple endpoints going to the same "cases endpoint to accommodate GDC syntax"
 @application.route('/cases', methods=['GET','OPTIONS','POST'])
