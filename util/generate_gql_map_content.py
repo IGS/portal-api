@@ -20,10 +20,12 @@ def main():
     with open(args.outfile,'w') as out:
         if args.which_file == 'readme':
             for k in sorted(gql_map):
-                out.write("* {} - {}\n".format(k.replace('\"','**'),gql_map[k]['description']))
+                out.write("* **{}** - {}\n".format(k,gql_map[k]['description']))
         
         elif args.which_file == 'gql':
             for k in sorted(gql_map):
+                if k == 'tag':
+                    k = 'tag_term'
                 out.write('{0} = graphene.Field(BucketCounter, name="{0}")\n'.format(k))
 
         elif args.which_file == 'ac':
@@ -35,8 +37,7 @@ def main():
                 'study': ['study_','VSS.study_'],
                 'subject': ['subject_','PS.'],
                 'visit': ['visit_','VSS.visit_'],
-                'file': ['file_','F.'],
-                'tag': ['tag_','T.']
+                'file': ['file_','F.']
             }
 
             for k in sorted(gql_map):
@@ -51,7 +52,17 @@ def main():
 
                     if k.startswith(ke):
                         cypher = k.replace(va[0],va[1],1)
-                        break    
+                        break
+
+                if k == 'tag':
+                    renamed_vals = 'tag_term'
+                    cypher = 'T.term'
+                elif k == 'visit_visit_number':
+                    cypher = 'VSS.visit_visit_number'
+                elif k == 'subject_id':
+                    cypher = 'PS.rand_subject_id'
+                elif k == 'subject_uuid':
+                    cypher = 'PS.id'
 
                 out.write('{} = get_buckets("{}","no","")\n'.format(renamed_vals,cypher))         
 
@@ -65,10 +76,8 @@ def main():
                     renamed_vals = k.split('_')[0][:3]+'_'+('_').join(k.split('_')[1:]) 
                 
                 ***REMOVED***subject is a bit of an exception and uses these for ID/UUID
-                if k == 'subject_id':
-                    renamed_vals = 'sub_rand_subject_id'
-                elif k == 'subject_uuid':
-                    renamed_vals = 'sub_id'
+                if k == 'tag':
+                    k,renamed_vals = ('tag_term' for i in range(2))
 
                 out.write('{}={},\n'.format(k,renamed_vals))
 

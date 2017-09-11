@@ -72,48 +72,232 @@ Try type this query in the interface and observe how auto-complete helps along t
 
 ##***REMOVED***Available Properties
 
-The list of properties available to search on is actively growing. Below you can find the name+description for those which are currently available.
+The list of properties available to search on is actively growing. Below you can find the name+description for those which will eventually be searchable.
 
-* **file.format** - The format of the file
-* **file.id** - The iHMP ID of the file
-* **file.type** - The node type of the file
-* **project.name** - The name of the project within which the sequencing was organized
-* **project.subtype** - The subtype of the project
-* **sample.biome** - Biomes are defined based on factors such as plant structures, leaf types, plant spacing, and other factors like climate
-* **sample.body_product** - Substance produced by the body, e.g. stool, mucus, where the sample was obtained from
-* **sample.body_site** - Body site from which the sample was obtained using the FMA ontology
-* **sample.collection_date** - The time of sampling, either as an instance (single point in time) or interval
-* **sample.env_package** - Controlled vocabulary of MIGS/MIMS environmental packages
-* **sample.feature** - Environmental feature level includes geographic environmental features
-* **sample.fecalcal** - FecalCal result, exists if measured for the sample
-* **sample.geo_loc_name** - The geographical origin of the sample as defined by the country or sea name followed by specific region name
-* **sample.id** - The iHMP ID of the sample
-* **sample.lat_lon** - Latitude/longitude in WGS 84 coordinates
-* **sample.material** - Matter that was displaced by the sample, before the sampling event
-* **sample.project_name** - Name of the project within which the sequencing was organized
-* **sample.rel_to_oxygen** - Whether the organism is an aerobe or anaerobe
-* **sample.samp_collect_device** - The method or device employed for collecting the sample
-* **sample.samp_mat_process** - Any processing applied to the sample during or after retrieving the sample from environment
-* **sample.size** - Amount or size of sample (volume, mass or area) that was collected
-* **sample.subtype** - The subtype of the sample
-* **sample.supersite** - Body supersite from which the sample was obtained
-* **study.center** - The study's sequencing center
-* **study.contact** - The study's primary contact at the sequencing center
-* **study.description** - A longer description of the study
-* **study.name** - The name of the study
-* **study.srp_id** - NCBI Sequence Read Archive (SRA) project ID
-* **study.subtype** - The subtype of the study
-* **subject.gender** - The subject's sex
-* **subject.id** - The subject's per-study ID (can view in individual sample page)
-* **subject.race** - The subject's race/ethnicity
-* **subject.subtype** - The subtype of the subject
-* **subject.uuid** - The subject's UUID
+* **file_annotation_pipeline** - The annotation pipeline used to generate the file
+* **file_format** - The format of the file
+* **file_id** - The iHMP ID of the file
+* **file_matrix_type** - The type of data used to generate the abundance matrix
+* **file_type** - The node type of the file
+* **project_name** - The name of the project within which the sequencing was organized
+* **project_subtype** - The subtype of the project
+* **sample_biome** - Biomes are defined based on factors such as plant structures, leaf types, plant spacing, and other factors like climate
+* **sample_body_product** - Substance produced by the body, e.g. stool, mucus, where the sample was obtained from
+* **sample_body_site** - Body site from which the sample was obtained using the FMA ontology
+* **sample_collection_date** - The time of sampling, either as an instance (single point in time) or interval
+* **sample_env_package** - Controlled vocabulary of MIGS/MIMS environmental packages
+* **sample_feature** - Environmental feature level includes geographic environmental features
+* **sample_fecalcal** - FecalCal result, exists if measured for the sample
+* **sample_geo_loc_name** - The geographical origin of the sample as defined by the country or sea name followed by specific region name
+* **sample_id** - The iHMP ID of the sample
+* **sample_lat_lon** - Latitude/longitude in WGS 84 coordinates
+* **sample_material** - Matter that was displaced by the sample, before the sampling event
+* **sample_rel_to_oxygen** - Whether the organism is an aerobe or anaerobe
+* **sample_samp_collect_device** - The method or device employed for collecting the sample
+* **sample_samp_mat_process** - Any processing applied to the sample during or after retrieving the sample from environment
+* **sample_samp_size** - Amount or size of sample (volume, mass or area) that was collected
+* **sample_subtype** - The subtype of the sample
+* **sample_supersite** - Body supersite from which the sample was obtained
+* **study_center** - The study's sequencing center
+* **study_contact** - The study's primary contact at the sequencing center
+* **study_description** - A longer description of the study
+* **study_name** - The name of the study
+* **study_srp_id** - NCBI Sequence Read Archive (SRA) project ID
+* **study_subtype** - The subtype of the study
+* **subject_aerobics** - What is patient's baseline aerobic exercise level; type, minutes/week
+* **subject_alcohol** - What is patient's baseline alcohol consumption; type, drinks/week
+* **subject_allergies** - Does patient have allergies?
+* **subject_asthma** - Does patient have asthma? Yes/No, duration
+* **subject_cad** - Does patient have coronary artery disease/myocardial infarction? Yes/No, duration
+* **subject_chf** - Does patient have chronic heart failure? Yes/No, duration
+* **subject_comment** - Free-text comment
+* **subject_contact** - Does patient agree to be contacted in the future?
+* **subject_diabetes** - Does patient have diabetes (including gestational)? Yes/No, duration
+* **subject_education** - Subject's highest level of education
+* **subject_family_history** - Family history of hereditary diseases or physiological conditions
+* **subject_father** - Any heritable diseases that the father had
+* **subject_gallbladder** - Does patient have gallbladder disease? Yes/No, duration, clarification
+* **subject_gender** - The subject's sex
+* **subject_hyperlipidemia** - Does patient have hyperlipidemia? Yes/No, duration
+* **subject_hypertension** - Does patient have hypertension? Yes/No, duration
+* **subject_id** - The subject's per-study ID (can view in individual sample page)
+* **subject_illicit_drug** - What is patient's baseline illicit drug history?
+* **subject_kidney** - Does patient have kidney disease? Yes/No, duration
+* **subject_liver** - Does patient have liver disease? Yes/No, duration, clarification
+* **subject_lmp** - When was patient's last menstrual period, if applicable
+* **subject_mother** - Any heritable diseases that the mother had
+* **subject_occupation** - Subject's occupation
+* **subject_osa** - Does patient have obstructive sleep apnea? Yes/No, duration
+* **subject_pancreatitis** - Does patient have pancreatitis? Yes/No, duration
+* **subject_postmenopausal** - Is patient postmenopausal? Yes/No, duration
+* **subject_pvd** - Does patient have peripheral vascular disease? Yes/No, duration
+* **subject_race** - The subject's race/ethnicity
+* **subject_rx** - List all prescriptions and over the counter medication patient is taking at start of study
+* **subject_subtype** - The subtype of the subject
+* **subject_survey_id** - Center specific survey identifier
+* **subject_tobacco** - What is patient's baseline tobacco use, measured as number of packs per day x years smoked
+* **subject_uuid** - The subject's UUID
 * **tag** - Tag word attached to the file
-* **visit.date** - Date when the visit occurred
-* **visit.id** - The identifier used by the sequence center to uniquely identify the visit
-* **visit.interval** - The amount of time since the last visit (in days)
-* **visit.number** - A sequential number that is assigned as visits occur for a subject
-* **visit.subtype** - The subtype of the visit
+* **visit_30m_gluc** - Glucose level 30 minutes after eating.
+* **visit_60m_gluc** - Glucose level 60 minutes after eating.
+* **visit_abdominal_pain** - Is patient currently suffering from abdominal pain?
+* **visit_abx** - In past two weeks, has patient received antibiotics?
+* **visit_activity_30d** - Activity level over the last 30 days?
+* **visit_activity_3m** - Activity level over the last 3 months?
+* **visit_activity_change_30d** - If activity level has changed over the last 30 days, please specify what is different?
+* **visit_activity_change_3m** - If activity level has changed over the last 3 months, please specify what is different?
+* **visit_acute_dis** - Has patient suffered from an acute disease? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/
+07/2012; I received a heart surgery on 02/12/2012).
+* **visit_age** - Patient age at time of visit
+* **visit_alcohol** - Do you drink alcohol?
+* **visit_anger** - In the past month, how often has patient been angered because of things that were outside of their control?
+* **visit_arthralgia** - In the past 24 hours, has patient experienced arthralgia (joint pain)?
+* **visit_beans** - Do you eat beans or pulses?
+* **visit_biscuit** - Do you eat biscuits (including chocolate biscuits)?
+* **visit_bmi** - Subject BMI at time of visit, calculated as kg/m2.
+* **visit_bowel_day** - Patient's day time bowel frequency.
+* **visit_bowel_night** - Patient's night time bowel frequency.
+* **visit_bread** - What kind of bread do you usually eat?
+* **visit_bread_spread** - What do you usually spread on bread?
+* **visit_breadrolls** - Do you eat slices of bread/rolls?
+* **visit_breakfast_amt** - Please enter the following information for BREAKFAST you ate: Time of day, Food, Amount (whatever unit easier to you)
+.
+* **visit_breakfast_food** - Please enter the following information for BREAKFAST you ate: Time of day, Food, Amount (whatever unit easier to you
+).
+* **visit_breakfast_tod** - Please enter the following information for BREAKFAST you ate: Time of day, Food, Amount (whatever unit easier to you)
+.
+* **visit_cancer** - Has patient been diagnosed with cancer? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012
+; I received a heart surgery on 02/12/2012).
+* **visit_cancer_mtc** - Has patient been diagnosed with Medullary Thyroid Cancer, or Multiple Endocrine Neoplasia Type 2 (Men2)?
+* **visit_cereal** - Do you eat breakfast cereal?
+* **visit_cereal_type** - Which type of breakfast cereal do you normally eat?
+* **visit_cheese** - Do you eat cheese?
+* **visit_chemo** - In past two weeks, has patient undergone chemotherapy?
+* **visit_chest_pain** - Is patient currently suffering from chest pain?
+* **visit_chips_crisps** - Do you eat chips, crisps, savory snacks?
+* **visit_chronic_dis** - Has patient suffered from a chronic disease? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 
+01/07/2012; I received a heart surgery on 02/12/2012).
+* **visit_claudication** - Is patient currently suffering from claudication (cramping pain in leg)?
+* **visit_colonoscopy** - In past two weeks, has patient undergone a colonoscopy or other procedure?
+* **visit_confident** - In the past month, how often has patient felt confident about ability to handle personal problems?
+* **visit_control** - In the past month, how often has patient felt  unable to control the important things in their life?
+* **visit_coping** - In the past month, how often has patient found that they could not cope with all the things that they had to do?
+* **visit_current** - Is the patient currently undergoing hormone replacement therapy?
+* **visit_dairy** - Do you eat dairy?
+* **visit_date** - Date when the visit occurred
+* **visit_diag_other** - Has patient been diagnosed with some other disorder? If YES, provide details (e.g. I had a cold on 01/02/2012 and recove
+red on 01/07/2012; I received a heart surgery on 02/12/2012).
+* **visit_diarrhea** - In past two weeks, has patient experienced diarrhea?
+* **visit_diet_drinks** - Do you drink diet soft drinks, tea or coffee with sugar?
+* **visit_difficulties** - In the past month, how often has patient felt difficulties were piling up so high that they could not overcome them?
+* **visit_dinner_amt** - Please enter the following information for DINNER you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_dinner_food** - Please enter the following information for DINNER you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_dinner_tod** - Please enter the following information for DINNER you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_duration** - Total duration of hormone replacement therapy
+* **visit_dyspnea** - Is patient currently suffering from dyspnea (difficult or labored breathing)?
+* **visit_eggs** - Do you eat eggs?
+* **visit_ery_nodosum** - In the past 24 hours, has patient experienced erythema nodosum (a specific type of skin inflammation)?
+* **visit_fast_gluc** - Fasting glucose level.
+* **visit_fever** - Has patient suffered from fever? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I rece
+ived a heart surgery on 02/12/2012).
+* **visit_fish** - Do you eat fish, fish products?
+* **visit_fish_count** - How many times do you eat oil rich fish?
+* **visit_fish_oil** - Do you eat oil rich fish?
+* **visit_fish_white** - Do you eat white fish?
+* **visit_fruit** - Do you eat fruit?
+* **visit_fruit_count** - How many times do you eat fruits and vegetables or pure fruit juice?
+* **visit_going_your_way** - In the past month, how often has patient felt that things were going their way?
+* **visit_grains** - Do you eat whole grains?
+* **visit_hbi** - Was Harvey-Bradshaw index (HBI) completed?
+* **visit_hbi_total** - Harvey-Bradshaw index (HBI) total score.
+* **visit_height** - Subject height at time of visit, in cm.
+* **visit_hosp** - In past two weeks, has patient been hospitalized?
+* **visit_ice_cream** - Do you eat ice cream?
+* **visit_id** - The identifier used by the sequence center to uniquely identify the visit
+* **visit_immunosupp** - In past two weeks, has patient received immunosuppressants (e.g. oral corticosteroids)?
+* **visit_interval** - The amount of time since the last visit (in days)
+* **visit_irritation** - In the past month, how often has patient been able to control irritations in their life?
+* **visit_juice** - Do you drink fruit juice (not squash)?
+* **visit_leg_edema** - Is patient currently suffering from leg edema (swelling)?
+* **visit_lunch_amt** - Please enter the following information for LUNCH you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_lunch_food** - Please enter the following information for LUNCH you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_lunch_tod** - Please enter the following information for LUNCH you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_meat** - Do you eat meat?
+* **visit_meat_product** - Do you eat processed meats?
+* **visit_meat_red** - Do you eat read meat?
+* **visit_meat_white** - Do you eat white meat?
+* **visit_milk** - What kind of milk do you usually use?
+* **visit_mod_activity_days** - During the last 7 days, on how many days did patient do moderate physical activities like carrying light loads, b
+icycling at a regular pace, or doubles tennis? Do not include walking.
+* **visit_mod_activity_hours** - During the last 7 days, on how many days did patient do moderate physical activities like carrying light loads, 
+bicycling at a regular pace, or doubles tennis? Do not include walking.
+* **visit_mod_activity_minutes** - During the last 7 days, on how many days did patient do moderate physical activities like carrying light loads
+, bicycling at a regular pace, or doubles tennis? Do not include walking.
+* **visit_neurologic** - Has a neurological exam been performed?
+* **visit_new_meds** - Has patient started any new medications since last visit?
+* **visit_number** - A sequential number that is assigned as visits occur for a subject
+* **visit_on_top** - In the past month, how often has patient felt that they were on top of things?
+* **visit_oral_contrast** - In past two weeks, has patient used an oral contrast?
+* **visit_other_food_intake** - Please enter any other information that you want to include about your food consumption on the day.
+* **visit_pastry** - Do you eat cakes, scones, sweet pies and pastries?
+* **visit_poultry** - Do you eat poultry?
+* **visit_preg_plans** - Does patient plan to become pregnant?
+* **visit_pregnant** - Is patient currently pregnant?
+* **visit_prior** - Has the patient had hormone replacement therapy in the past?
+* **visit_probiotic** - Do you take probiotics?
+* **visit_psychiatric** - Has a psychiatric exam been performed?
+* **visit_pyo_gangrenosum** - In the past 24 hours, has patient experienced pyoderma gangrenosum related ulcers?
+* **visit_rash** - Is patient currently experiencing a rash?
+* **visit_salt** - At table, how do you use salt?
+* **visit_sccai** - Was patient SCCAI (simple clinical colitis activity index) performed?
+* **visit_sccai_total** - Patient SCCAI (simple clinical colitis activity index) score.
+* **visit_self_assess** - Does patient feel that they can be described as healthy at this time?
+* **visit_self_condition** - If patient answered NO to healthy self assessment question, describe the medical conditions they are under now.
+* **visit_shellfish** - Do you eat shellfish?
+* **visit_snacks_amt** - Please enter the following information for SNACKS you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_snacks_food** - Please enter the following information for SNACKS you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_snacks_tod** - Please enter the following information for SNACKS you ate: Time of day, Food, Amount (whatever unit easier to you).
+* **visit_soda** - Do you drink soft drinks/fizzy drinks?
+* **visit_starch** - Do you eat starch?
+* **visit_starch_type** - Do you eat potatoes, pasta or rice?
+* **visit_stool_blood** - Does patient currently have blood in their stool.
+* **visit_stool_soft** - Number of liquid or very soft stools in the past 24 hours
+* **visit_stopped_meds** - Has patient stoped any previous medications since last visit?
+* **visit_stress** - In the past month, how often has patient felt nervous and 'stressed'?
+* **visit_stress_def** - In the past month, what types of stress has patient encountered?
+* **visit_study_disease_comment** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_study_disease_description** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_study_disease_disease_ontology_id** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_study_disease_mesh_id** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_study_disease_name** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_study_disease_nci_id** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_study_disease_status** - Status of subject health in reference to study disease.
+* **visit_study_disease_umls_concept_id** - Ontology data associated with iHMP disease classes. Disease nodes describe phenotypic traits of a subject.
+* **visit_subtype** - The subtype of the visit
+* **visit_sugar** - Do you usually take sugar (or sugar substitute) in tea or coffee?
+* **visit_sugar_drinks** - Do you drink soft drinks, tea or coffee with sugar?
+* **visit_surgery** - Has patient undergone surgery? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).
+* **visit_sweets** - Do you eat sweets, chocolates?
+* **visit_sweets_count** - How many times do you eat sweets, chocolates, cakes, scones, sweet pies, pastries or biscuits?
+* **visit_upset** - In the past month, how often has patient been upset because of something that happened unexpectedly?
+* **visit_urgency_def** - Patient's urgency of defecation
+* **visit_uveitis** - In the past 24 hours, has patient experienced uveitis (a form of eye inflammation)?
+* **visit_veg** - Do you eat vegetables?
+* **visit_veg_green** - Do you eat cooked green vegetables (fresh or frozen)?
+* **visit_veg_raw** - Do you eat raw vegetables or salad (including tomatoes)?
+* **visit_veg_root** - Do you eat cooked root vegetables (fresh or frozen)?
+* **visit_vig_activity_days** - During the last 7 days, on how many days did patient do vigorous physical activities like heavy lifting, digging, aerobics, or fast bicycling? Think about only those physical activities that done for at least 10 minutes at a time.
+* **visit_vig_activity_hours** - During the last 7 days, on how many days did patient do vigorous physical activities like heavy lifting, digging, aerobics, or fast bicycling? Think about only those physical activities that done for at least 10 minutes at a time.
+* **visit_vig_activity_minutes** - During the last 7 days, on how many days did patient do vigorous physical activities like heavy lifting, digging, aerobics, or fast bicycling? Think about only those physical activities that done for at least 10 minutes at a time.
+* **visit_walking_days** - During the last 7 days, on how many days did patient walk for at least 10 minutes at a time? This includes walking at work and at home, walking to travel from place to place, and any other walking that done solely for recreation, sport, exercise or leisure.
+* **visit_walking_hours** - During the last 7 days, on how many days did patient walk for at least 10 minutes at a time? This includes walking at work and at home, walking to travel from place to place, and any other walking that done solely for recreation, sport, exercise or leisure.
+* **visit_walking_minutes** - During the last 7 days, on how many days did patient walk for at least 10 minutes at a time? This includes walking at work and at home, walking to travel from place to place, and any other walking that done solely for recreation, sport, exercise or leisure.
+* **visit_water** - Do you drink water?
+* **visit_weight** - Subject weight at time of visit, in kg.
+* **visit_weight_change** - Has patient suffered from weight gain or loss? If YES, provide details (e.g. I had a cold on 01/02/2012 and recovered on 01/07/2012; I received a heart surgery on 02/12/2012).
+* **visit_weight_diff** - Weight gain/loss since last visit.
+* **visit_work_missed** - If patient has been physically ill, how many days of work were missed?
+* **visit_yogurt** - Do you eat yogurt or other foods containing active bacterial cultures?
 
 #***REMOVED***Cart Metadata
 

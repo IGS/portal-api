@@ -1427,13 +1427,6 @@ gql_map['sample_material'] = {
     "full": "sample.material", 
     "type": "string"
     }
-gql_map['sample_project_name'] = {
-    "description": "Name of the project within which the sequencing was organized", 
-    "doc_type": "cases", 
-    "field": "sample.project_name", 
-    "full": "sample.project_name", 
-    "type": "string"
-    }
 gql_map['sample_rel_to_oxygen'] = {
     "description": "Whether the organism is an aerobe or anaerobe", 
     "doc_type": "cases", 
