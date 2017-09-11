@@ -5,7 +5,7 @@ from autocomplete_map import gql_map
 from py2neo import Graph # Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
 from models import Project,Pagination,CaseHits,IndivFiles,IndivSample,Analysis,AssociatedEntities
-from models import FileHits,Bucket,BucketCounter,Aggregations,SBucket,SBucketCounter,FileSize,PieCharts
+from models import FileHits,Bucket,BucketCounter,SBucket,SBucketCounter,FileSize,PieCharts
 
 # The match var is the base query to prepend all queries. The idea is to traverse
 # the graph entirely and use filters to return a subset of the total traversal. 
