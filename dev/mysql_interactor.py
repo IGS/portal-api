@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
-from Crypto.Cipher import AES
-from Crypto import Random
 import mysql.connector, hashlib
-import base64
 from conf import mysql_h_2,mysql_db_2,mysql_un_2,mysql_pw_2,secret_key,iv
 
 config = {
@@ -17,15 +14,6 @@ config = {
 ***REMOVED***FUNCTIONS FOR MANAGING USER SESSIONS AND QUERY HISTORY #
 ##########################################################
 
-def encode(message):
-    obj = AES.new(secret_key, AES.MODE_CFB, iv)
-    return base64.urlsafe_b64encode(obj.encrypt(message))
-
-def decode(cipher):
-    obj = AES.new(secret_key, AES.MODE_CFB, iv)
-    return obj.decrypt(base64.urlsafe_b64decode(cipher))
-
-
 ***REMOVED***Establish a "session" node in the Neo4j DB to consider the user logged in. 
 ***REMOVED***Note that only TWO sessions will be allowed per user at a given time. 
 def establish_session(username):
@@ -33,28 +21,35 @@ def establish_session(username):
     cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
     cursor = cnx.cursor(buffered=True)
 
-    add_user = "INSERT IGNORE INTO user (username) VALUES (%s)"
-    cursor.execute(add_user,(username,))
+    session_id = hashlib.sha256(username+str(time.time())).hexdigest()
+    unique_session = True ***REMOVED***loop until we get a unique session_id regardless of user
+    while unique_session:
+        try:
+            session_id = hashlib.sha256(username+str(time.time())).hexdigest()
+            add_session = "INSERT INTO sessions (session_key,username) VALUES (%s,%s)"
+            cursor.execute(add_session,(session_id,username,))
+            unique_session = False
+        except mysql.connector.IntegrityError as err:
+            print("Session key already existed, generating a new one. Error: {}".format(err))
 
-    add_session = "INSERT INTO sessions (username) VALUES (%s)"
-    cursor.execute(add_session,(username,))
-
-    cursor.execute("SELECT LAST_INSERT_ID()")
-    cnx.commit()
-
-    session_id = encode(str(cursor.fetchone()[0]))
+    ***REMOVED***Whether or not the user has logged in before, try add them
+    add_user = "INSERT INTO user (username) VALUES (%s)"
+    try:
+        cursor.execute(add_user,(username,))
+    except mysql.connector.IntegrityError:
+        print("User already in the database.")
 
     ***REMOVED***delete all but the two most recent sessions
-
     delete_old_sessions = ("DELETE FROM sessions WHERE session_id IN "
         "(SELECT * FROM "
             "(SELECT session_id from sessions WHERE username=%s "
             "ORDER BY timestamp DESC LIMIT 100000 OFFSET 2) "
         "AS id)")
+    try:
+        cursor.execute(delete_old_sessions,(username,))
+    except mysql.connector.Error as err:
+        print("Error while deleting past history: {}".format(err))
 
-    cursor.execute(delete_old_sessions,(username,))
-    
-    cnx.commit()
     cursor.close() ***REMOVED***close connection/cursor
     cnx.close()
 
@@ -68,9 +63,11 @@ def disconnect_session(session_id):
     cursor = cnx.cursor()
 
     delete_session = "DELETE FROM sessions WHERE session_id=%s"
-    cursor.execute(delete_session,(decode(session_id),)
+    try:
+        cursor.execute(delete_session,(session_id,))
+    except mysql.connector.Error as err:
+        print("Error while logging out: {}".format(err))
 
-    cnx.commit()
     cursor.close() ***REMOVED***close connection/cursor
     cnx.close()
 
