@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
-import mysql.connector, hashlib
-from conf import mysql_h_2,mysql_db_2,mysql_un_2,mysql_pw_2,secret_key,iv
+import mysql.connector, hashlib, time
+from datetime import datetime,timedelta
+from conf import mysql_h_2,mysql_db_2,mysql_un_2,mysql_pw_2,secret_key
 
 config = {
     'user': mysql_un_2,
@@ -18,39 +19,48 @@ config = {
 ***REMOVED***Note that only TWO sessions will be allowed per user at a given time. 
 def establish_session(username):
 
-    cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
-    cursor = cnx.cursor(buffered=True)
-
-    session_id = hashlib.sha256(username+str(time.time())).hexdigest()
-    unique_session = True ***REMOVED***loop until we get a unique session_id regardless of user
-    while unique_session:
-        try:
-            session_id = hashlib.sha256(username+str(time.time())).hexdigest()
-            add_session = "INSERT INTO sessions (session_key,username) VALUES (%s,%s)"
-            cursor.execute(add_session,(session_id,username,))
-            unique_session = False
-        except mysql.connector.IntegrityError as err:
-            print("Session key already existed, generating a new one. Error: {}".format(err))
-
-    ***REMOVED***Whether or not the user has logged in before, try add them
+    ***REMOVED***MySQL statements
+    get_user_id = "SELECT id FROM user WHERE username=%s"
     add_user = "INSERT INTO user (username) VALUES (%s)"
-    try:
-        cursor.execute(add_user,(username,))
-    except mysql.connector.IntegrityError:
-        print("User already in the database.")
-
-    ***REMOVED***delete all but the two most recent sessions
+    get_session_id = "SELECT session_id FROM sessions WHERE session_key=%s"
+    add_session = "INSERT INTO sessions (user_id,session_key) VALUES (%s,%s)"
     delete_old_sessions = ("DELETE FROM sessions WHERE session_id IN "
         "(SELECT * FROM "
             "(SELECT session_id from sessions WHERE username=%s "
             "ORDER BY timestamp DESC LIMIT 100000 OFFSET 2) "
-        "AS id)")
+        "AS id)") ***REMOVED***delete all but the two most recent sessions
+
+    cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
+    cnx.autocommit = True
+    cursor = cnx.cursor(buffered=True)
+
+    cursor.execute(get_user_id,(username,))
+    user_id = cursor.fetchone()
+
+    if not user_id:
+        cursor.execute(insert_user,(username,))
+        cursor.execute(get_user_id,(username,))
+        user_id = cursor.fetchone()[0]
+    else:
+        user_id = user_id[0]
+
+    session_key = hashlib.sha256(username+str(time.time())).hexdigest()
+    unique_session = True ***REMOVED***loop until we get a unique session_id regardless of user
+    while unique_session:
+        cursor.execute(get_session_id,(session_key,))
+        session_id = cursor.fetchone()
+        if not session_id:
+            cursor.execute(add_session,(user_id,session_key))
+            unique_session = False
+        else:
+            session_key = hashlib.sha256(username+str(time.time())).hexdigest()    
+
     try:
         cursor.execute(delete_old_sessions,(username,))
     except mysql.connector.Error as err:
         print("Error while deleting past history: {}".format(err))
 
-    cursor.close() ***REMOVED***close connection/cursor
+    cursor.close() ***REMOVED***close cursor/connection
     cnx.close()
 
     return session_id
@@ -72,3 +82,67 @@ def disconnect_session(session_id):
     cnx.close()
 
     return
+
+***REMOVED***Given a session ID and see if it checks out with what was set in the cookies
+def get_user_info(session_id):
+
+    cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
+    cursor = cnx.cursor()
+
+    user_info = {
+        'username':"",
+        'queries':[],
+        'hrefs':[],
+        'scounts':[],
+        'fcounts':[],
+        'comments':[],
+        'last_calc':[]
+    }
+
+    pull_user_info = "SELECT TIMESTAMP FROM sessions"
+    try:
+
+        cursor.execute(delete_session,(session_id,))
+        for (username,query,href,scount,fcount,comment,timestamp) in cursor:
+
+                ***REMOVED***check if any history is present
+                user_info['username'] = username
+                user_info['queries'].append(query)
+                user_info['hrefs'].append(href)
+                user_info['scounts'].append(scount)
+                user_info['fcounts'].append(fcount)
+                user_info['comments'].append(comment)
+                day_diff = (datetime.today() - timedelta(days=datetime.strptime(val, '%Y-%m-%d %H:%M:%S').day)).day
+                user_info['last_calc'].append("{} days ago".format(day_diff))
+
+    except mysql.connector.Error as err:
+        print("Error while pulling user info: {}".format(err))
+
+    cursor.close() ***REMOVED***close connection/cursor
+    cnx.close()
+
+    return user_info
+
+def pull_data(table):
+
+    cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
+    cursor = cnx.cursor()
+    pull_user_info = "SELECT * FROM "
+    pull_user_info += table
+    cursor.execute(pull_user_info)
+    row = cursor.fetchone()
+    while row is not None:
+        print(row)
+        row = cursor.fetchone()
+    cursor.close() ***REMOVED***close connection/cursor
+    cnx.close()
+
+def reset_db():
+
+    cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
+    cursor = cnx.cursor()
+    tables = ['sessions','user','query']
+    for table in tables:
+        cursor.execute("TRUNCATE TABLE {}".format(table))
+    cursor.close() ***REMOVED***close connection/cursor
+    cnx.close()
