@@ -4,16 +4,42 @@ import mysql.connector, hashlib, time
 from datetime import datetime,timedelta
 from conf import mysql_h_2,mysql_db_2,mysql_un_2,mysql_pw_2,secret_key
 
-config = {
-    'user': mysql_un_2,
-    'password': mysql_pw_2,
-    'host': mysql_h_2,
-    'database': mysql_db_2
-}
-
 ##########################################################
 # FUNCTIONS FOR MANAGING USER SESSIONS AND QUERY HISTORY #
 ##########################################################
+
+def connect_mysql():
+
+    config = {
+        'user': mysql_un_2,
+        'password': mysql_pw_2,
+        'host': mysql_h_2,
+        'database': mysql_db_2
+    }
+
+    try:
+        cnx = mysql.connector.connect(**config) # open connection/cursor
+        cnx.autocommit = True
+        cursor = cnx.cursor(buffered=True)
+        return cnx,cursor
+    except mysql.connector.Error as err:
+        print("Error while connecting to MySQL: {}".format(err))
+        return None,None
+
+def disconnect_mysql(connection,cursor):
+
+    try:
+        cursor.close()
+        connection.close()
+    except mysql.connector.Error as err:
+        print("Error while disconnecting from MySQL: {}".format(err))
+
+def execute_mysql(cursor,statement,values,error):
+
+    try:
+        cursor.execute(statement,values)
+    except mysql.connector.Error as err:
+        print("Error during {}: {}".format(error,err))
 
 # Establish a "session" node in the Neo4j DB to consider the user logged in. 
 # Note that only TWO sessions will be allowed per user at a given time. 
@@ -26,62 +52,54 @@ def establish_session(username):
     add_session = "INSERT INTO sessions (user_id,session_key) VALUES (%s,%s)"
     delete_old_sessions = ("DELETE FROM sessions WHERE session_id IN "
         "(SELECT * FROM "
-            "(SELECT session_id from sessions WHERE username=%s "
+            "(SELECT session_id from sessions WHERE user_id=%s "
             "ORDER BY timestamp DESC LIMIT 100000 OFFSET 2) "
         "AS id)") # delete all but the two most recent sessions
 
-    cnx = mysql.connector.connect(**config) # open connection/cursor
-    cnx.autocommit = True
-    cursor = cnx.cursor(buffered=True)
+    cnx,cursor = connect_mysql()
+    if cursor:
 
-    cursor.execute(get_user_id,(username,))
-    user_id = cursor.fetchone()
+        execute_mysql(cursor,get_user_id,(username,),"get_user_id")
+        user_id = cursor.fetchone()
 
-    if not user_id:
-        cursor.execute(insert_user,(username,))
-        cursor.execute(get_user_id,(username,))
-        user_id = cursor.fetchone()[0]
-    else:
-        user_id = user_id[0]
-
-    session_key = hashlib.sha256(username+str(time.time())).hexdigest()
-    unique_session = True # loop until we get a unique session_id regardless of user
-    while unique_session:
-        cursor.execute(get_session_id,(session_key,))
-        session_id = cursor.fetchone()
-        if not session_id:
-            cursor.execute(add_session,(user_id,session_key))
-            unique_session = False
+        if not user_id:
+            execute_mysql(cursor,add_user,(username,),"add_user")
+            execute_mysql(cursor,get_user_id,(username,),"get_user_id")
+            user_id = cursor.fetchone()[0]
         else:
-            session_key = hashlib.sha256(username+str(time.time())).hexdigest()    
+            user_id = user_id[0]
 
-    try:
-        cursor.execute(delete_old_sessions,(username,))
-    except mysql.connector.Error as err:
-        print("Error while deleting past history: {}".format(err))
+        session_key = hashlib.sha256(username+str(time.time())).hexdigest()
+        unique_session = True # loop until we get a unique session_id regardless of user
+        while unique_session:
+            execute_mysql(cursor,get_session_id,(session_key,),"get_session_id")
+            session_id = cursor.fetchone()
+            if not session_id:
+                execute_mysql(cursor,add_session,(user_id,session_key),"add_session")
+                unique_session = False
+            else:
+                session_key = hashlib.sha256(username+str(time.time())).hexdigest()    
 
-    cursor.close() # close cursor/connection
-    cnx.close()
+        execute_mysql(cursor,delete_old_sessions,(user_id,),"delete_old_sessions")
 
-    return session_id
+        disconnect_mysql(cnx,cursor)
+
+        return session_id
 
 # If the user logs out, then disconnect deliberately here. The auto-loader
 # should handle timeout disconnects.
-def disconnect_session(session_id):
+def disconnect_session(session_key):
 
-    cnx = mysql.connector.connect(**config) # open connection/cursor
-    cursor = cnx.cursor()
+    cnx,cursor = connect_mysql()
+    if cursor:
 
-    delete_session = "DELETE FROM sessions WHERE session_id=%s"
-    try:
-        cursor.execute(delete_session,(session_id,))
-    except mysql.connector.Error as err:
-        print("Error while logging out: {}".format(err))
+        delete_session = "DELETE FROM sessions WHERE session_key=%s"
 
-    cursor.close() # close connection/cursor
-    cnx.close()
+        execute_mysql(cursor,delete_session,(session_key,),"delete_session")
 
-    return
+        disconnect_mysql(cnx,cursor)
+
+        return
 
 # Given a session ID and see if it checks out with what was set in the cookies
 def get_user_info(session_id):
