@@ -34,37 +34,43 @@ def disconnect_mysql(connection,cursor):
     except mysql.connector.Error as err:
         print("Error while disconnecting from MySQL: {}".format(err))
 
-def execute_mysql(cursor,statement,values,error):
+def execute_mysql(cursor,statement,values):
+
+    all_statements = {
+        'get_user_id': "SELECT id FROM user WHERE username=%s",
+        'get_user_id_from_session_key': "SELECT user_id FROM sessions WHERE session_key=%s",
+        'add_user': "INSERT INTO user (username) VALUES (%s)",
+        'get_session_id': "SELECT session_id FROM sessions WHERE session_key=%s",
+        'add_session': "INSERT INTO sessions (user_id,session_key) VALUES (%s,%s)",
+        'delete_session': "DELETE FROM sessions WHERE session_key=%s",
+        'delete_old_sessions': (
+            "DELETE FROM sessions WHERE session_id IN "
+            "(SELECT * FROM "
+                "(SELECT session_id from sessions WHERE user_id=%s "
+                "ORDER BY timestamp DESC LIMIT 100000 OFFSET 2) "
+            "AS id)"         
+        ),
+        'add_saved_query_sample_data': (
+            "INSERT INTO query (user_id,query,query_url,sample_count,comment,file_count) "
+            "VALUES (%s,%s,%s,%s,%s,%s)"
+        )
+    }
 
     try:
-        cursor.execute(statement,values)
+        cursor.execute(all_statements[statement],values)
     except mysql.connector.Error as err:
-        print("Error during {}: {}".format(error,err))
+        print("Error during {}: {}".format(statement,err))
 
-# Establish a "session" node in the Neo4j DB to consider the user logged in. 
-# Note that only TWO sessions will be allowed per user at a given time. 
 def establish_session(username):
-
-    # MySQL statements
-    get_user_id = "SELECT id FROM user WHERE username=%s"
-    add_user = "INSERT INTO user (username) VALUES (%s)"
-    get_session_id = "SELECT session_id FROM sessions WHERE session_key=%s"
-    add_session = "INSERT INTO sessions (user_id,session_key) VALUES (%s,%s)"
-    delete_old_sessions = ("DELETE FROM sessions WHERE session_id IN "
-        "(SELECT * FROM "
-            "(SELECT session_id from sessions WHERE user_id=%s "
-            "ORDER BY timestamp DESC LIMIT 100000 OFFSET 2) "
-        "AS id)") # delete all but the two most recent sessions
 
     cnx,cursor = connect_mysql()
     if cursor:
-
-        execute_mysql(cursor,get_user_id,(username,),"get_user_id")
+        execute_mysql(cursor,'get_user_id',(username,))
         user_id = cursor.fetchone()
 
         if not user_id:
-            execute_mysql(cursor,add_user,(username,),"add_user")
-            execute_mysql(cursor,get_user_id,(username,),"get_user_id")
+            execute_mysql(cursor,'add_user',(username,))
+            execute_mysql(cursor,'get_user_id',(username,))
             user_id = cursor.fetchone()[0]
         else:
             user_id = user_id[0]
@@ -72,33 +78,52 @@ def establish_session(username):
         session_key = hashlib.sha256(username+str(time.time())).hexdigest()
         unique_session = True # loop until we get a unique session_id regardless of user
         while unique_session:
-            execute_mysql(cursor,get_session_id,(session_key,),"get_session_id")
+            execute_mysql(cursor,'get_session_id',(session_key,))
             session_id = cursor.fetchone()
             if not session_id:
-                execute_mysql(cursor,add_session,(user_id,session_key),"add_session")
+                execute_mysql(cursor,'add_session',(user_id,session_key))
                 unique_session = False
             else:
                 session_key = hashlib.sha256(username+str(time.time())).hexdigest()    
 
-        execute_mysql(cursor,delete_old_sessions,(user_id,),"delete_old_sessions")
+        execute_mysql(cursor,'delete_old_sessions',(user_id,))
 
         disconnect_mysql(cnx,cursor)
-
         return session_id
 
-# If the user logs out, then disconnect deliberately here. The auto-loader
-# should handle timeout disconnects.
 def disconnect_session(session_key):
 
     cnx,cursor = connect_mysql()
     if cursor:
-
-        delete_session = "DELETE FROM sessions WHERE session_key=%s"
-
-        execute_mysql(cursor,delete_session,(session_key,),"delete_session")
+        execute_mysql(cursor,'delete_session',(session_key,))
 
         disconnect_mysql(cnx,cursor)
+        return
 
+def save_query_sample_data(session_key,reference_url,query,count,comment,file_count):
+
+    cnx,cursor = connect_mysql()
+    if cursor:
+
+        execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
+        user_id = cursor.fetchone()   
+
+        if user_id: # rare case where a session has expired
+            user_id = user_id[0]
+        else:
+            return
+
+        execute_mysql(cursor,
+            'add_saved_query_sample_data',
+                (user_id,
+                query,
+                reference_url.replace('save=yes',''),
+                count,
+                comment,
+                file_count)
+        )
+
+        disconnect_mysql(cnx,cursor)
         return
 
 # Given a session ID and see if it checks out with what was set in the cookies
