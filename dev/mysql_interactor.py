@@ -39,6 +39,11 @@ def execute_mysql(cursor,statement,values):
     all_statements = {
         'get_user_id': "SELECT id FROM user WHERE username=%s",
         'get_user_id_from_session_key': "SELECT user_id FROM sessions WHERE session_key=%s",
+        'get_username_from_session_key': (
+            "SELECT username FROM user,sessions "
+            "WHERE user.id=sessions.user_id "
+            "AND sessions.session_key=%s"
+        ),
         'add_user': "INSERT INTO user (username) VALUES (%s)",
         'get_session_id': "SELECT session_id FROM sessions WHERE session_key=%s",
         'add_session': "INSERT INTO sessions (user_id,session_key) VALUES (%s,%s)",
@@ -57,6 +62,11 @@ def execute_mysql(cursor,statement,values):
         'add_saved_query_file_data': (
             "UPDATE query SET file_count=%s "
             "WHERE user_id=%s AND query_url=%s"
+        ),
+        'get_saved_queries': (
+            "SELECT query, query_url, sample_count, "
+            "file_count, comment, timestamp "
+            "FROM query WHERE user_id=%s"
         )
     }
 
@@ -163,45 +173,54 @@ def save_query_file_data(session_key,reference_url,file_count):
         disconnect_mysql(cnx,cursor)
         return
 
-***REMOVED***Given a session ID and see if it checks out with what was set in the cookies
-def get_user_info(session_id):
+def get_user_info(session_key):
 
-    cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
-    cursor = cnx.cursor()
+    cnx,cursor = connect_mysql()
+    if cursor:
 
-    user_info = {
-        'username':"",
-        'queries':[],
-        'hrefs':[],
-        'scounts':[],
-        'fcounts':[],
-        'comments':[],
-        'last_calc':[]
-    }
+        execute_mysql(cursor,'get_username_from_session_key',(session_key,))
+        username = cursor.fetchone()   
 
-    pull_user_info = "SELECT TIMESTAMP FROM sessions"
-    try:
+        if username: ***REMOVED***rare case where a session has expired
+            username = username[0]
+        else:
+            return
 
-        cursor.execute(delete_session,(session_id,))
-        for (username,query,href,scount,fcount,comment,timestamp) in cursor:
+        user_info = {
+            'username':str(username),
+            'queries':[],
+            'hrefs':[],
+            'scounts':[],
+            'fcounts':[],
+            'comments':[],
+            'last_calc':[]
+        }
+
+        execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
+        user_id = cursor.fetchone()   
+
+        if user_id: ***REMOVED***rare case where a session has expired
+            user_id = user_id[0]
+        else:
+            return
+
+        execute_mysql(cursor,'get_saved_queries',(user_id,))
+
+        for (query,href,scount,fcount,comment,timestamp) in cursor:
 
                 ***REMOVED***check if any history is present
-                user_info['username'] = username
-                user_info['queries'].append(query)
-                user_info['hrefs'].append(href)
+                user_info['queries'].append(str(query))
+                user_info['hrefs'].append(str(href))
                 user_info['scounts'].append(scount)
                 user_info['fcounts'].append(fcount)
-                user_info['comments'].append(comment)
-                day_diff = (datetime.today() - timedelta(days=datetime.strptime(val, '%Y-%m-%d %H:%M:%S').day)).day
+                user_info['comments'].append(str(comment))
+                day_diff = (datetime.today() - timedelta(days=timestamp.day)).day
                 user_info['last_calc'].append("{} days ago".format(day_diff))
 
-    except mysql.connector.Error as err:
-        print("Error while pulling user info: {}".format(err))
+        disconnect_mysql(cnx,cursor)
 
-    cursor.close() ***REMOVED***close connection/cursor
-    cnx.close()
-
-    return user_info
+        if user_info['username']:
+            return user_info
 
 def pull_data(table):
 
@@ -226,5 +245,3 @@ def reset_db():
         cursor.execute("TRUNCATE TABLE {}".format(table))
     cursor.close() ***REMOVED***close connection/cursor
     cnx.close()
-
-save_query_file_data('93231ac17a71785642ff844b6853434e6a783e2395d7ac1cbba20f0832c333c4','ref_url',5678)
