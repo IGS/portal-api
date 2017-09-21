@@ -53,6 +53,10 @@ def execute_mysql(cursor,statement,values):
         'add_saved_query_sample_data': (
             "INSERT INTO query (user_id,query,query_url,sample_count,comment,file_count) "
             "VALUES (%s,%s,%s,%s,%s,%s)"
+        ),
+        'add_saved_query_file_data': (
+            "UPDATE query SET file_count=%s "
+            "WHERE user_id=%s AND query_url=%s"
         )
     }
 
@@ -60,6 +64,7 @@ def execute_mysql(cursor,statement,values):
         cursor.execute(all_statements[statement],values)
     except mysql.connector.Error as err:
         print("Error during {}: {}".format(statement,err))
+        return 'error'
 
 def establish_session(username):
 
@@ -100,7 +105,7 @@ def disconnect_session(session_key):
         disconnect_mysql(cnx,cursor)
         return
 
-def save_query_sample_data(session_key,reference_url,query,count,comment,file_count):
+def save_query_sample_data(session_key,reference_url,query,sample_count,comment,file_count):
 
     cnx,cursor = connect_mysql()
     if cursor:
@@ -118,10 +123,42 @@ def save_query_sample_data(session_key,reference_url,query,count,comment,file_co
                 (user_id,
                 query,
                 reference_url.replace('save=yes',''),
-                count,
+                sample_count,
                 comment,
-                file_count)
+                file_count
+                )
         )
+
+        disconnect_mysql(cnx,cursor)
+        return
+
+def save_query_file_data(session_key,reference_url,file_count):
+
+    cnx,cursor = connect_mysql()
+    if cursor:
+
+        execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
+        user_id = cursor.fetchone()   
+
+        if user_id: # rare case where a session has expired
+            user_id = user_id[0]
+        else:
+            return
+
+        for attempt in range(10):
+
+            time.sleep(1)
+
+            res = execute_mysql(cursor,
+                'add_saved_query_file_data',
+                    (file_count,
+                    user_id,
+                    reference_url.replace('save=yes','')
+                    )
+            )
+
+            if res != 'error':
+                break
 
         disconnect_mysql(cnx,cursor)
         return
@@ -189,3 +226,5 @@ def reset_db():
         cursor.execute("TRUNCATE TABLE {}".format(table))
     cursor.close() # close connection/cursor
     cnx.close()
+
+save_query_file_data('93231ac17a71785642ff844b6853434e6a783e2395d7ac1cbba20f0832c333c4','ref_url',5678)
