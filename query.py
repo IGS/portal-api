@@ -270,13 +270,13 @@ def extract_url(urls_node):
     if 'http' in urls_node:
         fn = urls_node['http']
     elif 'fasp' in urls_node:
-        fn = urls_node['fasp'].replace("fasp://aspera","http://downloads")
+        fn = urls_node['fasp']
     elif 'ftp' in urls_node:
         fn = urls_node['ftp']
     elif 's3' in urls_node:
         fn = urls_node['s3']
     else:
-        fn = "No file attached to ID ({0})".format(urls_node['id'])
+        fn = "Private data"
 
     return fn
 
@@ -296,7 +296,7 @@ def extract_manifest_urls(urls_node):
         urls.append(urls_node['s3'])
 
     if len(urls) == 0: ***REMOVED***if here, there is no downloadable file
-        urls.append('private: Data not accessible via the HMP DACC.')
+        urls.append('Private: Data not accessible via the HMP DACC.')
 
     return ",".join(urls)
 
@@ -390,14 +390,17 @@ def get_files(sample_id):
     res = process_cquery_http(cquery)
 
     for x in range(0,len(res)): ***REMOVED***iterate over each unique path
-        fs = 0
+        url = extract_url(res[x]['F'])
         dt = res[x]['F']['subtype']
         df = res[x]['F']['format']
         ac = "open" ***REMOVED***need to change this once a new private/public property is added to OSDF
+        if url.startswith("Private"):
+            ac = "private"
+        fs = 0
         if 'size' in res[x]['F']:
             fs = res[x]['F']['size']
         fi = res[x]['F']['id']
-        fn = extract_url(res[x]['F'])
+        fn = url
         fl.append(IndivFiles(dataType=dt,fileName=fn,dataFormat=df,access=ac,fileId=fi,fileSize=fs))
 
     return fl
