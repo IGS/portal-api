@@ -151,18 +151,28 @@ def get_cases():
         r = response.read()
         data = ('{0}, "warnings": {{}}}}'.format(r[:-1]))
 
-        save_query = request.args.get('save')
+        save_query = request.args.get('save') # saving query
+        comment = request.args.get('comment') # adding custom comment to query
         if save_query and save_query == 'yes':
             if 'HTTP_X_CSRFTOKEN' in request.environ:
+
                 # Not sure what's up with the JSON lib and parsing this, just 
                 # hacking at it for now. Should render an exact copy of what
                 # dislays in the advanced query input box. 
                 query = re.search(r'query":"(.*)"}',unmodified_filters.replace('\\','')).group(1)
+
                 mysql_fxns.save_query_sample_data(request.environ['HTTP_X_CSRFTOKEN'],
                     request.environ['HTTP_REFERER'],
                     query,
                     re.search(r'"total":(\d+)',data).group(1)
                 )
+
+        elif comment:
+            query = re.search(r'query":"(.*)"}',unmodified_filters.replace('\\','')).group(1)
+            mysql_fxns.save_query_comment_data(request.environ['HTTP_X_CSRFTOKEN'],
+                query,
+                comment
+            )
 
         return make_json_response(data)
 
