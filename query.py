@@ -86,41 +86,6 @@ cypher_conn = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user
 ***REMOVED***This section will have all the logic for populating the actual data in the schema (data from Neo4j)
 #graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
 
-***REMOVED***Given a session ID, reference URL, query, a count for how many samples, load
-***REMOVED***into Neo4j that this user has made this query before and the number of 
-***REMOVED***results returned from it. 
-def save_query_sample_data(session_id,reference_url,query,count):
-
-    ***REMOVED***If a sample, set the reference URL and sample count
-    cypher = """
-        MATCH (s:session)<-[:has_session]-(u:user) 
-        WHERE s.id = {si} 
-        WITH u
-        MERGE (q:query { url:{url} })
-        SET q.query_str={qs}, q.s_count={sc}
-        WITH q,u
-        MERGE (u)-[:saved_query]->(q)
-        """
-    ***REMOVED***Note the trimming of the save parameter from the reference URL, this is 
-    ***REMOVED***so that when a user clicks a query to go back to they don't re-invoke
-    ***REMOVED***all this save functionality as it's unnecessary at that point.
-    cypher_conn.run(cypher, parameters={'si':session_id,'url':reference_url.replace('save=yes',''),'qs':query,'sc':count})
-
-    return
-
-***REMOVED***Simply append file count data to this particular query node. All other 
-***REMOVED***information will be handled by the sample data function 
-***REMOVED***save_query_sample_data().
-def save_query_file_data(reference_url,count):
-
-    cypher = """
-        MERGE (q:query { url:{url} })
-        SET q.f_count={fc}
-        """
-    cypher_conn.run(cypher, parameters={'url':reference_url.replace('save=yes',''),'fc':count})
-
-    return
-
 ####################################
 ***REMOVED***FUNCTIONS FOR GETTING NEO4J DATA #
 ####################################
