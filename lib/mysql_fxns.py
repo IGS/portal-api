@@ -129,7 +129,7 @@ def establish_session(username):
         execute_mysql(cursor,'delete_old_sessions',(user_id,))
 
         disconnect_mysql(cnx,cursor)
-        return session_id
+        return session_key
 
 def disconnect_session(session_key):
 
