@@ -55,6 +55,10 @@ def execute_mysql(cursor,statement,values):
                 "ORDER BY timestamp DESC LIMIT 100000 OFFSET 2) "
             "AS id)"         
         ),
+        'add_saved_query_comment_data': (
+            "UPDATE query SET comment=%s "
+            "WHERE user_id=%s AND query=%s"
+        ),
         'add_saved_query_sample_data': (
             "INSERT INTO query (user_id,query,query_url,sample_count,comment,file_count) "
             "VALUES (%s,%s,%s,%s,%s,%s)"
@@ -111,6 +115,30 @@ def disconnect_session(session_key):
     cnx,cursor = connect_mysql()
     if cursor:
         execute_mysql(cursor,'delete_session',(session_key,))
+
+        disconnect_mysql(cnx,cursor)
+        return
+
+def save_query_comment_data(session_key,query,comment):
+
+    cnx,cursor = connect_mysql()
+    if cursor:
+
+        execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
+        user_id = cursor.fetchone()   
+
+        if user_id: ***REMOVED***rare case where a session has expired
+            user_id = user_id[0]
+        else:
+            return
+
+        res = execute_mysql(cursor,
+            'add_saved_query_comment_data',
+                (comment,
+                user_id,
+                query
+                )
+        )
 
         disconnect_mysql(cnx,cursor)
         return
