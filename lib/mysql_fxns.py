@@ -38,14 +38,6 @@ def disconnect_mysql(connection,cursor):
 def execute_mysql(cursor,statement,values):
 
     all_statements = {
-        'add_saved_query_comment_data': (
-            "UPDATE query SET comment=%s "
-            "WHERE user_id=%s AND query=%s"
-        ),
-        'add_saved_query_file_data': (
-            "UPDATE query SET file_count=%s "
-            "WHERE user_id=%s AND query_url=%s"
-        ),
         'add_saved_query_sample_data': (
             "INSERT INTO query (user_id,query,query_url,sample_count,comment,file_count) "
             "VALUES (%s,%s,%s,%s,%s,%s)"
@@ -66,6 +58,10 @@ def execute_mysql(cursor,statement,values):
             "FROM query WHERE user_id=%s"
         ),
         'get_session_id': "SELECT session_id FROM sessions WHERE session_key=%s",
+        'get_single_saved_query': (
+            "SELECT sample_count "
+            "FROM query WHERE query=%s AND user_id=%s"
+        ),
         'get_user_id': "SELECT id FROM user WHERE username=%s",
         'get_user_id_from_session_key': "SELECT user_id FROM sessions WHERE session_key=%s",
         'get_username_from_session_key': (
@@ -73,7 +69,19 @@ def execute_mysql(cursor,statement,values):
             "WHERE user.id=sessions.user_id "
             "AND sessions.session_key=%s"
         ),
-        'login': "SELECT password FROM hmp_portal WHERE username=%s"
+        'login': "SELECT password FROM hmp_portal WHERE username=%s",
+        'update_saved_query_comment_data': (
+            "UPDATE query SET comment=%s, timestamp=timestamp "
+            "WHERE user_id=%s AND query=%s"
+        ),
+        'update_saved_query_file_data': (
+            "UPDATE query SET file_count=%s "
+            "WHERE user_id=%s AND query_url=%s"
+        ),
+        'update_saved_query_sample_data': (
+            "UPDATE query SET sample_count=%s "
+            "WHERE user_id=%s AND query=%s"
+        )
     }
 
     try:
@@ -158,7 +166,7 @@ def save_query_comment_data(session_key,query,comment):
             return
 
         res = execute_mysql(cursor,
-            'add_saved_query_comment_data',
+            'update_saved_query_comment_data',
                 (comment,
                 user_id,
                 query
@@ -181,17 +189,25 @@ def save_query_sample_data(session_key,reference_url,query,sample_count):
         else:
             return
 
-        ***REMOVED***note dummy values for comment/file_count
-        execute_mysql(cursor,
-            'add_saved_query_sample_data',
-                (user_id,
-                query,
-                reference_url.replace('save=yes',''),
-                sample_count,
-                '',
-                0
-                )
-        )
+        ***REMOVED***if this query is already saved, only update sample count
+        execute_mysql(cursor,'get_single_saved_query',(query,user_id))
+        existing_query = cursor.fetchone()
+
+        if existing_query: 
+            execute_mysql(cursor,'update_saved_query_sample_data',(sample_count,user_id,query))
+
+        else:
+            ***REMOVED***note dummy values for comment/file_count
+            execute_mysql(cursor,
+                'add_saved_query_sample_data',
+                    (user_id,
+                    query,
+                    reference_url.replace('save=yes',''),
+                    sample_count,
+                    '',
+                    0
+                    )
+            )
 
         disconnect_mysql(cnx,cursor)
         return
@@ -214,7 +230,7 @@ def save_query_file_data(session_key,reference_url,file_count):
             time.sleep(1)
 
             res = execute_mysql(cursor,
-                'add_saved_query_file_data',
+                'update_saved_query_file_data',
                     (file_count,
                     user_id,
                     reference_url.replace('save=yes','')
