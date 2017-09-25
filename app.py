@@ -13,11 +13,9 @@ from query import get_url_for_download,convert_gdc_to_osdf,get_all_proj_data
 from query import get_all_proj_counts,get_all_study_data
 from query import token_to_manifest,convert_portal_to_neo4j,get_study_sample_counts
 from query import get_manifest_data,get_metadata
-from query import establish_session,disconnect_session,get_user_info
 from query import save_query_sample_data,save_query_file_data
 from autocomplete_map import gql_map
 from conf import access_origin,be_port,secret_key,be_loc
-from conf import mysql_h,mysql_db,mysql_un,mysql_pw
 from front_page_results import q1_query,q1_cases,q1_files,q2_query,q2_cases,q2_files,q3_query,q3_cases,q3_files
 import graphene
 import json, urllib2, urllib, re
@@ -279,7 +277,7 @@ def login():
         if sha1_pw != pw:
             error = 'Invalid credentials'
         elif pw and sha1_pw == pw: ***REMOVED***don't allow null=null
-            new_session = establish_session(request.form['username']) ***REMOVED***establish the session
+            new_session = mysql_fxns.establish_session(username) 
             response = make_response(redirect(access_origin[0]))
             response.set_cookie('csrftoken',new_session)
             return response
@@ -289,8 +287,8 @@ def login():
 @application.route('/status/logout', methods=['GET','OPTIONS','POST'])
 def logout():
 
-    ***REMOVED***nullify all the info both in Neo4j and stored in the UI for this session
-    disconnect_session(request.cookies['csrftoken']) 
+    ***REMOVED***nullify all the info both in MySQL and stored in the UI for this session
+    mysql_fxns.disconnect_session(request.cookies['csrftoken']) 
     response = make_response(redirect(request.referrer))
     response.set_cookie('csrftoken','')
 
@@ -326,7 +324,7 @@ def get_status_user_unauthorized():
                 }}
             '''
 
-            user_info = get_user_info(request.environ['HTTP_X_CSRFTOKEN'])
+            user_info = mysql_fxns.get_user_info(request.environ['HTTP_X_CSRFTOKEN'])
             if user_info['username'] != "": ***REMOVED***if successfully logged in, should be in DB
                 return make_json_response(
                     response.format(user_info['username'],
