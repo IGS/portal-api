@@ -168,7 +168,7 @@ def save_query_comment_data(session_key,query,comment):
         disconnect_mysql(cnx,cursor)
         return
 
-def save_query_sample_data(session_key,reference_url,query,sample_count,comment,file_count):
+def save_query_sample_data(session_key,reference_url,query,sample_count):
 
     cnx,cursor = connect_mysql(mysql_un_2,mysql_pw_2,mysql_h_2,mysql_db_2)
     if cursor:
@@ -181,14 +181,15 @@ def save_query_sample_data(session_key,reference_url,query,sample_count,comment,
         else:
             return
 
+        # note dummy values for comment/file_count
         execute_mysql(cursor,
             'add_saved_query_sample_data',
                 (user_id,
                 query,
                 reference_url.replace('save=yes',''),
                 sample_count,
-                comment,
-                file_count
+                '',
+                0
                 )
         )
 
