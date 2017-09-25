@@ -23,6 +23,7 @@ import graphene
 import json, urllib2, urllib, re
 import mysql.connector, hashlib
 from flask_cors import CORS
+from lib import mysql_fxns
 
 application = Flask(__name__)
 application.secret_key = secret_key
@@ -269,36 +270,16 @@ def login():
 
     if request.method == 'POST':
 
-        config = {
-            'user': mysql_un,
-            'password': mysql_pw,
-            'host': mysql_h,
-            'database': mysql_db
-        }
-
         username = request.form['username']
+
+        pw = mysql_fxns.login(username)
+
         sha1_pw = hashlib.sha1(request.form['password']).hexdigest()
-
-        # Now hit MySQL to see if these are valid 
-        cnx = mysql.connector.connect(**config)
-
-        cursor = cnx.cursor()
-        query = ("SELECT password FROM hmp_portal WHERE username = %s")
-        cursor.execute(query,(username,))
-
-        pw = cursor.fetchone()
-
-        if pw:
-            pw = str(pw[0]) # convert from tuple/unicode to plain string if we got a record
-
-        cursor.close()
-        cnx.close()
 
         if sha1_pw != pw:
             error = 'Invalid credentials'
         elif pw and sha1_pw == pw: # don't allow null=null
             new_session = establish_session(request.form['username']) # establish the session
-            #flash('You were successfully logged in')
             response = make_response(redirect(access_origin[0]))
             response.set_cookie('csrftoken',new_session)
             return response
