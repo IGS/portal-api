@@ -333,7 +333,9 @@ def get_status_user_unauthorized():
                     "queries": {1},
                     "hrefs": {2},
                     "scounts": {3},
-                    "fcounts": {4}
+                    "fcounts": {4},
+                    "comments": {5},
+                    "timestamps": {6}
                 }}
             '''
 
@@ -344,7 +346,9 @@ def get_status_user_unauthorized():
                         json.dumps(user_info['queries']),
                         json.dumps(user_info['hrefs']),
                         json.dumps(user_info['scounts']),
-                        json.dumps(user_info['fcounts'])
+                        json.dumps(user_info['fcounts']),
+                        json.dumps(user_info['comments']),
+                        json.dumps(user_info['timestamps'])
                         )
                     )
 

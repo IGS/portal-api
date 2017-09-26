@@ -263,7 +263,7 @@ def get_user_info(session_key):
             'scounts':[],
             'fcounts':[],
             'comments':[],
-            'last_calc':[]
+            'timestamps':[]
         }
 
         execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
@@ -284,10 +284,10 @@ def get_user_info(session_key):
                 user_info['scounts'].append(scount)
                 user_info['fcounts'].append(fcount)
                 user_info['comments'].append(str(comment))
-                day_diff = (datetime.today() - timedelta(days=timestamp.day)).day
-                user_info['last_calc'].append("{} days ago".format(day_diff))
+                user_info['timestamps'].append("{} days ago".format((datetime.today()-timestamp).days))
 
         disconnect_mysql(cnx,cursor)
 
         if user_info['username']:
             return user_info
+            
