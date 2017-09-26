@@ -8,6 +8,8 @@ from query import get_buckets, get_file_hits, get_pagination, get_sample_count
 # the relevant edges. Simplified for now. 
 ft = get_buckets("F.node_type","no","")
 ff = get_buckets("F.format","no","")
+fa = get_buckets("F.annotation_pipeline","no","")
+fm = get_buckets("F.matrix_type","no","")
 
 class Query(graphene.ObjectType):
 
@@ -37,7 +39,11 @@ class Query(graphene.ObjectType):
         return get_sample_count(cy)
 
     def resolve_aggregations(self, args, context, info):
-        return Aggregations(file_type=ft, file_format=ff)
+        return Aggregations(file_type=ft, 
+            file_format=ff,
+            file_annotation_pipeline=fa,
+            file_matrix_type=fm
+        )
 
 # As noted above, going to hit Neo4j once and get everything then let GQL 
 # do its magic client side to return the values that the user wants. 

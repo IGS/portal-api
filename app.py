@@ -403,6 +403,18 @@ def get_files():
                         doc_count
                     }}
                 }}
+                file_annotation_pipeline {{
+                    buckets {{
+                        key
+                        doc_count
+                    }}
+                }}
+                file_matrix_type {{
+                    buckets {{
+                        key
+                        doc_count
+                    }}
+                }}
             }}
             {4}
         }}  
