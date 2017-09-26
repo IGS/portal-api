@@ -299,6 +299,101 @@ bicycling at a regular pace, or doubles tennis? Do not include walking.
 * **visit_work_missed** - If patient has been physically ill, how many days of work were missed?
 * **visit_yogurt** - Do you eat yogurt or other foods containing active bacterial cultures?
 
+## Controlled Vocabulary
+
+The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) document data store of the HMP data into a graph representation. During this process certain data values are harmonized to facilitate searching. Thus, multiple OSDF values may map to a single HMP representation (e.g. both body sites 'FMA:64183' and 'stool' in OSDF become solely 'feces' in the HMP portal). Below is a table which maps the HMP portal representation of a data point to the data point(s) it originates from in OSDF. 
+
+| HMP representation | OSDF representation |
+| ------------------ | ------------------- |
+| *study name* | |
+| 16S-GM-AO | The Thrifty Microbiome: The Role of the Gut Microbiota in Obesity in the Amish. |
+| 16S-GM-CD | Effect of Crohn's Disease Risk Alleles on Enteric Microbiota. |
+| 16S-GM-CD2 | Diet, Genetic Factors, and the Gut Microbiome in Crohn's Disease. |
+| 16S-GM-CGD | The Human Microbiome in Pediatric Abdominal Pain and Intestinal Inflammation. |
+| 16S-GM-EA | Foregut Microbiome in Development of Esophageal Adenocarcinoma. |
+| 16S-GM-NE | The Neonatal Microbiome and Necrotizing Enterocolitis. |
+| 16S-GM-UC | The Role of the Gut Microbiota in Ulcerative Colitis, Targeted Gene Survey. |
+| 16S-PP1 | Human microbiome project 16S production phase I. |
+| 16S-PP2 | Human microbiome project 16S production phase II. |
+| 16S-SM-ADI | Skin Microbiome in Disease States: Atopic Dermatitis and Immunodeficiency. |
+| 16S-SM-P | Evaluation of the Cutaneous Microbiome in Psoriasis. |
+| 16S-UM-AD | Urethral Microbiome of Adolescent Males. |
+| 16S-VM-BV | The Microbial Ecology of Bacterial Vaginosis: A Fine Scale Resolution Metagenomic Study. |
+| 16S-VM-DGE | The Vaginal Microbiome: Disease, Genetics and the Environment, 16S Gene Survey. |
+| IBDMDB | ibdmdb,Inflammatory Bowel Disease Multi-omics Database (IBDMDB) |
+| MOMS-PI | momspi |
+| T2D | prediabetes |
+| WGS-GM-CD | Metagenomic Analysis of the Structure and Function of the Human Gut Microbiota in Crohn's Disease. |
+| WGS-GM-UC | The Role of the Gut Microbiota in Ulcerative Colitis, Whole Metagenome Sequencing Project. |
+| WGS-PP1 | Human microbiome project WGS production phase I. |
+| WGS-PP2 | Human microbiome project WGS production phase II. |
+| WGS-VIR-FE | The Human Virome in Children And Its Relationship to Febrile Illness. |
+| *body site* | |
+| abdomen | abdomen |
+| angle of seventh rib | FMA:7842 |
+| anterior part of leg | shin |
+| ascending colon | ascending_colon |
+| back | back |
+| blood cell | blood |
+| buccal mucosa | Buccal mucosa [FMA:59785],buccal_mucosa |
+| cerebrospinal fluid | cerebrospinal_fluid |
+| cervix of uterus | cervix |
+| cubital fossa | antecubital_fossa |
+| descending colon | descending_colon |
+| dorsum of tongue | Dorsum of tongue [FMA:54651],tongue_dorsum |
+| elbow | elbow |
+| external naris | anterior_nares,External naris [FMA:59645],nare |
+| feces | stool,FMA:64183 |
+| foot | foot |
+| forearm | volar_forearm,forearm |
+| gall bladder | gall_bladder |
+| gastric antrum | gastric_antrum |
+| gastrointestinal tract | gut,Gastrointestinal tract [FMA:71132] |
+| gingiva | gingival_crevices,subgingival_plaque,supragingival_plaque,attached_keratinized_gingiva,gingiva [FMA:59762],Gingiva [FMA:59762] |
+| hand | hand |
+| hard palate | Hard palate [FMA:55023],hard_palate |
+| head | head |
+| ileal-anal pouch | ileal-anal_pouch |
+| ileum | ileal_pouch,ileum |
+| knee | knee |
+| left arm | left_arm |
+| left cubital fossa | left_antecubital_fossa |
+| left retroauricular crease | left_retroauricular_crease,Skin of left auriculotemporal part of head [FMA:70332] |
+| leg | leg |
+| lung aspirate | lung_aspirate |
+| lymph node | lymph_node |
+| nasal cavity | nasal |
+| nasopharynx | Nasopharynx [FMA:54878],nasopharynx |
+| oral cavity | Oral cavity [FMA:20292],oral_cavity |
+| orifice of vagina | Orifice of vagina [FMA:19984],vaginal_introitus |
+| palatine tonsil | Palantine tonsil [FMA:9610],palatine_tonsils,Palatine tonsil [FMA:9610] |
+| perianal space | perianal_region |
+| peripheral blood mononuclear cell | FMA:86713 |
+| plasma | Plasma [FMA:62970] |
+| popliteal fossa | popliteal_fossa |
+| portion of saliva | saliva |
+| posterior fornix of vagina | posterior_fornix,Posterior fornix of vagina [FMA:19987] |
+| rectum | rectal |
+| respiratory tract | respiratory_tract |
+| right cubital fossa | right_antecubital_fossa,right cubital fossa [FMA:39849] |
+| right nasal cavity | FMA:276108 |
+| right retroauricular crease | Skin of right auriculotemporal part of head [FMA:70331],right_retroauricular_crease |
+| scalp | scalp |
+| shoulder | shoulder |
+| sigmoid colon | sigmoid_colon |
+| spinal cord | spinal_cord |
+| synovial fluid | synovial_fluid |
+| terminal ileum | terminal_ileum |
+| thigh | thigh |
+| throat | Throat [FMA:228738],throat |
+| transverse colon | transverse_colon |
+| unknown | unknown |
+| upper respiratory tract | upper_respiratory_tract |
+| urethra | urethra |
+| urinary tract | FMA:326482,urinary_tract |
+| vagina | mid_vagina,Vagina [FMA:19949],vaginal |
+| wall of vagina | wall_of_vagina |
+
 ## Cart Metadata
 
 On the cart page of the UI, one can download both a manifest of their samples+files of interest as well as metadata for these same entities. The manifest is to be used in conjunction with the [HMP client](https://github.com/IGS/hmp_client) to efficiently download all the files. The metadata serves as an additional source of input for analysis. The metadata, which is tab-separated, will always consist of a minimum set of (in this order):
