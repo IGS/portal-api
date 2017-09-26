@@ -141,7 +141,7 @@ def convert_order(order):
 ***REMOVED***to communicate a base URL in the result tables in the portal. 
 def extract_url(urls_node):
    
-    fn = ""
+    fn = "Private data"
 
     if 'http' in urls_node:
         fn = urls_node['http']
@@ -151,8 +151,8 @@ def extract_url(urls_node):
         fn = urls_node['ftp']
     elif 's3' in urls_node:
         fn = urls_node['s3']
-    else:
-        fn = "Private data"
+    elif 'private_url' in urls_node:
+        fn += ": {}".format(urls_node['private_url'])
 
     return fn
 
@@ -482,10 +482,11 @@ def get_file_hits(size,order,f,cy):
         #case_hits.append(cur_case)
 
         furl = extract_url(res[x]['F']) ***REMOVED***File name is our URL
-        if '.hmpdacc' in furl and '/data/' in furl: ***REMOVED***HMP endpoint
-            furl = re.search(r'/data/(.*)',furl).group(1)
-        elif '.ihmpdcc' in furl and 'org/' in furl:
-            furl = re.search(r'\.org/(.*)',furl).group(1)
+        
+        access_level = "open"
+
+        if furl.startswith('Private data'):
+            access_level = "controlled"
 
         ***REMOVED***Should try handle this at an earlier phase, but make sure size exists
         if 'size' not in res[x]['F']:
@@ -495,11 +496,10 @@ def get_file_hits(size,order,f,cy):
             fileName=furl,
             dataFormat=res[x]['F']['format'],
             submitterId="null",
-            access="open",
+            access=access_level,
             state="submitted",
             fileId=res[x]['F']['id'],
             dataCategory=res[x]['F']['node_type'],
-            experimentalStrategy=res[x]['F']['subtype'],
             fileSize=res[x]['F']['size']
             )
 
@@ -534,6 +534,9 @@ def get_file_data(file_id):
     if 'size' in res[0]['F']: ***REMOVED***some files with non-valid URLs can have no size
         size = res[0]['F']['size']
     furl = extract_url(res[0]['F']) 
+    access_level = "open"
+    if furl.startswith('Private data'):
+        access_level = "controlled"
     sample_bs = res[0]['VSS']['body_site']
     wf = "{0} -> {1}".format(sample_bs,res[0]['D']['node_type'])
     cl.append(CaseHits(project=Project(projectId=res[0]['PS']['project_subtype']),caseId=res[0]['VSS']['id']))
@@ -547,7 +550,7 @@ def get_file_data(file_id):
         dataFormat=res[0]['F']['format'],
         submitterId="null",
         state="submitted",
-        access="open",
+        access=access_level,
         fileId=res[0]['F']['id'],
         dataCategory=res[0]['F']['node_type'],
         experimentalStrategy=res[0]['F']['study'],
