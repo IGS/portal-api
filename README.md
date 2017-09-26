@@ -34,11 +34,16 @@
    * neo4j_http - port for Neo4j http connection
    * neo4j_un - username to access Neo4j database
    * neo4j_pw - password to access Neo4j database
-     * All MySQL variables in the conf are needed if logins are to be supported, fill with dummy values if logging in is not required
-   * mysql_h - host of the MySQL authentication server
+     * An additional MySQL conf is needed under the `./lib/` directory if logins are to be supported, fill with dummy values if logging in is not required
+   * mysql_h - host of the MySQL **authentication database**
    * mysql_db - name of the DB that houses the username+password rows
-   * mysql_un - username to access MySQL database
-   * mysql_pw - password to access MySQL database
+   * mysql_un - username to access this MySQL database
+   * mysql_pw - password to access this MySQL database
+     * An additional set of the same parameters but for a database which will store session/query history information
+   * mysql_h_2 - host of the MySQL **session/query database**
+   * mysql_db_2 - name of the DB that houses the session/query information
+   * mysql_un_2 - username to access this MySQL database
+   * mysql_pw_2 - password to access this MySQL database
  * Once `conf.py` is made, use the command `python app.py`
 5. Can now interact with the GQL at any of the following endpoints or setup your own [portal UI]( https://github.com/jmatsumura/portal-ui)
  * `/sum_schema`
@@ -59,11 +64,11 @@
 
 ## Searching
 
-The HMP portal offers two methods for searching for data: [facet search](https://github.com/jmatsumura/ihmp_portal_api#facet-search) and [advanced search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search).
+The HMP portal offers two methods for searching the data: [facet search](https://github.com/jmatsumura/ihmp_portal_api#facet-search) and [advanced search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search).
 
 ### Facet Search
 
-`Facet Search` enables one to search for data entirely through clicking. Clicking a slice of a pie chart or a checkbox within the panel on the left will subset the data by the selected property+value. Additional properties and values can be added to subset by via the "Add a filter" option towards the top-right of the panel on the left. Selecting a new property here will add a new set of values to the panel on the left that one can interact with to filter the data by. 
+`Facet Search` enables one to search for data entirely through clicking. Clicking a slice of a pie chart or a checkbox within the panel on the left will subset the data by the selected property+value combination. Additional properties can be added to subset by via the "Add a filter" option towards the top-right of the panel on the left. Selecting a new property here will add a new set of values to the panel on the left that one can interact with to filter the data by. Facet search builds by inclusion of a particular property+value combination, in order to efficiently perform an exclusive search (e.g. looking for all data **not** associated with a particular property+value combination) it is recommended to use `Advanced Search`.
 
 ### Advanced Search
 
@@ -310,7 +315,7 @@ bicycling at a regular pace, or doubles tennis? Do not include walking.
 * **visit_work_missed** - If patient has been physically ill, how many days of work were missed?
 * **visit_yogurt** - Do you eat yogurt or other foods containing active bacterial cultures?
 
-## Controlled Vocabulary
+### Controlled Vocabulary
 
 The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) document data store of the HMP data into a graph representation. During this process certain data values are harmonized to facilitate searching. Thus, multiple OSDF values may map to a single HMP representation (e.g. both body sites 'FMA:64183' and 'stool' in OSDF become solely 'feces' in the HMP portal). Below is a table which maps the HMP portal representation of a data point to the data point(s) it originates from in OSDF. 
 
