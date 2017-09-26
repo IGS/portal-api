@@ -246,6 +246,7 @@ def get_file_metadata(file_id):
             submitter_id
             access
             state
+            md5sum
             data_category
             experimental_strategy
                 analysis {{
@@ -388,7 +389,6 @@ def get_files():
                 file_id
                 data_category
                 file_size
-                experimental_strategy
             }}
             aggregations {{
                 file_type {{
