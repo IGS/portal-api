@@ -1,10 +1,13 @@
-***REMOVED***HMP Portal API
+***REMOVED***Human Microbiome Project (HMP) Portal API
 
 * [Overview](https://github.com/jmatsumura/ihmp_portal_api#overview)
   * [Setup](https://github.com/jmatsumura/ihmp_portal_api#setup)
   * [Dependencies](https://github.com/jmatsumura/ihmp_portal_api#dependencies)
-* [Advanced Search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search)
+* [Searching](https://github.com/jmatsumura/ihmp_portal_api#searching)
+  * [Facet Search](https://github.com/jmatsumura/ihmp_portal_api#facet-search)
+  * [Advanced Search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search)
   * [Available Properties](https://github.com/jmatsumura/ihmp_portal_api#available-properties)
+  * [Controlled Vocabulary](https://github.com/jmatsumura/ihmp_portal_api#controlled-vocabulary)
 * [Cart Metadata](https://github.com/jmatsumura/ihmp_portal_api#cart-metadata)
 
 #***REMOVED***Overview
@@ -54,13 +57,21 @@
   * [py2neo](http://py2neo.org/v3/)
   * [MySQL connector](https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html)
 
-#***REMOVED***Advanced Search
+#***REMOVED***Searching
+
+The HMP portal offers two methods for searching for data: [facet search](https://github.com/jmatsumura/ihmp_portal_api#facet-search) and [advanced search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search).
+
+##***REMOVED***Facet Search
+
+`Facet Search` enables one to search for data entirely through clicking. Clicking a slice of a pie chart or a checkbox within the panel on the left will subset the data by the selected property+value. Additional properties and values can be added to subset by via the "Add a filter" option towards the top-right of the panel on the left. Selecting a new property here will add a new set of values to the panel on the left that one can interact with to filter the data by. 
+
+##***REMOVED***Advanced Search
 
 `Advanced Search` is meant to be similar to how one would query a database directly. Each query requires the following general format:
 ```
 (property) (comparison operator) (value)
 ```
-The `property` is what you want to search on. The `comparison operator` is how you want to relate your `value` to your property. Your `value` is what you want to subset your `property` by. 
+The `property` is what you want to search on. The `comparison operator` is how you want to relate your `value` to your `property`. Your `value` is what you want to subset your `property` by. 
 
 For example:
 ```
@@ -305,7 +316,7 @@ The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) docu
 
 | HMP representation | OSDF representation |
 | ------------------ | ------------------- |
-| *study name* | |
+| **study name** | |
 | 16S-GM-AO | The Thrifty Microbiome: The Role of the Gut Microbiota in Obesity in the Amish. |
 | 16S-GM-CD | Effect of Crohn's Disease Risk Alleles on Enteric Microbiota. |
 | 16S-GM-CD2 | Diet, Genetic Factors, and the Gut Microbiome in Crohn's Disease. |
@@ -328,7 +339,8 @@ The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) docu
 | WGS-PP1 | Human microbiome project WGS production phase I. |
 | WGS-PP2 | Human microbiome project WGS production phase II. |
 | WGS-VIR-FE | The Human Virome in Children And Its Relationship to Febrile Illness. |
-| *body site* | |
+| | |
+| **body site** | |
 | abdomen | abdomen |
 | angle of seventh rib | FMA:7842 |
 | anterior part of leg | shin |
