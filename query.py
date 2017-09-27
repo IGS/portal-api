@@ -813,6 +813,8 @@ def convert_gdc_to_osdf(inp_str):
     ***REMOVED***Handle facet searches from panel on left side
     inp_str = inp_str.replace("file_type","F.node_type")
     inp_str = inp_str.replace("file_format","F.format")
+    inp_str = inp_str.replace("file_annotation_pipeline","F.annotation_pipeline")
+    inp_str = inp_str.replace("file_matrix_type","F.matrix_type")
 
     ***REMOVED***Next two lines guarantee URL encoding (seeing errors with urllib)
     inp_str = inp_str.replace('"','|')
@@ -875,7 +877,7 @@ def build_facet_where(inp):
 ***REMOVED***on the portal itself as we want users to be able to do something like search
 ***REMOVED***for Project name as Project.name or something similar instead of PS.project_name.
 def convert_portal_to_neo4j(inp_str):
-
+    
     inp_str = inp_str.replace("cases.","")
     inp_str = inp_str.replace("files.","")
 
