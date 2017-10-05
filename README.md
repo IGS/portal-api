@@ -1,6 +1,7 @@
 # Human Microbiome Project (HMP) Portal API
 
 * [Overview](https://github.com/jmatsumura/ihmp_portal_api#overview)
+  * [Video Tutorials](https://github.com/jmatsumura/ihmp_portal_api#video-tutorials)
   * [Setup](https://github.com/jmatsumura/ihmp_portal_api#setup)
   * [Dependencies](https://github.com/jmatsumura/ihmp_portal_api#dependencies)
 * [Searching](https://github.com/jmatsumura/ihmp_portal_api#searching)
@@ -13,8 +14,13 @@
 ## Overview
 
 * This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). 
-* [Short walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY) of how to navigate the UI once linked to the API.
-* The API is a Flask app which uses [GraphQL](http://graphql.org/) to communicate with a [Neo4j](https://neo4j.com/) database in order to efficiently retrieve and transfer the data in a RESTful manner. 
+* The API is a Flask app which uses [GraphQL](http://graphql.org/) to communicate with a [Neo4j](https://neo4j.com/) database in order to efficiently retrieve and transfer the data in a RESTful manner.
+
+### Video Tutorials
+* [General Walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY)
+* [Facet Search](https://www.youtube.com/watch?v=_mvbP9MKtvQ&feature=youtu.be)
+* [Advanced Search](https://www.youtube.com/watch?v=YDmrpYVMQwc&feature=youtu.be)
+* [HMP Client](https://www.youtube.com/watch?v=b35UpeZ8UgM&feature=youtu.be)
 
 ### Setup
 1. First, make sure all dependencies are installed and start Neo4j
