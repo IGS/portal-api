@@ -10,7 +10,7 @@ file_annotation_pipeline = get_buckets("F.annotation_pipeline","no","")
 file_format = get_buckets("F.format","no","")
 file_id = get_buckets("F.id","no","")
 file_matrix_type = get_buckets("F.matrix_type","no","")
-file_type = get_buckets("F.type","no","")
+file_type = get_buckets("F.node_type","no","")
 
 pro_name = get_buckets("PS.project_name","no","")
 pro_subtype = get_buckets("PS.project_subtype","no","")

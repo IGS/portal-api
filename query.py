@@ -909,8 +909,8 @@ def convert_portal_to_neo4j(inp_str):
     if "F." not in inp_str:
         # File
         inp_str = inp_str.replace("file.","F.")
-        inp_str = inp_str.replace("F.type","F.node_type")
         inp_str = inp_str.replace("File_","F.")
+        inp_str = inp_str.replace("F.type","F.node_type")
 
     if "T." not in inp_str:
         # Tag
