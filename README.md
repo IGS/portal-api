@@ -422,6 +422,7 @@ The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) docu
 On the cart page of the UI, one can download both a manifest of their samples+files of interest as well as metadata for these same entities. The manifest is to be used in conjunction with the [HMP client](https://github.com/IGS/hmp_client) to efficiently download all the files. The metadata serves as an additional source of input for analysis. The metadata, which is tab-separated, will always consist of a minimum set of (in this order):
  * **sample_id**
  * **subject_id**
+ * **subject_uuid**
  * **sample_body_site**
  * **visit_number**
  * **subject_gender**

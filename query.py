@@ -657,6 +657,7 @@ def get_metadata(id_list):
     base_metadata = [
         'sample_id',
         'subject_id',
+        'subject_uuid',
         'sample_body_site',
         'visit_number',
         'subject_gender',
@@ -676,7 +677,8 @@ def get_metadata(id_list):
         ***REMOVED***Those without 'ifs' are guaranteed by cutlass. Also note that any 
         ***REMOVED***numbers need to be converted to strings in order to join str list. 
         cols['sample_id'].append(entry['S']['id'])
-        cols['subject_id'].append(entry['J']['id'])
+        cols['subject_id'].append(entry['J']['rand_subject_id'])
+        cols['subject_uuid'].append(entry['J']['id'])
         cols['sample_body_site'].append(entry['S']['body_site'])
         cols['visit_number'].append(str(entry['S']['visit_visit_number']))
         cols['subject_gender'].append(entry['J']['gender'])
@@ -882,8 +884,8 @@ def convert_portal_to_neo4j(inp_str):
     inp_str = inp_str.replace("files.","")
 
     inp_str = inp_str.replace("Project.","project.")
-    inp_str = inp_str.replace("subject.uuid","subject.id")
     inp_str = inp_str.replace("subject.id","subject.rand_subject_id")
+    inp_str = inp_str.replace("subject.uuid","subject.id")
 
     if 'PS.' not in inp_str:
         ***REMOVED***Project -> Study -> Subject
