@@ -1,4 +1,4 @@
-# Human Microbiome Project (HMP) Portal API
+# Portal API
 
 * [Overview](https://github.com/jmatsumura/ihmp_portal_api#overview)
   * [Video Tutorials](https://github.com/jmatsumura/ihmp_portal_api#video-tutorials)
@@ -13,7 +13,7 @@
 
 ## Overview
 
-* This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). 
+* This API is built to work in conjunction with the [Portal UI]( https://github.com/IGS/portal-ui). 
 * The API is a Flask app which uses [GraphQL](http://graphql.org/) to communicate with a [Neo4j](https://neo4j.com/) database in order to efficiently retrieve and transfer the data in a RESTful manner.
 
 ### Video Tutorials
