@@ -24,11 +24,10 @@
 
 ### Setup
 1. First, make sure all dependencies are installed and start Neo4j
-2. Request an account to access [OSDF](http://osdf.igs.umaryland.edu/)
-3. Use the [loader](https://github.com/jmatsumura/iHMPDCC_new_fxns/blob/master/OSDF_to_Neo4j/couchdb2neo4j_with_tags.py) to move the data from CouchDB to Neo4j
+2. Use the [loader](https://github.com/jmatsumura/iHMPDCC_new_fxns/blob/master/OSDF_to_Neo4j/couchdb2neo4j_with_tags.py) to move the data from CouchDB to Neo4j
  * Make sure your Neo4j server is started and available
  * `python couchdb2neo4j_with_tags.py --db <OSDF_URL> --neo4j_password <NEO4J_PASS>`
-4. Start your Flask app (must create a `conf.py` before doing this):
+3. Start your Flask app (must create a `conf.py` before doing this):
  * `conf.py` requires:
    * app_root - the path to the location of this repository
    * access_origin - a list of origins to accept requests from
@@ -51,7 +50,7 @@
    * mysql_un_2 - username to access this MySQL database
    * mysql_pw_2 - password to access this MySQL database
  * Once `conf.py` is made, use the command `python app.py`
-5. Can now interact with the GQL at any of the following endpoints or setup your own [portal UI]( https://github.com/jmatsumura/portal-ui)
+4. Can now interact with the GQL at any of the following endpoints or setup your own [portal UI]( https://github.com/jmatsumura/portal-ui)
  * `/sum_schema`
  * `/ac_schema`
  * `/files_schema`
