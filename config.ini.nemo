@@ -1,0 +1,573 @@
+
+# site-wide config originally from portal-ui/config.js
+[site-wide]
+project-abbr=NeMO
+api=/api
+auth=/api/status
+auth-api=/api/status/api
+tag=https://github.com/NCI-GDC/portal-ui/releases/tag/1.2.4
+fake-auth=False
+#ident = desired length of a random alphanumeric string
+ident=8
+production=False
+supported-api=1
+version=1.2.4
+build-cache-on-first-request=True
+subject-excluded-fields=node_type,project_project_name
+sample-excluded-fields=node_type,visit_gender
+file-excluded-fields=<private>
+footer-link-text=NeMO Hub
+footer-link=https://portal.nemoarchive.org
+google-analytics-enabled=False
+google-analytics-id=INSERT-PORTAL-GA-ID-HERE
+
+[navbar]
+# Custom external link, else leave empty for logo to link to portal home page
+logo-link=
+analysis-display=False
+analysis-link=https://portal.nemoarchive.org
+documentation-display=False
+documentation-link=
+apps-data-portal-display=True
+apps-data-portal-tooltip-text=NeMO Data Portal
+apps-data-portal-link=/
+apps-api-display=True
+apps-api-tooltip-text=NeMO API
+apps-api-link=http://github.com/IGS/portal_api
+apps-documentation-display=True
+apps-documentation-tooltip-text=NeMO Docs
+apps-documentation-link=https://github.com/nemoarchive/documentation
+apps-legacy-archive-display=False
+apps-legacy-archive-tooltip-text=HMP Legacy Archive
+apps-legacy-archive-link=http://hmpdacc.org/
+apps-website-display=True
+apps-website-tooltip-text=NeMO Website
+apps-website-link=http://www.nemoarchive.org/
+apps-datatransfer-tool-display=True
+apps-datatransfer-tool-tooltip-text=NeMO Data Transfer Tool
+apps-datatransfer-tool-link=https://github.com/IGS/portal_client
+apps-faq-display=True
+apps-faq-tooltip-text=NeMO FAQ
+apps-faq-link=http://nemoarchive.org/about/index.php
+apps-resources-display=True
+apps-resources-tooltip-text=NeMO Resources
+apps-resources-link=http://nemoarchive.org/resources.php
+user-login-link=http://portal.nemoarchive.org/api/login
+
+
+[home]
+page-title=Neuroscience Multi-Omic Data Portal | NeMO
+portal-name=Welcome to the NeMO Data Portal
+projects-table-title=Go to The Portal Projects Page
+projects-table-title-header=Studies by Modality Type
+project-external-link=
+project-name=
+
+[home-summary-stat-1]
+title=Grants
+icon=<i class="fa fa-bar-chart data-icon"></i>
+data=hc.projectData.aggregations.x_labels.buckets.length
+
+[home-summary-stat-2]
+title=Samples
+icon=<i class="fa fa-user-o data-icon"></i>
+data=hc.caseData.pagination.total
+
+[home-summary-stat-3]
+title=Files
+icon=<i class="fa fa-folder-open-o data-icon"></i>
+data=hc.fileData.pagination.total
+
+[home-summary-stat-4]
+title=Modality Type
+icon=<span class="icon-gdc-cancer-types project-icon"><span class="path1"></span><span class="path2"></span><span class="path3" style="color: #fff;"></span><span class="path4"></span><span class="path5"></span><span class="path6"></span></span>
+data=hc.projectData.pagination.unique_total
+
+[home-example-query-1]
+description=Retrieve CEMBA methylomics FASTQ data (demo set)
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE file.format = "FASTQ" AND sample.id = "CEMBA171207_3C" and sample.modality="Methylation" RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"content":[{"content":{"field":"file.format","value":["FASTQ"]},"op":"in"},{"content":{"field":"sample.id","value":["CEMBA171207_3C"]},"op":"in"},{"content":{"field":"sample.modality","value":["Methylation"]},"op":"in"}],"op":"and"}
+has-files-link=True
+files-link=/search/f?filters={"content":[{"content":{"field":"file.format","value":["FASTQ"]},"op":"in"},{"content":{"field":"sample.id","value":["CEMBA171207_3C"]},"op":"in"},{"content":{"field":"sample.modality","value":["Methylation"]},"op":"in"}],"op":"and"}
+
+[home-example-query-2]
+description=Retrieve all chromatin FASTQ bundles obtained from mouse samples
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE file.format = "FASTQ" AND sample.organism = "Mouse" AND sample.modality = "Chromatin" RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"content":[{"content":{"field":"file.format","value":["FASTQ"]},"op":"in"},{"content":{"field":"sample.organism","value":["Mouse"]},"op":"in"},{"content":{"field":"sample.modality","value":["Chromatin"]},"op":"in"}],"op":"and"}
+has-files-link=True
+files-link=/search/f?filters={"content":[{"content":{"field":"file.format","value":["FASTQ"]},"op":"in"},{"content":{"field":"sample.organism","value":["Mouse"]},"op":"in"},{"content":{"field":"sample.modality","value":["Chromatin"]},"op":"in"}],"op":"and"}
+
+[home-example-query-3]
+description=Retrieve all 10x Chromium 3' v2 sequenced-FASTQ files generated from mouse samples
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE sample.technique = "10x Chromium 3' v2 sequencing" AND subject.project_name = "BICCN" and sample.organism = "Mouse" and file.format = "FASTQ" RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"content":[{"content":{"field":"sample.technique","value":["10x Chromium 3' v2 sequencing"]},"op":"in"},{"content":{"field":"subject.project_name","value":["BICCN"]},"op":"in"},{"content":{"field":"sample.organism","value":["Mouse"]},"op":"in"},{"content":{"field":"file.format","value":["FASTQ"]},"op":"in"}],"op":"and"}
+has-files-link=True
+files-link=/search/f?filters={"content":[{"content":{"field":"sample.technique","value":["10x Chromium 3' v2 sequencing"]},"op":"in"},{"content":{"field":"subject.project_name","value":["BICCN"]},"op":"in"},{"content":{"field":"sample.organism","value":["Mouse"]},"op":"in"},{"content":{"field":"file.format","value":["FASTQ"]},"op":"in"}],"op":"and"}
+
+[projects]
+page-title=Projects | NeMO
+display-graph-tab=True
+study-data-query=MATCH (subject)<-[:extracted_from]-(sample)<-[D:derived_from]-(file) WITH sample.study_name+"_"+sample.organism as study_key, sample.study_name AS study_name, sample.organism as organism, COUNT(DISTINCT(sample)) as _case_count, COUNT(DISTINCT(file)) as _file_count, SUM(file.size) AS _file_size RETURN study_key, study_name, organism, SUM(_case_count) as case_count, SUM(_file_count) as file_count, SUM(_file_size) as file_size
+study-sample-count-query=MATCH (subject)<-[:extracted_from]-(sample)<-[D:derived_from]-(file) RETURN sample_study_name+"_"+sample.organism as study_key, sample.study_name AS study_name, COUNT(DISTINCT(sample)) AS sample_count
+
+[projects-table]
+title=studies
+row-id=study_key
+linked-fields=case_count,file_count
+default-sort=case_count:desc
+
+[projects-table-heading-1]
+name=Grant
+id=study_name
+# tooltip-text=study_full_name
+sortable=True
+show=True
+draggable=True
+col-span=4
+
+[projects-table-heading-2]
+name=Organism
+id=organism
+sortable=True
+show=True
+draggable=True
+
+
+[projects-table-heading-3]
+name=Samples
+id=case_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+
+[projects-table-heading-4]
+name=Files
+id=file_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+
+#Default chartconfigs for projects page pie charts
+# hover-count-label - Changes the hover. default is 'Files' <study> - <count> <HOVER_COUNT_LABEL>, <file_size stuff> 
+# field-filter = field applied to URL when adding a filter
+[projects-piechart-config-1]
+default-text=Grant
+plural-default-text=Grants
+hover-count-label=Grant
+chart-title=Sample Counts by Grant
+grouping-title=Study
+filter-key=study_name
+field-filter=sample.study_name
+display-key=study_name
+sort-key=case_count
+
+[projects-piechart-config-2]
+default-text=Grant
+plural-default-text=Grants
+chart-title=File Counts by Grant
+grouping-title=File
+filter-key=study_name
+field-filter=sample.study_name
+display-key=study_name
+sort-key=file_count
+
+[search]
+page-title=Search | NeMO
+recalculate-facets=True
+#The unique ID property for the sample node
+sample-node-id=sample.study_full_name
+facets-panel-samples-tab-name=
+facets-panel-files-tab-name=
+center-panel-samples-tab-name=
+center-panel-files-tab-name=
+	
+#Sets columns for 'samples' table on Search page
+[cases-table]
+api-row-id-node-type=sample
+api-row-id-field=study_full_name
+title=Samples
+row-id=id
+linked-field=sample.sample_id
+default-sort=sample.sample_id:asc
+
+[cases-table-heading-1]
+name=Sample ID
+id=sample.sample_id
+show=True
+sortable=True
+
+[cases-table-heading-2]
+name=Donor ID
+id=subject.rand_subject_id
+show=True
+sortable=False
+
+[cases-table-heading-3]
+name=Anatomical Structure
+id=sample.anatomical_region
+show=True
+sortable=False
+
+[cases-table-heading-4]
+name=Modality
+id=sample.modality
+show=True
+sortable=True
+
+[cases-table-heading-5]
+name=Grant ID
+id=sample.study_name
+show=True
+sortable=False
+# tooptip-text is optional
+tooltip-text=sample.study_full_name
+
+#[cases-table-heading-6]
+#name=Study Full Name
+#id=sample.study_full_name
+#sortable=True
+
+[files-table]
+api-row-id-node-type=file
+api-row-id-field=id
+title=Files
+row-id=file_id
+default-sort=file_id:asc
+#False = leaves filename unchanged
+#True = changes filepath to file_url
+rename-filename-absolute-path=False
+#Leave blank for default value: "Private data", otherwise specify the string to display for private data
+private-data-filename=
+
+[files-table-heading-1]
+name=Access
+id=file.private_files
+show=True
+sortable=False
+
+[files-table-heading-2]
+name=File UUID
+id=file_id
+sortable=True
+show=False
+tooltip-text=file_id
+td-classname=id-cell
+
+[files-table-heading-3]
+name=File Name
+id=file.file_name
+sortable=True
+show=True
+td-classname=id-cell
+
+[files-table-heading-4]
+name=Modality
+id=file.node_type
+sortable=True
+show=True
+
+[files-table-heading-5]
+name=Data Format
+id=file.format
+sortable=True
+show=True
+
+[files-table-heading-6]
+name=Size
+id=file.size
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right 
+td-classname=text-right
+
+[files-table-heading-7]
+name=Data Type
+id=file.subtype
+sortable=True
+show=False
+
+# Default config for front-page barchart
+# Default body_site query - HMP
+[search-barchart-config]
+count-query=RETURN DISTINCT PS.grant, VSS.modality, COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count ORDER BY file_count DESC
+x-axis-labels=PS.grant
+x-axis-order-by-count=file_count
+data-tooltip-label=VSS.modality
+data-tooltip-include-project-id=True
+y-axis-scale=log
+allow-bar-rotation=True
+bar-rotation=rotate(180)
+bar-colorscale-data-property=barTip
+allow-darker-bar-colors=False
+use-custom-color=False
+#for the custom color scale, use the colors found in colorbrewer.js (ex. OrRd for orange->red)
+custom-color-scale=Set1
+#the number of colors you want in the custom scale
+custom-color-scale-number=5
+# example: reverse OrRd to be red->orange
+reverse-custom-color-scale=False
+
+
+[search-piechart-api]
+chart-order=project_name,anatomical_structure,study_name,organism,file_format,modality
+
+[search-piechart-count-queries]
+# name the keys using the fields listed in the above [piechart-api]chart-order
+# {field}={query}
+# {field}_detailed={query_detailed}
+project-name=RETURN subject.project_name AS prop, count(subject.project_name) AS counts
+project-name-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, subject.project_name AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+anatomical-structure=RETURN sample.common_ontology AS prop, count(sample.common_ontology) AS counts
+anatomical-structure-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, sample.common_ontology AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+study-name=RETURN sample.study_name AS prop, count(sample.study_name) AS counts
+study-name-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, sample.study_name AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+organism=RETURN sample.organism AS prop, count(sample.organism) AS counts
+organism-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, sample.organism AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+file-format=RETURN file.format AS prop, count(file.format) AS counts
+file-format-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, file.format AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+modality=RETURN file.node_type AS prop, count(file.node_type) AS counts
+modality-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, file.node_type AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+
+
+#Default chartconfigs for search page pie charts
+[search-piechart-config-1]
+default-text=Project
+plural-default-text=Projects
+chart-title=File Counts by Project
+grouping-title=Project
+filter-key=subject.project_name
+field-filter=subject.project_name
+
+[search-piechart-config-2]
+default-text=Anatomical Structure
+plural-default-text=Anatomical Structures
+chart-title=File Counts by Anatomical Structure
+grouping-title=Primary Site
+filter-key=sample.common_ontology
+field-filter=sample.common_ontology
+
+[search-piechart-config-3]
+default-text=Study
+plural-default-text=Studies
+chart-title=File Counts by Study
+grouping-title=Name
+filter-key=sample.study_name
+field-filter=sample.study_name
+
+[search-piechart-config-4]
+default-text=Organism
+plural-default-text=Organisms
+chart-title=File Counts by Organism
+grouping-title=Organism
+filter-key=sample.organism
+field-filter=sample.organism
+
+[search-piechart-config-5]
+default-text=File Format
+plural-default-text=File Formats
+chart-title=File Counts by File Format
+grouping-title=File Format
+filter-key=file.format
+field-filter=file.format
+
+[search-piechart-config-6]
+default-text=Modality
+plural-default-text=Modalities
+chart-title=File Counts by Modality Type
+grouping-title=Modality
+filter-key=sample.modality
+field-filter=sample.modality
+
+[search-advanced-query-page]
+enable-documentation-link=True
+documentation-link=https://github.com/nemoarchive/documentation/wiki/Browsing-in-the-NeMO-Portal#advanced-searches-
+
+
+# /cases page configuration
+[cases-page]
+page-title=Sample
+# sample.id for HMP. sample.study_full_name for NeMO
+link-filter-field=sample.study_full_name
+
+[cases-page-summary-table]
+# property-names should be formatted: <node_label>_<property>
+human-readable=Sample ID,Organism,Library Method,Technique,Modality,Grant,Anatomical Structure
+property-names=sample_sample_id,sample_organism,sample_lib_method,sample_technique,sample_modality,sample_study_name,sample_anatomical_region
+
+
+# /files page configuration
+[files-page]
+page-title=File
+# enable download of the actual data file
+enable-download-btn=False
+# property-names should be formatted: <node_label>_<property>
+[files-page-properties-table]
+human-readable=Name,Access,UUID,Data Format,Size,MD5 Checksum
+property-names=file_file_name,file_access,file_id,file_format,file_size,file_md5
+
+[files-page-data-information-table]
+human-readable=Data Category,Data Type,Project ID
+property-names=file_node_type,file_subtype,file_study
+
+
+[cart]
+#list the search-piechart configs to be used for cart page piecharts
+piechart-order=search-piechart-config-3,search-piechart-config-4
+page-title=Cart | NeMO
+
+enable-study-level-matrices=False
+# Neo4j node & property that denote whether the node is a study-level matrix
+# For HMBR neo4j: file.study_level = true
+study-level-matrix-flag=
+# Neo4j node and property that contains the study's name
+# For HMBR neo4j: subject.dataset_name = "RISK"
+study-name-on-node=
+
+
+# This requires addition of the multifile_downloader plugin to the api plugins/ directory
+enable-download-cart-btn=False
+download-cart-text=
+
+# If enabling Terra btn, be sure that [cloud-options]service-name=terra
+enable-export-to-terra-btn=True
+
+download-client-link=https://github.com/IGS/NeMO_client
+#download-cart-text=Download Files in your Cart directly from the Web Browser.
+notes-metadata-text=Please note that each file in a downloaded manifest can be tied to metadata through the sample_id column.
+#class for Font-Awesome icon found in the 'Download' button
+download-button-icon=fa fa-download
+# Select 'Download' or 'Send to Cloud'
+download-button-text=Download
+# --- For DCPPC ---
+# download-manifest-text=Saves manifest file to Amazon S3 bucket. Use the manifest download utility and DCPPC client on a cloud-based VM to comply with NIH data access policy
+# download-utility-link=https://github.com/dcppc-phosphorous/manifest-downloader
+#comment to remove/exclude unique to DCPPC
+# manifest-filename=dcppc_manifest
+# metadata-filename=dcppc_manifest_metadata
+# --- End DCPPC ---
+
+download-manifest-text=Downloading and analyzing large files can be very resource intensive and so it is recommended to use the NeMO client for this purpose. One can download a manifest file using the button below in order to download their data through the client.
+manifest-filename=NeMO_manifest
+metadata-filename=NeMO_manifest_metadata
+manifest-file-header=file_id\tmd5\tsize\tfiletype\turls\tsample_id\tcomponent_files
+
+[manifest-download-col-1]
+col-name=file_id
+node-type=file
+prop=id
+
+[manifest-download-col-2]
+col-name=md5
+node-type=file
+prop=md5
+
+[manifest-download-col-3]
+col-name=size
+node-type=file
+prop=size
+
+[manifest-download-col-4]
+col-name=filetype
+node-type=file
+prop=format
+
+[manifest-download-col-5]
+col-name=urls
+node-type=None
+prop=urls
+
+[manifest-download-col-6]
+col-name=sample_id
+node-type=sample
+prop=id
+
+[manifest-download-col-7]
+col-name=component_files
+node-type=None
+prop=component_files
+
+
+[metadata-download-col-1]
+col-name=sample_id
+node-type=sample
+prop=id
+
+[metadata-download-col-2]
+col-name=project_id
+node-type=subject
+prop=id
+
+[metadata-download-col-3]
+col-name=sample_anatomical_region
+node-type=sample
+prop=anatomcial_region
+
+[metadata-download-col-4]
+col-name=sample_organism
+node-type=sample
+prop=organism
+
+[metadata-download-col-5]
+col-name=sample_library_method
+node-type=sample
+prop=lib_method
+
+[metadata-download-col-6]
+col-name=sample_modality
+node-type=sample
+prop=modality
+
+[metadata-download-col-7]
+col-name=sample_technique
+node-type=sample
+prop=technique
+
+[metadata-download-col-8]
+col-name=sample_transgenic_line
+node-type=sample
+prop=transgenic_line
+
+[metadata-download-col-9]
+col-name=study_full_name
+node-type=sample
+prop=study_full_name
+
+[metadata-download-col-10]
+col-name=project_name
+node-type=subject
+prop=project_name
+
+[metadata-download-col-11]
+col-name=project_grant
+node-type=subject
+prop=grant
+
+[metadata-download-col-12]
+col-name=project_lab
+node-type=subject
+prop=lab
+
+[metadata-download-col-13]
+col-name=project_organization
+node-type=subject
+prop=organizations
+
+[cloud-options]
+# 'download', 'aws', 'terra'
+service-name=terra
+# --- AWS settings --- These values are NEVER forwarded to UI
+aws-api-key=""
+aws-secret-key=""
+aws-bucket-name=""
+aws-running-on-ec2=False
+# --- End AWS ---

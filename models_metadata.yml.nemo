@@ -1,0 +1,237 @@
+
+metadata_mapping:
+# This section configures the following areas:
+# 1) UI - The autocomplete mapping for adding facets on the search page
+# 2) API - Fields for Aggregations class in models.py
+# 3) API - Converting UI facet/field names to Neo4j cypher
+  # Project props
+  project_name:
+      cypher_field: "subject.project_name"
+      description: "The name of the project within which the sequencing was organized"
+      doc_type: "cases"
+      field: "project name"
+      type: "string"
+
+  project_subtype:
+      cypher_field: "subject.project_subtype"
+      description: "The subtype of the project"
+      doc_type: "cases"
+      field: "project subtype"
+      type: "string"
+
+  project_lab:
+      cypher_field: "subject.lab"
+      description: "The name of the lab group within which the sequencing was organized"
+      doc_type: "cases"
+      field: "project lab"
+      type: "string"
+
+  project_grant:
+      cypher_field: "subject.grant"
+      description: "The name of the grant funding within which the sequencing was organized"
+      doc_type: "cases"
+      field: "project grant"
+      type: "string"
+
+  # Sample props
+
+  sample_id:
+      cypher_field: "sample.study_full_name"
+      description: "The unique ID of the sample, combination of sample_id, modality, and technique"
+      doc_type: "cases"
+      field: "sample id"
+      type: "string"
+
+  sample_sample_id:
+      cypher_field: "sample.id"
+      description: "The NeMO ID of the sample"
+      doc_type: "cases"
+      field: "sample id"
+      type: "string"
+
+  anatomical_region:
+      cypher_field: "sample.anatomical_region"
+      description: "Anatomical region from which the sample was obtained"
+      doc_type: "cases"
+      field: "sample anatomical region"
+      type: "string"
+
+  assay:
+      cypher_field: "sample.assay"
+      description: "Assay type of the sample"
+      doc_type: "cases"
+      field: "sample assay"
+      type: "string"
+
+  modality:
+      cypher_field: "sample.modality"
+      description: "Modality type of the sample"
+      doc_type: "cases"
+      field: "sample modality"
+      type: "string"
+
+  organism:
+      cypher_field: "sample.organism"
+      description: "The sample's organism type"
+      doc_type: "cases"
+      field: "sample organism"
+      type: "string"
+
+  library_method:
+      cypher_field: "sample.lib_method"
+      description: "Library method used to extract the sample"
+      doc_type: "cases"
+      field: "sample library method"
+      type: "string"
+
+  subspecimen_type:
+      cypher_field: "sample.subspecimen_type"
+      description: "The subspecimen type of the sample"
+      doc_type: "cases"
+      field: "sample subspecimen type"
+      type: "string"
+
+  sample_subtype:
+      cypher_field: "sample.subtype"
+      description: "The subtype of the sample"
+      doc_type: "cases"
+      field: "sample subtype"
+      type: "string"
+
+  total_processed_cells:
+      cypher_field: "sample.total_processed_cells"
+      description: "Total number of processed cells for the sample"
+      doc_type: "cases"
+      field: "sample total processed cells"
+      type: "string"
+
+  technique:
+      cypher_field: "sample.technique"
+      description: "Technique used to obtain the sample"
+      doc_type: "cases"
+      field: "sample technique"
+      type: "string"
+
+  transgenic_line:
+      cypher_field: "sample.transgenic_line"
+      description: "Transgenic line of the donor the sample came from"
+      doc_type: "cases"
+      field: "sample transgenic line"
+      type: "string"
+
+  lab:
+      cypher_field: "sample.lab"
+      description: "The grant ID of the lab the sample belongs to"
+      doc_type: "cases"
+      field: "sample lab"
+      type: "string"
+
+  # Study props
+  study_center:
+      cypher_field: "sample.study_center"
+      description: "The study's sequencing center"
+      doc_type: "cases"
+      field: "study center"
+      type: "string"
+
+  study_contact:
+      cypher_field: "sample.study_contact"
+      description: "The study's primary contact at the sequencing center"
+      doc_type: "cases"
+      field: "study contact"
+      type: "string"
+
+  study_description:
+      cypher_field: "sample.study_description"
+      description: "A longer description of the study"
+      doc_type: "cases"
+      field: "study description"
+      type: "string"
+
+  study_name:
+      cypher_field: "sample.study_name"
+      description: "The name of the study"
+      doc_type: "cases"
+      field: "study name"
+      type: "string"
+
+  study_full_name:
+      cypher_field: "sample.study_full_name"
+      description: "The full descriptive name of the study"
+      doc_type: "cases"
+      field: "study full_name"
+      type: "string"
+
+  # Subject props
+  subject_subtype:
+      cypher_field: "subject.subtype"
+      description: "The subtype of the subject"
+      doc_type: "cases"
+      field: "subject subtype"
+      type: "string"
+
+  subject_id:
+      cypher_field: "subject.uuid"
+      description: "The subject's UUID"
+      doc_type: "cases"
+      field: "subject UUID"
+      type: "string"
+
+  rand_subject_id:
+      cypher_field: "subject.id"
+      description: "The subject's per-study ID (can view in individual sample page)"
+      doc_type: "cases"
+      field: "subject ID"
+      type: "string"
+
+  # Subject attribute props
+  comment:
+      cypher_field: "subject.comment"
+      description: "Free-text comment"
+      doc_type: "cases"
+      field: "subject comment"
+      type: "string"
+
+  # File props (includes everything below Sample node in OSDF schema)
+  file_id:
+      cypher_field: "file.id"
+      description: "The NeMO ID of the file"
+      doc_type: "files"
+      field: "file ID"
+      type: "string"
+
+  format:
+      cypher_field: "file.format"
+      description: "The format of the file"
+      doc_type: "files"
+      field: "file format"
+      type: "string"
+
+  type:
+      cypher_field: "file.node_type"
+      description: "The node type of the file"
+      doc_type: "files"
+      field: "file type"
+      type: "string"
+
+  file_subtype:
+      cypher_field: "file.subtype"
+      description: "The categorical type of the file"
+      doc_type: "files"
+      field: "file subtype"
+      type: "string"
+
+  file_name:
+      cypher_field: "file.file_name"
+      description: "The basename of the file"
+      doc_type: "files"
+      field: "file file_name"
+      type: "string"
+
+  # Tag prop
+  tag:
+      cypher_field: "tag.term"
+      description: "Tag word attached to the file"
+      doc_type: "cases"
+      field: "tag"
+      type: "string"

@@ -1,0 +1,415 @@
+# THIS FILE CAN BE AUTO-GENERATED (minus descriptions) USING util/generated_models_metadata_yml.py
+
+metadata_mapping:
+# This section configures the following areas:
+# 1) UI - The autocomplete mapping for adding facets on the search page
+# 2) API - Fields for Aggregations class in models.py
+# 3) API - Converting UI facet/field names to Neo4j cypher
+
+  # sample props
+  sample_type:
+      cypher_field: "sample.sample_type"
+      description: ""
+      doc_type: "cases"
+      field: "Sample Type"
+      full: "sample_type"
+      type: "string"
+
+  body_site_(original_encoding):
+      cypher_field: "sample.body_site_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "Body Site (original encoding)"
+      full: "body_site_(original_encoding)"
+      type: "string"
+
+  assay_prep:
+      cypher_field: "sample.assay_prep"
+      description: ""
+      doc_type: "cases"
+      field: "Assay Prep"
+      full: "assay_prep"
+      type: "string"
+
+  study_name:
+      cypher_field: "sample.study_name"
+      description: ""
+      doc_type: "cases"
+      field: "Study Name"
+      full: "study_name"
+      type: "string"
+
+  body_site:
+      cypher_field: "sample.body_site"
+      description: ""
+      doc_type: "cases"
+      field: "Body Site"
+      full: "body_site"
+      type: "string"
+
+  batch:
+      cypher_field: "sample.batch"
+      description: ""
+      doc_type: "cases"
+      field: "Batch"
+      full: "batch"
+      type: "string"
+
+  database:
+      cypher_field: "sample.database"
+      description: ""
+      doc_type: "cases"
+      field: "Database"
+      full: "database"
+      type: "string"
+
+  sample_accession_(database):
+      cypher_field: "sample.sample_accession_database"
+      description: ""
+      doc_type: "cases"
+      field: "Sample Accession (database)"
+      full: "sample_accession_(database)"
+      type: "string"
+
+
+  # file props
+  format:
+      cypher_field: "file.format"
+      description: ""
+      doc_type: "file"
+      field: "file.format"
+      full: "format"
+      type: "string"
+
+  size:
+      cypher_field: "file.size"
+      description: ""
+      doc_type: "file"
+      field: "file.size"
+      full: "size"
+      type: "string"
+
+  matrix_type:
+      cypher_field: "file.matrix_type"
+      description: ""
+      doc_type: "file"
+      field: "file.matrix_type"
+      full: "matrix_type"
+      type: "string"
+
+#  id:
+#      cypher_field: "file.id"
+#      description: ""
+#      doc_type: "file"
+#      field: "file.id"
+#      full: "id"
+#      type: "string"
+
+  md5:
+      cypher_field: "file.md5"
+      description: ""
+      doc_type: "file"
+      field: "file.md5"
+      full: "md5"
+      type: "string"
+
+  filename:
+      cypher_field: "file.filename"
+      description: ""
+      doc_type: "file"
+      field: "file.filename"
+      full: "filename"
+      type: "string"
+
+  category:
+      cypher_field: "file.category"
+      description: ""
+      doc_type: "file"
+      field: "file.category"
+      full: "category"
+      type: "string"
+
+  http:
+      cypher_field: "file.http"
+      description: ""
+      doc_type: "file"
+      field: "file.http"
+      full: "http"
+      type: "string"
+
+
+  # subject props
+#  dataset_name:
+#      cypher_field: "subject.dataset_name"
+#      description: ""
+#      doc_type: "cases"
+#      field: "subject.dataset_name"
+#      full: "dataset_name"
+#      type: "string"
+
+  bmi:
+      cypher_field: "subject.bmi"
+      description: ""
+      doc_type: "cases"
+      field: "BMI"
+      full: "bmi"
+      type: "string"
+
+  immunosuppressants:
+      cypher_field: "subject.immunosuppressants"
+      description: ""
+      doc_type: "cases"
+      field: "Immunosuppressants"
+      full: "subject.immunosuppressants"
+      type: "string"
+
+  family_id_(original_encoding):
+      cypher_field: "subject.family_id_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "Family id (original_encoding)"
+      full: "family_id_(original_encoding)"
+      type: "string"
+
+  family_id:
+      cypher_field: "subject.family_id"
+      description: ""
+      doc_type: "cases"
+      field: "Family id"
+      full: "family_id"
+      type: "string"
+
+  pmid:
+      cypher_field: "subject.pmid"
+      description: ""
+      doc_type: "cases"
+      field: "PMID"
+      full: "pmid"
+      type: "string"
+
+#  age:
+#      cypher_field: "subject.age"
+#      description: ""
+#      doc_type: "cases"
+#      field: "subject.age"
+#      full: "age"
+#      type: "string"
+
+  montreal_e_classification:
+      cypher_field: "subject.montreal_e_classification"
+      description: ""
+      doc_type: "cases"
+      field: "Montreal E Classification"
+      full: "montreal_Etest_classification"
+      type: "string"
+
+  age_category:
+      cypher_field: "subject.age_category"
+      description: ""
+      doc_type: "cases"
+      field: "Age Category"
+      full: "age_category"
+      type: "string"
+
+  age_at_diagnosis_category:
+      cypher_field: "subject.age_at_diagnosis_category"
+      description: ""
+      doc_type: "cases"
+      field: "Age At Diagnosis Category"
+      full: "age_at_diagnosis_category"
+      type: "string"
+
+
+  subject_accession:
+      cypher_field: "subject.subject_accession"
+      description: ""
+      doc_type: "cases"
+      field: "Subject Accession"
+      full: "subject_accession"
+      type: "string"
+
+
+  steroids:
+      cypher_field: "subject.steroids"
+      description: ""
+      doc_type: "cases"
+      field: "Steroids"
+      full: "steroids"
+      type: "string"
+
+#  id:
+#      cypher_field: "subject.id"
+#      description: ""
+#      doc_type: "cases"
+#      field: "subject.id"
+#      full: "id"
+#      type: "string"
+
+  disease:
+      cypher_field: "subject.disease"
+      description: ""
+      doc_type: "cases"
+      field: "Disease"
+      full: "disease"
+      type: "string"
+
+  timepoint:
+      cypher_field: "subject.timepoint"
+      description: ""
+      doc_type: "cases"
+      field: "Timepoint"
+      full: "timepoint"
+      type: "string"
+
+  antibiotics:
+      cypher_field: "subject.antibiotics"
+      description: ""
+      doc_type: "cases"
+      field: "Antibiotics"
+      full: "antibiotics"
+      type: "string"
+
+  smoking_history:
+      cypher_field: "subject.smoking_history"
+      description: ""
+      doc_type: "cases"
+      field: "Smoking History"
+      full: "smoking_history"
+      type: "string"
+
+  montreal_a_classification:
+      cypher_field: "subject.montreal_a_classification"
+      description: ""
+      doc_type: "cases"
+      field: "Montreal A Classification"
+      full: "montreal_a_classification"
+      type: "string"
+
+  gender:
+      cypher_field: "subject.gender"
+      description: ""
+      doc_type: "cases"
+      field: "Gender"
+      full: "gender"
+      type: "string"
+
+  montreal_l_classification:
+      cypher_field: "subject.montreal_l_classification"
+      description: ""
+      doc_type: "cases"
+      field: "Montreal L Classification"
+      full: "montreal_l_classification"
+      type: "string"
+
+  montreal_b_classification:
+      cypher_field: "subject.montreal_b_classification"
+      description: ""
+      doc_type: "cases"
+      field: "Montreal B Classification"
+      full: "montreal_b_classification"
+      type: "string"
+
+  control:
+      cypher_field: "subject.control"
+      description: ""
+      doc_type: "cases"
+      field: "Control"
+      full: "control"
+      type: "string"
+
+  calprotectin:
+      cypher_field: "subject.calprotectin"
+      description: ""
+      doc_type: "cases"
+      field: "Calprotectin"
+      full: "calprotectin"
+      type: "string"
+
+  race:
+      cypher_field: "subject.race"
+      description: ""
+      doc_type: "cases"
+      field: "Race"
+      full: "race"
+      type: "string"
+
+  antibiotics_(original_encoding):
+      cypher_field: "subject.antibiotics_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "Antibiotics (original_encoding)"
+      full: "antibiotics_(original_encoding)"
+      type: "string"
+
+  steroids_(original_encoding):
+      cypher_field: "subject.steroids_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "Steroids (original_encoding)"
+      full: "steroids_(original_encoding)"
+      type: "string"
+
+  5ASA:
+      cypher_field: "subject.fiveASA"
+      description: ""
+      doc_type: "cases"
+      field: "5ASA"
+      full: "5ASA"
+      type: "string"
+
+
+  5asa_(original_encoding):
+      cypher_field: "subject.fiveASA_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "5ASA (original encoding)"
+      full: "5asa_(original_encoding)"
+      type: "string"
+
+  timepoint_(original_encoding):
+      cypher_field: "subject.timepoint_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "Timepoint (original_encoding)"
+      full: "timepoint_(original_encoding)"
+      type: "string"
+
+  study_accession_(database):
+      cypher_field: "subject.study_accession_database"
+      description: ""
+      doc_type: "cases"
+      field: "Study Accession (database)"
+      full: "study_accession_(database)"
+      type: "string"
+
+  perianal:
+      cypher_field: "subject.perianal"
+      description: ""
+      doc_type: "cases"
+      field: "Perianal"
+      full: "perianal"
+      type: "string"
+
+  pcdai:
+      cypher_field: "subject.pcdai"
+      description: ""
+      doc_type: "cases"
+      field: "PCDAI"
+      full: "pcdai"
+      type: "string"
+
+  immunosuppressants_(original_encoding):
+      cypher_field: "subject.immunosuppressants_original_encoding"
+      description: ""
+      doc_type: "cases"
+      field: "Immunosuppressants (original_encoding)"
+      full: "immunosuppressants_(original_encoding)"
+
+  alcohol:
+      cypher_field: "subject.alcohol"
+      description: ""
+      doc_type: "cases"
+      field: "Alcohol"
+      full: "alcohol"
+      type: "string"
+

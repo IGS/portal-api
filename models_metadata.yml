@@ -1,0 +1,314 @@
+# THIS FILE CAN BE AUTO-GENERATED (minus descriptions) USING util/generated_models_metadata_yml.py
+
+metadata_mapping:
+# This section configures the following areas:
+# 1) UI - The autocomplete mapping for adding facets on the search page
+# 2) API - Fields for Aggregations class in models.py
+# 3) API - Converting UI facet/field names to Neo4j cypher
+
+  # subject props
+  subtype:
+      cypher_field: "subject.subtype"
+      description: "The subtype of the study"
+      doc_type: "cases"
+      field: "subject subtype"
+      type: "string"
+
+  project_subtype:
+      cypher_field: "subject.project_subtype"
+      description: "The subtype of the project"
+      doc_type: "cases"
+      field: "subject project subtype"
+      type: "string"
+
+  id:
+      cypher_field: "subject.id"
+      description: "The subject's UUID"
+      doc_type: "cases"
+      field: "subject ID"
+      type: "string"
+
+  rand_subject_id:
+      cypher_field: "subject.rand_subject_id"
+      description: "The subject's per-study ID (can view in individual sample page)"
+      doc_type: "cases"
+      field: "subject study ID"
+      type: "string"
+
+  project_id:
+      cypher_field: "subject.project_id"
+      description: ""
+      doc_type: "cases"
+      field: "subject project ID"
+      type: "string"
+
+  race:
+      cypher_field: "subject.race"
+      description: "The subject's race/ethnicity"
+      doc_type: "cases"
+      field: "subject race"
+      type: "string"
+
+  project_name:
+      cypher_field: "subject.project_name"
+      description: "The name of the project within which the sequencing was organized"
+      doc_type: "cases"
+      field: "subject project name"
+      type: "string"
+
+  gender:
+      cypher_field: "subject.gender"
+      description: "The subject's sex"
+      doc_type: "cases"
+      field: "subject gender"
+      type: "string"
+
+  # sample props
+  geo_loc_name:
+      cypher_field: "sample.geo_loc_name"
+      description: "The geographical origin of the sample as defined by the country or sea name followed by specific region name"
+      doc_type: "cases"
+      field: "sample geo location name"
+      type: "string"
+
+  subtype:
+      cypher_field: "sample.subtype"
+      description: "The subtype of the sample"
+      doc_type: "cases"
+      field: "sample subtype"
+      type: "string"
+
+  study_subtype:
+      cypher_field: "sample.study_subtype"
+      description: "The subtype of the study"
+      doc_type: "cases"
+      field: "sample study subtype"
+      type: "string"
+
+  env_package:
+      cypher_field: "sample.env_package"
+      description: "Controlled vocabulary of MIGS/MIMS environmental packages"
+      doc_type: "cases"
+      field: "sample environmental package"
+      type: "string"
+
+  id:
+      cypher_field: "sample.id"
+      description: "The iHMP ID of the sample"
+      doc_type: "cases"
+      field: "sample id"
+      type: "string"
+
+  study_center:
+      cypher_field: "sample.study_center"
+      description: "The study's sequencing center"
+      doc_type: "cases"
+      field: "sample study center"
+      type: "string"
+
+  study_srp_id:
+      cypher_field: "sample.study_srp_id"
+      description: "NCBI Sequence Read Archive (SRA) project ID"
+      doc_type: "cases"
+      field: "sample study SRP ID"
+      type: "string"
+
+  study_name:
+      cypher_field: "sample.study_name"
+      description: "The name of the study"
+      doc_type: "cases"
+      field: "sample study name"
+      type: "string"
+
+  visit_subtype:
+      cypher_field: "sample.visit_subtype"
+      description: "The subtype of the visit"
+      doc_type: "cases"
+      field: "sample visit subtype"
+      type: "string"
+
+  visit_id:
+      cypher_field: "sample.visit_id"
+      description: "The identifier used by the sequence center to uniquely identify the visit"
+      doc_type: "cases"
+      field: "sample visit ID"
+      type: "string"
+
+  study_description:
+      cypher_field: "sample.study_description"
+      description: "A longer description of the study"
+      doc_type: "cases"
+      field: "sample study description"
+      type: "string"
+
+  study_contact:
+      cypher_field: "sample.study_contact"
+      description: "The study's primary contact at the sequencing center"
+      doc_type: "cases"
+      field: "sample study contact"
+      type: "string"
+
+  body_site:
+      cypher_field: "sample.body_site"
+      description: "Body site from which the sample was obtained using the FMA ontology"
+      doc_type: "cases"
+      field: "sample body site"
+      type: "string"
+
+  biome:
+      cypher_field: "sample.biome"
+      description: "Biomes are defined based on factors such as plant structures leaf types plant spacing and other factors like climate"
+      doc_type: "cases"
+      field: "sample biome"
+      type: "string"
+
+  collection_date:
+      cypher_field: "sample.collection_date"
+      description: "time of sampling either as an instance (single point in time) or interval"
+      doc_type: "cases"
+      field: "sample collection date"
+      type: "string"
+
+  visit_visit_number:
+      cypher_field: "sample.visit_visit_number"
+      description: "A sequential number that is assigned as visits occur for a subject"
+      doc_type: "cases"
+      field: "sample visit number"
+      type: "string"
+
+  body_product:
+      cypher_field: "sample.body_product"
+      description: "Substance produced by the body e.g. stool mucus where the sample was obtained from"
+      doc_type: "cases"
+      field: "sample body product"
+      type: "string"
+
+  feature:
+      cypher_field: "sample.feature"
+      description: "Environmental feature level includes geographic environmental features"
+      doc_type: "cases"
+      field: "sample feature"
+      type: "string"
+
+  lat_lon:
+      cypher_field: "sample.lat_lon"
+      description: "Latitude/longitude in WGS 84 coordinates"
+      doc_type: "cases"
+      field: "sample latitude longitude"
+      type: "string"
+
+  visit_interval:
+      cypher_field: "sample.visit_interval"
+      description: "The amount of time since the last visit (in days)"
+      doc_type: "cases"
+      field: "sample visit interval"
+      type: "string"
+
+  rel_to_oxygen:
+      cypher_field: "sample.rel_to_oxygen"
+      description: "Whether the organism is an aerobe or anaerobe"
+      doc_type: "cases"
+      field: "sample relationship to oxygen"
+      type: "string"
+
+  samp_size:
+      cypher_field: "sample.samp_size"
+      description: "Amount or size of sample (volume mass or area) that was collected"
+      doc_type: "cases"
+      field: "sample size"
+      type: "string"
+
+  samp_mat_process:
+      cypher_field: "sample.samp_mat_process"
+      description: "Any processing applied to the sample during or after retrieving the sample from environment"
+      doc_type: "cases"
+      field: "sample material process"
+      type: "string"
+
+  material:
+      cypher_field: "sample.material"
+      description: "Matter that was displaced by the sample before the sampling event"
+      doc_type: "cases"
+      field: "sample material"
+      type: "string"
+
+  samp_collect_device:
+      cypher_field: "sample.samp_collect_device"
+      description: "The method or device employed for collecting the sample"
+      doc_type: "cases"
+      field: "sample collection device"
+      type: "string"
+
+  visit_date:
+      cypher_field: "sample.visit_date"
+      description: "Date when the visit occurred"
+      doc_type: "cases"
+      field: "sample visit date"
+      type: "string"
+
+  fecalcal:
+      cypher_field: "sample.fecalcal"
+      description: "FecalCal result exists if measured for the sample"
+      doc_type: "cases"
+      field: "sample fecalcal"
+      type: "string"
+
+  supersite:
+      cypher_field: "sample.supersite"
+      description: "Body supersite from which the sample was obtained"
+      doc_type: "cases"
+      field: "sample supersite"
+      type: "string"
+
+  # file props
+  format:
+      cypher_field: "file.format"
+      description: "The format of the file"
+      doc_type: "file"
+      field: "file format"
+      type: "string"
+
+  node_type:
+      cypher_field: "file.node_type"
+      description: "The node type of the file"
+      doc_type: "file"
+      field: "file type"
+      type: "string"
+
+  id:
+      cypher_field: "file.id"
+      description: "The iHMP ID of the file"
+      doc_type: "file"
+      field: "file id"
+      type: "string"
+
+  matrix_type:
+      cypher_field: "file.matrix_type"
+      description: "The type of data used to generate the abundance matrix"
+      doc_type: "file"
+      field: "file matrix type"
+      type: "string"
+
+  annotation_pipeline:
+      cypher_field: "file.annotation_pipeline"
+      description: "The annotation pipeline used to generate the file"
+      doc_type: "file"
+      field: "file annotation pipeline"
+      type: "string"
+
+  # token props
+
+  # tag props
+  term:
+      cypher_field: "tag.term"
+      description: ""
+      doc_type: "file"
+      field: "tag term"
+      type: "string"
+
+
+  # user props
+
+  # session props
+
+  # query props

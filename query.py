@@ -1,738 +1,918 @@
-import re, json, requests, hashlib, time
+import re, json, requests, hashlib, time, ast, shlex
 import ujson, urllib
 from collections import OrderedDict
-from autocomplete_map import gql_map
-from py2neo import Graph ***REMOVED***Using py2neo v3 not v2
+from py2neo import Graph # Using py2neo v3 not v2
 from conf import neo4j_ip, neo4j_bolt, neo4j_http, neo4j_un, neo4j_pw
-from models import Project,Pagination,CaseHits,IndivFiles,IndivSample,Analysis,AssociatedEntities
-from models import FileHits,Bucket,BucketCounter,SBucket,SBucketCounter,FileSize,PieCharts
 
-***REMOVED***The match var is the base query to prepend all queries. The idea is to traverse
-***REMOVED***the graph entirely and use filters to return a subset of the total traversal. 
-***REMOVED***PS = Project/Subject
-***REMOVED***VSS = Visit/Sample/Study
-***REMOVED***File = File
-***REMOVED***D = derived from (contains prep data)
+from config_utils import load_config
+from flask import current_app
+
+#import metadata mapping
+from metadata_mapping import metadata_mapping as METADATA_MAPPING
+
+
+
+regexForNotEqual = re.compile(r"<>\s([0-9]*[a-zA-Z_]+[\-a-zA-Z0-9_]*)\b") # only want to add quotes to anything that's not solely numbers
+regexForEqual = re.compile(r"=\s([0-9]*[a-zA-Z_]+[\-a-zA-Z0-9_]*)\b")
+regexForIn = re.compile(r"(\[[\-_a-zA-Z\'\"\s\,\(\)]+\])") # catch anything that should be in a list
+
+METADATA_FIELDS = list(METADATA_MAPPING.keys())
+METADATA_CY_FIELDS = list( METADATA_MAPPING[facet]['cypher_field'] for facet in METADATA_MAPPING.keys())
+POTENTIALLY_MALICIOUS_STRINGS = {";"," delete "," create "," detach "," set ",
+                                    " merge ", " call ", " import ", " remove ",
+                                    " union ", " drop ", " foreach ", " using ", " unwind "}
+
+config = load_config(file_name='config.json')
+
+SUBJECT_EXCLUDE_LIST = config['site-wide']['subject-excluded-fields']
+SAMPLE_EXCLUDE_LIST = config['site-wide']['sample-excluded-fields']
+FILE_EXCLUDE_LIST = config['site-wide']['file-excluded-fields']
+
+# The match var is the base query to prepend all queries. The idea is to traverse
+# the graph entirely and use filters to return a subset of the total traversal.
+# PS = Project/Subject
+# VSS = Visit/Sample/Study
+# F = File
+# T = Tag
+# D = derived from (contains prep data)
+
+# TODO: mschor: Remove this constant in favor of caps constant once older lower cased version no longer used 
 full_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[D:derived_from]-(F:file) "
+FULL_TRAVERSAL = "MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) "
+SAMPLE_TRAVERSAL = "MATCH (subject:subject)<-[:extracted_from]-(sample:sample) "
 
 tag_traversal = "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[D:derived_from]-(F:file)-[:has_tag]->(T:tag) "
 
-***REMOVED***If the following return ends in "counts", then it is for a pie chart. The first two are for
-***REMOVED***cases/files tabs and the last is for the total size. 
-#
-***REMOVED***All of these returns are pre-pended with "WITH DISTINCT File.*". This is because there is 
-***REMOVED***some redundancy in the HMP data in that some nodes are iterated over multiple times. In order 
-***REMOVED***to get around this, need to just return each file that is seen only once and bundle any of the
-***REMOVED***other nodes alongside this single file. Meaning, "WITH DISTINCT File,Project" and only returning
-***REMOVED***aspects of 'Project' like Project.name or something is only counted once along a given path to a 
-***REMOVED***particular file. Note that each one has a fairly unique "WITH DISTINCT" clause, this is to help
-***REMOVED***optimize the query and ensure the distinct check is as simple as the return allows it to be.
-
-***REMOVED***The detailed queries require specifics about both sample and file counts to be 
-***REMOVED***returned so they require some extra handling. 
-base_detailed_return = '''
-    WITH COUNT(DISTINCT(VSS)) as scount, 
-    COUNT(DISTINCT(F)) AS fcount, {0} AS prop, SUM(DISTINCT(F.size)) as tot 
-    RETURN prop,scount,fcount,tot
-'''
-
-returns = {
-    'cases': "RETURN DISTINCT PS, VSS",
-    'files': "RETURN DISTINCT F",
-    'project_name': "RETURN PS.project_name AS prop, count(PS.project_name) AS counts",
-    'study_name': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
-    'body_site': "RETURN VSS.body_site AS prop, count(VSS.body_site) AS counts",
-    'study': "RETURN VSS.study_name AS prop, count(VSS.study_name) AS counts",
-    'gender': "RETURN PS.gender AS prop, count(PS.gender) AS counts",
-    'race': "RETURN PS.race AS prop, count(PS.race) AS counts",
-    'format': "WITH DISTINCT F RETURN F.format AS prop, count(F.format) AS counts",
-    'node_type': "WITH DISTINCT F RETURN F.node_type AS prop, count(F.node_type) AS counts",
-    'size': "WITH DISTINCT F RETURN SUM(F.size) AS tot",
-    'f_pagination': "RETURN (count(DISTINCT(F))) AS tot",
-    'c_pagination': "RETURN (count(DISTINCT(VSS.id))) AS tot",
-    'project_name_detailed': base_detailed_return.format('PS.project_name'),
-    'study_name_detailed': base_detailed_return.format('VSS.study_name'),
-    'sample_body_site_detailed': base_detailed_return.format('VSS.body_site'), 
-    'subject_gender_detailed': base_detailed_return.format('PS.gender'),
-    'file_format_detailed': base_detailed_return.format('F.format'),
-    'file_node_type_detailed': base_detailed_return.format('F.node_type')
-}
-
-***REMOVED***The loader missed some of these decimals/floats, convert here. Should fix
-***REMOVED***in loader but leaving here due to time constraint. Need to ensure what is being
-***REMOVED***passed by OSDF is indeed a numerical value.
-strings_to_nums = {
-    "VSS.fecalcal": "toFloat(VSS.fecalcal)"
-}
-
-***REMOVED***This populates the values in the side table of facet search. Want to let users
-***REMOVED***know how many samples per category in a given property. 
-count_props_dict = {
-    "PS": "MATCH (n:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
-    "VSS": "MATCH (PS:subject)<-[:extracted_from]-(n:sample)<-[:derived_from]-(F:file) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(n)) as counts",
-    "F": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(n:file) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts",
-    "T": "MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[:derived_from]-(F:file)-[:has_tag]->(n:tag) WHERE EXISTS(n.{0}) RETURN n.{0} AS prop, COUNT(DISTINCT(VSS)) as counts"
-}
-
 ###############
-***REMOVED***NEO4J SETUP #
+# NEO4J SETUP #
 ###############
 
-***REMOVED***Get all these values from the conf
+# Get all these values from the conf
 neo4j_bolt = int(neo4j_bolt)
 neo4j_http = int(neo4j_http)
 cypher_conn = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
 
-***REMOVED***This section will have all the logic for populating the actual data in the schema (data from Neo4j)
-#graph = Graph(host=neo4j_ip,bolt_port=neo4j_bolt,http_port=neo4j_http,user=neo4j_un,password=neo4j_pw)
+# Sample hits returns sample data for faceted search, advanced search, or default (all samples)
+def get_sample_hits(size, order, f, cy, facets=None):
 
-####################################
-***REMOVED***FUNCTIONS FOR GETTING NEO4J DATA #
-####################################
+    row_id_node_type = config['search']['cases-table']['api-row-id-node-type']
+    row_id_field = config['search']['cases-table']['api-row-id-field']
+    recalc_facets = config['search']['recalculate-facets'] if 'recalculate-facets' in config['search'] else True
+    
+    # Letting it fail if non numeric inputs
+    size = int(size)
+    f = int(f)
+    
+    hits = []
+    cquery = ""
+    
+    RETVAL = "RETURN DISTINCT subject,sample " 
+    where = None
 
-def process_cquery_http(cquery):
-    headers = {'Content-Type': 'application/json'}
-    data = {'statements': [{'statement': cquery, 'includeStats': False}]}
-    rq_res = requests.post(url='http://{}:7474/db/data/transaction/commit'.format(neo4j_ip),headers=headers, data=ujson.dumps(data), auth=(neo4j_un,neo4j_pw))
+    # Needed because from=1 means start from result 1 (as far as the api url is concerned), but neo4j skip should == 0    
+    if f != 0:
+        f = f-1
+    
+    param_map = {}
+    cypher_order = _convert_order(order)
+    aggs = None
+    
+    if cy == "":
+        order_by = " " + cypher_order + " SKIP {skip} LIMIT {size}"
+        cquery = SAMPLE_TRAVERSAL + " " + RETVAL + order_by
+        count_query = "MATCH (sample:sample) RETURN COUNT (sample) as tot"
+    elif '"op"' in cy:
+        (where, param_map) = _build_where(cy)
+        order_by = " " + cypher_order + " SKIP {skip} LIMIT {size}"
+        cquery = FULL_TRAVERSAL + " " + where + " " + RETVAL + order_by
+        count_query = FULL_TRAVERSAL + where + " RETURN COUNT(DISTINCT(sample)) as tot"
+        if recalc_facets:
+            aggs = _build_facet_counts_where(facets, where, param_map)
+    else:
+        # This is used by the advanced query (typing your own query)
+        (cquery, param_map) = _build_adv_cypher(cy,cypher_order,f,size,"samples")
+        cquery_limited = cquery + " SKIP {skip} LIMIT {size}"
+        count_query = cquery[0:cquery.index(" RETURN ")] + " RETURN COUNT(DISTINCT(sample)) as tot"
+        cquery = cquery_limited
+    
+    param_map["skip"] = f
+    param_map["size"] = size
+    res = execute_safe_query(cquery, **param_map)
+    
+    count = 0
+    for record in res:
+        hit = {}
+        for key in record.keys():
+            hit[key] = dict(record[key])
+            # filter facets in db, but not in metadata yaml
+            if key == "sample":
+                hit[key] = { key:value for (key, value) in hit[str(key)].items() if key not in SAMPLE_EXCLUDE_LIST}
+            elif key == "subject":
+                hit[key] = { key:value for (key, value) in hit[str(key)].items() if key not in SUBJECT_EXCLUDE_LIST}
+            else:
+                hit[key] = { key:value for (key, value) in hit[str(key)].items() if key not in FILE_EXCLUDE_LIST}
 
-    query_res = []
-    jsResp = ujson.loads(rq_res.text)
-    column_names = jsResp['results'][0]['columns']
+            if str(key) == row_id_node_type:
+                hit["id"] = hit[str(key)][row_id_field]
+                
+        hits.append(hit)
+        count += 1
+    
+    try:
+        res.close()
+    except:
+        pass
+    
+    data = {"hits": hits}
+    data["pagination"] = {"count" : count}
+    if aggs:
+        data["aggregations"] = aggs
+   
+    sample_count_cursor = execute_safe_query(count_query, **param_map)
+    try:
+        total = sample_count_cursor.evaluate("tot")
+        sample_count_cursor.close()
+    except:
+        total = 0
 
-    for result in jsResp["results"][0]["data"]:
-        res_dict = {}
-        for i in range(0, len(column_names)):
-            elem = result['row'][i]
-            res_dict[column_names[i]] = elem
-        query_res.append(res_dict)
+    # if no "from" provided as param
+    if total > 0 and f == 0:
+        f = 1
+    else:
+        # restore from to non-cypher, user-friendly number
+        f += 1
+    
+    pages = _calc_pages(total, size)
+    page = _calc_pages(f, size)
 
-    return query_res
+    # count = how many results back on the current page (could be less than what the user selected if this is the last page)
+    # total = total results in database based on selelcted facets
+    # page = current page number
+    # pages = total number of pages
+    # from = starting result number for page -- came in from client
+    # sort = sort string -- came in from client
+    # size = what the user selected to see per page
+        
+    pagination = {
+          "count": count, 
+          "total": total, 
+          "page": page,
+          "pages": pages, 
+          "from": f, 
+          "sort": order, 
+          "size": size
+        } 
+    
+    data["pagination"] = pagination
+    
+    return {"data": data}
 
-***REMOVED***Placeholder until the UI is completely stripped of GDC syntax
-def convert_order(order):
+    
+# Function to return file values to populate the table.
+def get_file_hits(size,order,f,cy,facets=None):
 
-    ***REMOVED***replace UI ':' with a ' '
-    order = order.replace(':',' ')
-    order = order.replace('.raw','') ***REMOVED***trim more GDC syntax
+    # Letting it fail if non numeric inputs
+    size = int(size)
+    f = int(f)
+    
+    hits = []
+    cquery = ""
 
-    ***REMOVED***UI has an erroneous ',' appended for files occassionally
-    if order[-1] == ',':
-        order = order[:-1]
+    RETVAL = "RETURN DISTINCT file " 
+    where = None
+    
+    # Needed because from=1 means start from result 1 (as far as the api url is concerned), but neo4j skip should == 0    
+    if f != 0:
+        f = f-1
+    
+    param_map = {}
+    cypher_order = _convert_order(order)
+    aggs = None
+    recalc_facets = config['search']['recalculate-facets'] if 'recalculate-facets' in config['search'] else True
 
-    map_order = {
-        'case_id': 'VSS.id',
-        'file_name': 'F.id',
-        'file_id': 'F.id',
-        'project.primary_site': 'VSS.body_site',
-        'data_category': 'F.node_type',
-        'data_format': 'F.format',
-        'cases.project.project_id': 'PS.project_name',
-        'file_size': 'F.size'
+    # The following if/elif/else block has 3 parts which are true when:
+    # A default query is triggered by the front-end (paging through samples, files)
+    # A facet-query is triggered
+    # An advanced search query is triggered
+    if cy == "":
+        order_by = " " + ("" if cypher_order is None else cypher_order) + " SKIP {skip} LIMIT {size}"
+        cquery = FULL_TRAVERSAL + " " + RETVAL + order_by
+        res = execute_safe_query(cquery, skip=f, size=size)
+        count_query = FULL_TRAVERSAL + " RETURN COUNT (file) as tot, COUNT(sample) as sample_tot"
+    elif '"op"' in cy:
+        (where, param_map) = _build_where(cy)
+        order_by = " " + cypher_order + " SKIP {skip} LIMIT {size}"
+        cquery = FULL_TRAVERSAL + " " + where + " " + RETVAL + order_by
+        param_map["skip"] = f
+        param_map["size"] = size
+        res = execute_safe_query(cquery, **param_map)
+        count_query = FULL_TRAVERSAL + where + " RETURN COUNT(DISTINCT(file)) as tot, COUNT(DISTINCT(sample)) as sample_tot"
+        if recalc_facets:
+            aggs = _build_facet_counts_where(facets, where, param_map)
+
+    else:
+        (cquery, param_map) = _build_adv_cypher(cy,cypher_order,f,size,"files")
+        cquery_limited = cquery + " SKIP {skip} LIMIT {size}"
+        param_map["skip"] = f
+        param_map["size"] = size
+        res = execute_safe_query(cquery_limited, **param_map)
+        count_query = cquery[0:cquery.index(" RETURN ")] + " RETURN COUNT(DISTINCT(file)) as tot, COUNT(DISTINCT(sample)) as sample_tot"
+
+    sample_count_cursor = execute_safe_query(count_query, **param_map)
+    total = 0
+    sample_total = 0
+    
+    for record in sample_count_cursor:
+        d_record = dict(record)
+        total = record["tot"]
+        sample_total = record["sample_tot"]    
+    
+    try:
+        sample_count_cursor.close()
+    except:
+        pass
+    
+    row_id_node_type = config['search']['files-table']['api-row-id-node-type']
+    row_id_field = config['search']['files-table']['api-row-id-field']
+    rename_filename = config['search']['files-table']['rename-filename-absolute-path']
+    
+    count = 0
+    for record in res:
+        d_record = dict(record)
+        hit = {}
+        
+        # For file traversals, there's only one node type, 'file', but sticking with allowance for multiple
+        for nodetype in record.keys():
+            hit[nodetype] = dict(record[nodetype])
+
+            file_url = extract_url(hit[nodetype])
+            # filter facets in db, but not in metadata yaml
+            #hit[nodetype] = { key:value for (key, value) in hit[nodetype].items() if key in METADATA_FIELDS}
+            hit[nodetype] = { key:value for (key, value) in hit[nodetype].items() if key not in FILE_EXCLUDE_LIST}
+            if str(nodetype) == row_id_node_type:
+                hit["file_id"] = hit[str(nodetype)][row_id_field]
+
+            if rename_filename in [True, "true"]:
+                # Changes file_name to the absolute file path url (NeMO uses only filename, no path)
+                hit[nodetype]["file_name"] = file_url
+            
+            #TODO: mschor: This is HMP specific and has been hardcoded since the beginning.
+            #Check if data is private 
+            if 'private' in file_url.lower():
+                hit['access'] = 'controlled'
+            else:
+                hit['access'] = 'open'
+        
+        hits.append(hit)
+        count += 1
+        
+    try:
+        res.close()
+    except:
+        pass
+        
+    data = {"hits": hits}
+    if aggs:
+        data["aggregations"] = aggs
+    
+    # if no "from" provided as param
+    if total > 0 and f == 0:
+        f = 1
+    else:
+        # restore from to non-cypher, user-friendly number
+        f += 1
+    
+    pages = _calc_pages(total, size)
+    page = _calc_pages(f, size)
+
+    # count = how many results back on the current page (could be less than what the user selected if this is the last page)
+    # total = total results in database based on selelcted facets
+    # page = current page number
+    # pages = total number of pages
+    # from = starting result number for page -- came in from client
+    # sort = sort string -- came in from client
+    # size = what the user selected to see per page
+            
+    pagination = {
+          "count": count, 
+          "total": total, 
+          "page": page, 
+          "pages": pages, 
+          "from": f, 
+          "sort": order, 
+          "size": size,
+          "sample_total": sample_total
+        } 
+    
+    data["pagination"] = pagination
+    
+    return {"data": data}
+
+
+# Retrieve all files associated with a given Sample ID.
+def get_files(sample_id):
+    
+    row_id_node_type = config['search']['files-table']['api-row-id-node-type']
+    row_id_field = config['search']['files-table']['api-row-id-field']
+    sample_id_property = config['search']['sample-node-id']
+
+    sample_file_traversal = "MATCH (sample:sample)<-[D:derived_from]-(file:file) "
+    cquery = sample_file_traversal + " WHERE " + sample_id_property + "={id} RETURN file"
+    res = execute_safe_query(cquery, id=sample_id)
+    
+    hits = []   
+    count = 0
+    for record in res:
+        d_record = dict(record)
+        hit = {}
+        for nodetype in d_record:
+            # Assign the dictionary as a value in this hit with the key being the node type
+            hit[nodetype] = d_record[nodetype]
+            if nodetype == row_id_node_type:
+                # The front-end will need a non-nested ID field to uniquely be able to iterate over the results
+                hit["id"] = hit[nodetype][row_id_field]
+                hit["file_id"] = hit[nodetype][row_id_field]
+        hits.append(hit)
+        count += 1
+
+    try:
+        res.close()
+    except:
+        pass
+    
+    data = {"files": hits, "case_id": sample_id }
+    
+    return data
+
+
+def get_subject_sample(sample_id):
+    sample_id_property = config['search']['sample-node-id']
+    cquery = "MATCH (subject:subject)<-[:extracted_from]-(sample:sample) WHERE " + sample_id_property + "= {id} RETURN subject, sample"
+    res = execute_safe_query(cquery, id=sample_id)
+
+    hit = {}
+    # There should only be one result here. Sample IDs should be unique. If more than one is returned, it's a data error.
+    count = 0    
+    for record in res:
+        count += 1
+        if count > 1:
+            #TODO: mschor: add logging module. We should log an error here
+            print("Found multiple samples with the same ID: " + sample_id + ". This is a data error!")
+            break
+        d_record = dict(record)
+        
+        for nodetype in d_record:
+            # Assign the dictionary as a value in this hit with the key being the node type
+            hit[nodetype] = d_record[nodetype]
+            # filter facets in db, but not in metadata yaml
+            #hit[nodetype] = { key:value for (key, value) in hit[str(nodetype)].items() if key in METADATA_FIELDS}
+            if nodetype == "subject":
+                hit[nodetype] = { key:value for (key, value) in hit[nodetype].items() if key not in SUBJECT_EXCLUDE_LIST}
+            else:
+                hit[nodetype] = { key:value for (key, value) in hit[nodetype].items() if key not in SAMPLE_EXCLUDE_LIST}
+    try:
+        res.close()
+    except:
+        pass
+    
+    return hit
+
+
+# Pull all the data associated with a particular file ID.
+def get_file_data(file_id):
+    rename_filename = config['search']['files-table']['rename-filename-absolute-path']
+    data = {}
+    
+    query = "MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE file.id = {id} RETURN subject, sample, file"
+    res = execute_safe_query(query, id=file_id)
+    
+    #Extract node properties from record
+    for record in res:
+        data.update({
+            'subject': dict(record)['subject'],
+            'sample': dict(record)['sample']
+        })
+        current_file = dict(record)['file']
+        
+        # filter facets in db, but not in metadata yaml
+        data['subject'] = { key:value for (key, value) in data['subject'].items() if key not in SUBJECT_EXCLUDE_LIST}
+        data['sample'] = { key:value for (key, value) in data['sample'].items() if key not in SAMPLE_EXCLUDE_LIST}
+        
+        file_url = extract_url(current_file)
+        
+        current_file = { key:value for (key, value) in current_file.items() if key not in FILE_EXCLUDE_LIST}
+
+        #Manually add file_id and file_name
+        current_file['file_id'] = current_file['id']
+        if rename_filename in [True, "true"]:
+            # Changes file_name to the absolute file path url (NeMO uses only filename, no path)
+            current_file['file_name'] = file_url
+
+    
+        #TODO: mschor: This is HMP specific and has been hardcoded since the beginning.
+        #Check if data is private 
+        if 'private' in file_url.lower():
+            current_file['access'] = 'controlled'
+        else:
+            current_file['access'] = 'open'
+
+    try:
+        res.close()
+    except:
+        pass
+    
+    data.update({'file': current_file})
+    return {'data' : data }
+
+
+def get_returns():
+    returns = {
+        'samples': "RETURN DISTINCT subject, sample",
+        'files': "RETURN DISTINCT file"
     }
     
-    for k,v in map_order.items():
-        order = order.replace(k,v)
+    if config:
+        count_queries = config['search']['piechart-api']['count-queries']
+        for k, v in count_queries.iteritems():
+            k = k.replace('-', '_') #config is hypen-separated, but need underscore_separated at this point
+            returns[k] = v
 
-    return order
+    return returns
 
-***REMOVED***Function to extract a file name and an HTTP URL given values from a urls 
-***REMOVED***property from an OSDF node. Note that this prioritizes http>fasp>ftp>s3
-***REMOVED***and that it only returns a single one of the endpoints. This is in an effort
-***REMOVED***to communicate a base URL in the result tables in the portal. 
+def cache_facet_counts():
+    
+    count_dict = {}
+    print("Building facet counts...")
+    for label in _get_node_labels():
+        for prop in _get_all_property_keys_for_node_type(label):
+            count_dict.update(_build_facet_counts([label + "." + prop]))
+
+    current_app.cache.set("facet_counts", count_dict)
+    print("Done")
+
+# Function to determine what component file property names to look for
+# based on the file type, obtained from the URL.
+def determine_component_files(urls, urls_node):
+    url = ','.split(urls)[0]
+    if urls_node['format'] == 'FASTQ':
+        r1_fastq = urls_node["r1_fastq"] if 'r1_fastq' in urls_node else "NA"
+        r2_fastq = urls_node["r2_fastq"] if 'r2_fastq' in urls_node else "NA"
+        i1_fastq = urls_node["i1_fastq"] if 'i1_fastq' in urls_node else "NA"
+        i2_fastq = urls_node["i2_fastq"] if 'i2_fastq' in urls_node else "NA"
+        barcodes_fastq = urls_node["barcodes_fastq"] if 'barcodes_fastq' in urls_node else "NA"
+        component_files = "{};{};{};{};{}".format(r1_fastq, r2_fastq, i1_fastq, i2_fastq, barcodes_fastq)
+    elif urls_node['format'] == 'BAM':
+        bam = urls_node["bam"] if 'bam' in urls_node else "NA"
+        bai = urls_node["bai"] if 'bai' in urls_node else "NA"
+        component_files = "{};{};".format(bam, bai)
+    elif urls_node['format'] == 'MEX':
+        mtx = urls_node["mtx"] if 'mtx' in urls_node else "NA"
+        barcodes_tsv = urls_node["barcodes_tsv"] if 'barcodes_tsv' in urls_node else "NA"
+        genes_tsv = urls_node["genes_tsv"] if 'genes_tsv' in urls_node else "NA"
+        component_files = "{};{};{}".format(mtx, barcodes_tsv, genes_tsv)
+    elif urls_node['format'] == 'TSV':
+        tsv = urls_node["tsv"] if 'tsv' in urls_node else "NA"
+        tsv_index = urls_node["tsv_index"] if 'tsv_index' in urls_node else "NA"
+        component_files = "{};{};".format(tsv, tsv_index)
+    elif urls_node['format'] == 'FPKM':
+        isoforms_fpkm = urls_node["isoforms_fpkm"] if 'isoforms_fpkm' in urls_node else "NA"
+        genes_fpkm = urls_node["genes_fpkm"] if 'genes_fpkm' in urls_node else "NA"
+        component_files = "{};{}".format(isoforms_fpkm, genes_fpkm)
+    elif urls_node['format'] == 'TABcounts':
+        col_counts = urls_node["col_counts"] if 'col_counts' in urls_node else "NA"
+        row_counts = urls_node["row_counts"] if 'row_counts' in urls_node else "NA"
+        mtx_counts = urls_node["mtx_counts"] if 'mtx_counts' in urls_node else "NA"
+        exp_json = urls_node["exp_json"] if 'exp_json' in urls_node else "NA"
+        component_files = "{};{};{};{}".format(col_counts, row_counts, mtx_counts, exp_json)
+    elif urls_node['format'] == 'TABanalysis':
+        col_analysis = urls_node["col_analysis"] if 'col_analysis' in urls_node else "NA"
+        row_analysis = urls_node["row_analysis"] if 'row_analysis' in urls_node else "NA"
+        dimred = urls_node["dimred"] if 'dimred' in urls_node else "NA"
+        component_files = "{};{};{}".format(col_analysis, row_analysis, dimred)
+    else:
+        component_files = "NA"
+    return component_files
+
+# Function to extract a file name and an HTTP URL given values from a urls
+# property from an OSDF node. Note that this prioritizes http>ftp>s3
+# and that it only returns a single one of the endpoints. This is in an effort
+# to communicate a base URL in the result tables in the portal.
 def extract_url(urls_node):
-   
-    fn = "Private data"
+    private_filename = config['search']['files-table']['private-data-filename']
+    fn = private_filename if private_filename else "Private data"
 
     if 'http' in urls_node:
         fn = urls_node['http']
-    elif 'fasp' in urls_node:
-        fn = urls_node['fasp']
+    elif 'https' in urls_node:
+        fn = urls_node['https']
     elif 'ftp' in urls_node:
         fn = urls_node['ftp']
     elif 's3' in urls_node:
         fn = urls_node['s3']
+    elif 'gs' in urls_node:
+        fn = urls_node['gs']
+    elif 'file' in urls_node:   # SAdkins test
+        fn = urls_node['file']
     elif 'private_url' in urls_node:
         fn += ": {}".format(urls_node['private_url'])
 
     return fn
 
-***REMOVED***Function to return all present URLs for the manifest file
+# Function to return all present URLs for the manifest file
 def extract_manifest_urls(urls_node):
 
     urls = []
 
-    ***REMOVED***Note that these are all individual ifs in order to grab all endpoints present
+    # Note that these are all individual ifs in order to grab all endpoints present
     if 'http' in urls_node:
         urls.append(urls_node['http'])
-    if 'fasp' in urls_node:
-        urls.append(urls_node['fasp'])
+    if 'https' in urls_node:
+        urls.append(urls_node['https'])
     if 'ftp' in urls_node:
         urls.append(urls_node['ftp'])
     if 's3' in urls_node:
         urls.append(urls_node['s3'])
+    if 'gs' in urls_node:
+        urls.append(urls_node['gs'])
+    if 'file' in urls_node:   # SAdkins test
+        urls.append(urls_node['file'])
 
-    if len(urls) == 0: ***REMOVED***if here, there is no downloadable file
+    if len(urls) == 0: # if here, there is no downloadable file
         urls.append('Private: Data not accessible via the HMP DACC.')
 
     return ",".join(urls)
 
-***REMOVED***Function to get file size from Neo4j. 
-***REMOVED***This current iteration should catch all the file data types EXCEPT for the *omes and the multi-step/repeat
-***REMOVED***edges like the two "computed_from" edges between abundance matrix and 16s_raw_seq_set. Should be
-***REMOVED***rather easy to accommodate these oddities once they're loaded and I can test.
-def get_total_file_size(cy):
-    cquery = ""
-    if cy == "":
-        cquery = "MATCH (F:file) RETURN SUM(DISTINCT(F.size)) AS tot"
-    elif '"op"' in cy:
-        cquery = build_cypher(cy,"null","null","null","size")
-    else:
-        cquery = build_adv_cypher(cy,"null","null","null","size")
-        cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-    res = process_cquery_http(cquery)
-    return res[0]['tot']
+#DOlley removed because appears to not be used. Remaining as precaution
+# def get_all_proj_data():
+#     cquery = "MATCH (VSS:subject) RETURN DISTINCT VSS.study_name, VSS.study_description"
+#     return _process_cquery_http(cquery)
+ 
+def get_all_study_data(size=None, order=None, f=None):
+    cquery = config['projects']['study-data-query']
+    param_map = {}
 
-***REMOVED***Function for pagination calculations. Find the page, number of pages, and number of entries on a single page.
-def pagination_calcs(total,start,size,c_or_f):
-    pg,pgs,cnt,tot = (0 for i in range(4))
-    sort = ""
-    if c_or_f == "c":
-        tot = int(total)
-        sort = "case_id.raw:asc"      
-    else:
-        tot = int(total)
-        sort = "file_name.raw:asc"
-    if size != 0: pgs = int(tot / size) + (tot % size > 0)
-    if size != 0: pg = int(start / size) + (start % size > 0)
-    if (start+size) < tot: ***REMOVED***less than full page, count must be page size
-        cnt = size
-    else: ***REMOVED***if less than a full page (only possible on last page), find the difference
-        cnt = tot-start
-    pagcalcs = []
-    pagcalcs.append(pgs)
-    pagcalcs.append(pg)
-    pagcalcs.append(cnt)
-    pagcalcs.append(tot)
-    pagcalcs.append(sort)
-    return pagcalcs
+    if order is not None:
+        if ":asc" in order.lower():
+            order = order.lower().replace(":asc", "")
+        if ":desc" in order.lower():
+            order = order.lower().replace(":desc", " DESC")
+        if order.endswith(","):
+            order = order[:-1]
+        
+        cypher_order = " ORDER BY " + order
 
-***REMOVED***Function to determine how pagination is to work for the cases/files tabs. This will 
-***REMOVED***take a Cypher query and a given table size and determine how many pages are needed
-***REMOVED***to display all this data. 
-***REMOVED***cy = Cypher filters/ops
-***REMOVED***size = size of each page
-***REMOVED***f = from/start position
-def get_pagination(cy,size,f,c_or_f):
-    cquery = ""
-    if cy == "":
-        if c_or_f == 'c':
-            cquery = "MATCH (n:sample) RETURN count(n) AS tot"
-        else:
-            cquery = "MATCH (n:file) RETURN count(n) AS tot"
-        res = process_cquery_http(cquery)
-        calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
-        return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
-    else:
-        if '"op"' in cy:
-            if c_or_f == 'c':
-                cquery = build_cypher(cy,"null","null","null","c_pagination")
-            else:
-                cquery = build_cypher(cy,"null","null","null","f_pagination")
-        else:
-            if c_or_f == 'c':
-                cquery = build_adv_cypher(cy,"null","null","null","c_pagination")
-                cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-            else:
-                cquery = build_adv_cypher(cy,"null","null","null","f_pagination")
-                cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-                
-        res = process_cquery_http(cquery)
-        calcs = pagination_calcs(res[0]['tot'],f,size,c_or_f)
-        return Pagination(count=calcs[2], sort=calcs[4], fromNum=f, page=calcs[1], total=calcs[3], pages=calcs[0], size=size)
+        cquery = cquery + cypher_order
+    if f is not None:
+        f = int(f)
+        if f != 0:
+            f = f-1
+        param_map['skip'] = f
+    if size is not None:
+        size = int(size)
+        param_map['size'] = size
 
-***REMOVED***retrieve the number of samples associated with the particular IDs
-def get_sample_count(cy):
-    cquery = build_cypher(cy,"null","null","null",'c_pagination')
-    cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-    res = process_cquery_http(cquery)
-    return int(res[0]['tot'])
+    res = execute_safe_query(cquery, **param_map)
+    results = []
+    for record in res:
+        results.append(dict(record))
     
-***REMOVED***Retrieve ALL files associated with a given Subject ID.
-def get_files(sample_id):
-    fl = []
-    dt, fn, df, ac, fi = ("" for i in range(5))
-
-    cquery = "{0} WHERE VSS.id='{1}' RETURN F".format(full_traversal,sample_id)
-    res = process_cquery_http(cquery)
-
-    for x in range(0,len(res)): ***REMOVED***iterate over each unique path
-        url = extract_url(res[x]['F'])
-        dt = res[x]['F']['subtype']
-        df = res[x]['F']['format']
-        ac = "open" ***REMOVED***need to change this once a new private/public property is added to OSDF
-        if url.startswith("Private"):
-            ac = "private"
-        fs = 0
-        if 'size' in res[x]['F']:
-            fs = res[x]['F']['size']
-        fi = res[x]['F']['id']
-        fn = url
-        fl.append(IndivFiles(dataType=dt,fileName=fn,dataFormat=df,access=ac,fileId=fi,fileSize=fs))
-
-    return fl
-
-***REMOVED***Query to traverse top half of OSDF model (Project<-....-Sample). 
-def get_proj_data(sample_id):
-    cquery = "{0} WHERE VSS.id='{1}' RETURN PS.project_name AS name,PS.project_subtype AS subtype".format(full_traversal,sample_id)
-    res = process_cquery_http(cquery)
-    return Project(name=res[0]['name'],projectId=res[0]['subtype'])
-
-def get_all_proj_data():
-    cquery = "MATCH (VSS:subject) RETURN DISTINCT VSS.study_name, VSS.study_description"
-    return process_cquery_http(cquery)
-
-def get_all_study_data():
-    cquery = '''
-        {0} RETURN VSS.study_name AS study_name, VSS.study_full_name AS study_full_name, 
-        PS.project_subtype AS project_subtype, VSS.study_subtype AS study_subtype, 
-        COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count, F.node_type as file_type, 
-        SUM(DISTINCT(F.size)) AS file_size, VSS.body_site AS body_site
-    '''.format(full_traversal)
-    return process_cquery_http(cquery)
+    return results
 
 def get_study_sample_counts():
-    cquery = '{0} RETURN VSS.study_name AS study_name, COUNT(DISTINCT(VSS)) AS sample_count'.format(full_traversal)
-    return process_cquery_http(cquery)
+    cquery = config['projects']['study-sample-count-query']
+    return _process_cquery_http(cquery)
 
-***REMOVED***This function is a bit unique as it's only called to populate the bar chart on the home page
-def get_all_proj_counts():
-    cquery = "{0} RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count".format(full_traversal)
-    return process_cquery_http(cquery)
+def get_front_page_bar_chart_data():
+    return_stmt = config['search']['barchart-config']['count-query']
+    cquery = ("{0} " + return_stmt).format(full_traversal)
+    return _process_cquery_http(cquery)
 
-***REMOVED***Function to return all relevant values for the pie charts. Takes in WHERE from UI
+def get_front_page_example_query_data(): 
+    data = []
+
+    for example_query in config['home']['example-queries']:
+        results = execute_safe_query(example_query['count-query'])
+        
+        for record in results:
+            data.append({
+                'case_count': record['case_count'],
+                'file_count': record['file_count'],
+                'description': example_query['description'],
+                'has-cases-link': example_query['has-cases-link'],
+                'has-files-link': example_query['has-files-link'],
+                'cases-link': example_query['cases-link'],
+                'files-link': example_query['files-link']
+            })
+        
+        try:
+            results.close()
+        except:
+            pass
+        
+    return data
+
+# Function to return all relevant values for the pie charts. Takes in WHERE from UI
 def get_pie_chart_summary(cy):
-   
+
     cquery = ""
-    pn_bl,sn_bl,sbs_bl,sg_bl,fnt_bl,ff_bl = ([] for i in range(6))
+    charts = []
     file_size = 0
 
-    chart_order = [
-        'project_name',
-        "study_name",
-        "sample_body_site",
-        "subject_gender",
-        "file_node_type",
-        "file_format"
-    ]
+    cache_results = False
+    return_from_cache = False
 
-    tx = cypher_conn.begin()
-
-    for chart in chart_order:        
-        if "op" in cy:
-            cquery = build_cypher(cy,"null","null","null","{0}_detailed".format(chart))
-        else:
-            cquery = build_adv_cypher(cy,"null","null","null","{0}_detailed".format(chart))
-
-        res = tx.run(cquery)
-        for record in res:
-            if chart == 'sample_body_site': ***REMOVED***minor optimization, those with more groups towards the top
-                sbs_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
-            elif chart == 'study_name':
-                sn_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
-            elif chart == 'file_node_type':
-                fnt_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
-            elif chart == 'file_format':
-                ff_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
-            elif chart == 'subject_gender':
-                sg_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
-            elif chart == 'project_name':
-                pn_bl.append(SBucket(key=record['prop'], caseCount=record['scount'], docCount=record['fcount'], fileSize=record['tot']))
-                file_size += record['tot'] ***REMOVED***calculate this here as projects most likely to return lowest amount of rows
-
-        res.close()
-
-    tx.commit()
-
-    return PieCharts(project_name=SBucketCounter(buckets=pn_bl),
-        subject_gender=SBucketCounter(buckets=sg_bl),
-        file_format=SBucketCounter(buckets=ff_bl),
-        study_name=SBucketCounter(buckets=sn_bl),
-        file_type=SBucketCounter(buckets=fnt_bl),
-        sample_body_site=SBucketCounter(buckets=sbs_bl),
-        fs=FileSize(value=file_size))
-
-***REMOVED***Cypher query to count the amount of each distinct property
-def count_props(node, prop, cy):
-    cquery = ""
-    if cy == "":
-        cquery = count_props_dict[node].format(prop)
-    else:
-        cquery = build_cypher(cy,"null","null","null",prop)
-    return process_cquery_http(cquery)
-
-***REMOVED***Cypher query to count the amount of each distinct property
-def count_props_and_files(node, prop, cy):
-
-    cquery,with_distinct = ("" for i in range (2))
+    # Get chart names/order from config
+    chart_order = config['search']['piechart-api']['chart-order']
+    count_queries = config['search']['piechart-api']['count-queries']
     
-    if cy == "":
-        retval = "RETURN {0}.{1} AS prop, COUNT(DISTINCT(VSS)) AS ccounts, COUNT(F) AS dcounts, SUM(DISTINCT(F.size)) as tot".format(node,prop)
-        cquery = "{0} {1}".format(full_traversal,retval)
-
-    else:
-        prop_detailed = "{0}_detailed".format(prop)
-        if "op" in cy:
-            cquery = build_cypher(cy,"null","null","null",prop_detailed)
-        else:
-            cquery = build_adv_cypher(cy,"null","null","null",prop_detailed)
-            cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-
-    return process_cquery_http(cquery)
-
-***REMOVED***Formats the values from count_props & count_props_and_files functions above into GQL
-def get_buckets(inp,sum, cy):
-
-    splits = inp.split('.') ***REMOVED***parse for node/prop values to be counted by
-    node = splits[0]
-    prop = splits[1]
-    bucketl,sortl = ([] for i in range(2)) ***REMOVED***need two lists to sort these buckets by size
-
-    if sum == "no": ***REMOVED***not a full summary, just key and doc count need to be returned
-        res = count_props(node, prop, cy)
-        for x in range(0,len(res)):
-            if res[x]['prop'] != "":
-                cur = Bucket(key=res[x]['prop'], docCount=res[x]['counts'])
-                sortl.append(int(res[x]['counts']))
-                bucketl.append(cur)
-
-        return BucketCounter(buckets=[bucket for(sort,bucket) in sorted(zip(sortl,bucketl),reverse=True)])
-
-    else: ***REMOVED***return full summary including case_count, doc_count, file_size, and key
-        res = count_props_and_files(node, prop, cy)
-        for x in range(0,len(res)):
-            if res[x]['prop'] != "":
-                cur = SBucket(key=res[x]['prop'], docCount=res[x]['dcounts'], fileSize=res[x]['tot'], caseCount=res[x]['ccounts'])
-                bucketl.append(cur)
-
-        return SBucketCounter(buckets=bucketl)
-
-***REMOVED***Function to return case values to populate the table, note that this will just return first 25 values arbitrarily for the moment
-***REMOVED***size = number of hits to return
-***REMOVED***order = what to ORDER BY in Cypher clause
-***REMOVED***f = position to star the return 'f'rom based on the ordering (python prevents using that word)
-***REMOVED***cy = filters/op sent from GDC portal
-def get_case_hits(size,order,f,cy):
-    hits = []
-    cquery = ""
-    order = convert_order(order)
-
-    if cy == "":
-        if f != 0:
-            f = f-1
-        retval = "RETURN DISTINCT PS,VSS ORDER BY {0} SKIP {1} LIMIT {2}".format(order,f,size)
-        cquery = "{0} {1}".format(full_traversal,retval)
-    elif '"op"' in cy:
-        cquery = build_cypher(cy,order,f,size,"cases")
-    else:
-        cquery = build_adv_cypher(cy,order,f,size,"cases")
-        cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-
-    res = process_cquery_http(cquery)
-
-    for x in range(0,len(res)):
-        cur = CaseHits(
-            project=Project(projectId=res[x]['PS']['project_subtype'],
-                primarySite=res[x]['VSS']['body_site'],
-                name=res[x]['PS']['project_name'],
-                studyName=res[x]['VSS']['study_name'],
-                studyFullName=res[x]['VSS']['study_name']),
-                caseId=res[x]['VSS']['id'],
-                visitNumber=res[x]['VSS']['visit_visit_number'],
-                subjectId=res[x]['PS']['rand_subject_id'])
-        hits.append(cur)
-    return hits
-
-***REMOVED***Function to return file values to populate the table.
-def get_file_hits(size,order,f,cy):
-    hits = []
-    cquery = ""
-    if order != '':
-        order = convert_order(order)
-
-    if cy == "":
-        if f != 0:
-            f = f-1
-        retval = "RETURN DISTINCT(F) ORDER BY {0} SKIP {1} LIMIT {2}".format(order,f,size)
-        cquery = "{0} {1}".format(full_traversal,retval)
-    elif '"op"' in cy:
-        cquery = build_cypher(cy,order,f,size,"files")
-    else:
-        cquery = build_adv_cypher(cy,order,f,size,"files")
-        cquery = cquery.replace('WHERE "',"WHERE ") ***REMOVED***where does this phantom quote come from?!
-
-    if order == '': ***REMOVED***for adding all to cart, allow no 'ORDER BY' for the sake of speed
-        cquery = cquery.replace('ORDER BY','')
-
-    res = process_cquery_http(cquery)
-
-    for x in range(0,len(res)):
-        ***REMOVED***For now, just returning file data for file hits
-        #case_hits = [] ***REMOVED***reinit each iteration
-        #cur_case = CaseHits(project=Project(projectId=res[x]['PS']['project_subtype'],name=res[x]['PS']['project_name']),caseId=res[x]['VSS']['id'])
-        #case_hits.append(cur_case)
-
-        furl = extract_url(res[x]['F']) ***REMOVED***File name is our URL
+    counter = 0
+    for chart in chart_order:
+        chart_query_key = chart.replace("_","-")
         
-        access_level = "open"
+        param_map = {}
+        
+        if cy:
+            if '"op"' in cy:
+                #TODO: mschor: why is cases. being passed in here from the UI?
+                cy = cy.replace("cases.","")
+                cy = cy.replace("files.","")
+                (where, param_map) = _build_where(cy)
+                chart_query_return = count_queries[chart_query_key + "-detailed"]
+                cquery = FULL_TRAVERSAL + " " + where + " " + chart_query_return
+            else:
+                # advanced pie chart search
+                chart_query_return = count_queries[chart_query_key + "-detailed"]
+                #cquery = FULL_TRAVERSAL + " " + chart_query_return 
+                (cquery, param_map) = _build_adv_cypher(cy,"null","null","null","samples")
+                cquery = cquery[0:cquery.index(" RETURN ")] + chart_query_return
+        else:
+            # Getting default piecharts
+            # If cache is found, use them
+            #cache_key = "default_piechart_counts"
+            #if current_app.cache.get(cache_key) is not None:
+            #    return_from_cache = True
+            #    break
+            #else:
+            #    #Cache default piecharts
+            #    cache_results = True
+            
+            chart_query_return = count_queries[chart_query_key + "-detailed"]
+            cquery = FULL_TRAVERSAL + " " + chart_query_return
+        
+        res = execute_safe_query(cquery, **param_map)
 
-        if furl.startswith('Private data'):
-            access_level = "controlled"
+        buckets = []
+        for record in res:
+            if counter == 0:
+                file_size += record['tot'] # calculate this here as projects most likely to return lowest amount of rows
+            
+            bucket = { "case_count" : record['scount'],
+                       "doc_count" : record['fcount'],
+                       "file_size" : record["tot"],
+                       "key" : record["prop"] }
+            buckets.append(bucket)
+        
+        charts.append({ "buckets" : buckets, "id": counter, "name": "chart" + str(counter) })
+             
+        try:
+            res.close()
+        except:
+            pass
+    
+        counter += 1
 
-        ***REMOVED***Should try handle this at an earlier phase, but make sure size exists
-        if 'size' not in res[x]['F']:
-            res[x]['F']['size'] = 0
+        tot_dict = { "fs" : { "value": file_size }, "charts" : charts }
 
-        cur_file = FileHits(dataType=res[x]['F']['subtype'],
-            fileName=furl,
-            dataFormat=res[x]['F']['format'],
-            submitterId="null",
-            access=access_level,
-            state="submitted",
-            fileId=res[x]['F']['id'],
-            dataCategory=res[x]['F']['node_type'],
-            fileSize=res[x]['F']['size']
-            )
+    #if cache_results is True:
+    #    current_app.cache.set(cache_key, tot_dict)
 
-        hits.append(cur_file)    
-    return hits
+    #if return_from_cache is True:
+    #    return current_app.cache.get(cache_key)
 
-***REMOVED***Pull all the data associated with a particular case (sample) ID. 
-def get_sample_data(sample_id):
-    retval = "WHERE VSS.id='{0}' RETURN PS,VSS,F".format(sample_id)
-    cquery = "{0} {1}".format(full_traversal,retval)
-    res = process_cquery_http(cquery)
-    fl = []
-    for x in range(0,len(res)):
-        fl.append(IndivFiles(fileId=res[x]['F']['id']))
-    return IndivSample(sample_id=sample_id,
-        body_site=res[0]['VSS']['body_site'],
-        subject_id=res[0]['PS']['id'],
-        rand_subject_id=res[0]['PS']['rand_subject_id'],
-        subject_gender=res[0]['PS']['gender'],
-        study_center=res[0]['VSS']['study_center'],
-        project_name=res[0]['PS']['project_name'],
-        files=fl
-        )
+    return tot_dict
 
-***REMOVED***Pull all the data associated with a particular file ID. 
-def get_file_data(file_id):
-    cl, al, fl = ([] for i in range(3))
-    retval = "WHERE F.id='{0}' RETURN PS,VSS,D,F".format(file_id)
-    cquery = "{0} {1}".format(full_traversal,retval)
-    res = process_cquery_http(cquery)
-    size = 0
-    if 'size' in res[0]['F']: ***REMOVED***some files with non-valid URLs can have no size
-        size = res[0]['F']['size']
-    furl = extract_url(res[0]['F']) 
-    access_level = "open"
-    if furl.startswith('Private data'):
-        access_level = "controlled"
-    sample_bs = res[0]['VSS']['body_site']
-    wf = "{0} -> {1}".format(sample_bs,res[0]['D']['node_type'])
-    cl.append(CaseHits(project=Project(projectId=res[0]['PS']['project_subtype']),caseId=res[0]['VSS']['id']))
-    al.append(AssociatedEntities(entityId=res[0]['D']['id'],caseId=res[0]['VSS']['id'],entityType=res[0]['D']['node_type']))
-    fl.append(IndivFiles(fileId=res[0]['F']['id']))
-    a = Analysis(updatedDatetime="null",workflowType=wf,analysisId="null",inputFiles=fl) ***REMOVED***can add analysis ID once node is present or remove if deemed unnecessary
-    return FileHits(
-        dataType=res[0]['F']['node_type'],
-        fileName=furl,
-        md5sum=res[0]['F']['md5'],
-        dataFormat=res[0]['F']['format'],
-        submitterId="null",
-        state="submitted",
-        access=access_level,
-        fileId=res[0]['F']['id'],
-        dataCategory=res[0]['F']['node_type'],
-        experimentalStrategy=res[0]['F']['study'],
-        fileSize=size,
-        cases=cl,
-        associatedEntities=al,
-        analysis=a
-        )
 
-def get_url_for_download(id):
-    cquery = "MATCH (F:file) WHERE F.id='{0}' RETURN F".format(id)
-    res = process_cquery_http(cquery)
-    return extract_url(res[0]['F'])
+# Elsewhere, facets are referred to as 'aggregations'. I find it to be confusing to have two 
+# different terms for the same thing (facets)    
+def get_facet_counts(fields):
+    # Params: fields = list of fields prefixed with node label as in ['VSS.study_name','PS.time_point']
+    
+    # Returns aggregations (values and counts) for specific node properties for specific node_types
+    # Return dict as
+    """
+    {
+     "aggregations": {
+        "study_name": {
+            "buckets": [
+              {
+                "key": "PROTECT", 
+                "doc_count": 1212
+              }, 
+              {
+                "key": "Herfarth", 
+                "doc_count": 1083
+              }, 
+              {
+                "key": "Jansson-Lamendella", 
+                "doc_count": 1075
+              }, 
+              {
+                "key": "RISK", 
+                "doc_count": 849
+              }, 
+              {
+                "key": "Mucosal IBD", 
+                "doc_count": 106
+              }
+            ]
+      }
+    }
+    """
+    
+    # Check if facet_counts already cached
+    if current_app.cache.get("facet_counts") is None:
+        current_app.cache.set("facet_counts", {})
+                              
+    cached_count_dict = current_app.cache.get("facet_counts")
 
-***REMOVED***Function to place a list into a string format that Neo4j understands
+    # facet counts may be cached, but may not be complete and may not contain the incoming fields    
+    cached_fields = cached_count_dict.keys()
+    uncached_fields = [field for field in fields if field not in cached_fields]
+    if uncached_fields:
+        cached_count_dict.update(_build_facet_counts(uncached_fields))
+
+    current_app.cache.set("facet_counts", cached_count_dict)
+    
+    # Only want to return subset of cached aggregations (facet counts). Ones that were requested as fields list
+    aggs = {k: cached_count_dict[k] for k in fields if k in cached_count_dict}
+    
+    return {"aggregations" : aggs}
+
+
+def execute_safe_query(cypher, **kwargs):
+
+    lower_cy = cypher.lower()
+    for pms in POTENTIALLY_MALICIOUS_STRINGS:
+        if pms in lower_cy:
+            print("Potentially unsafe cypher detected: " + cypher)
+            print("Skipping")
+            raise Exception("Potentially unsafe cypher detected: " + cypher)
+        
+    # cypher is now considered safe
+    cursor = []
+    
+    try:
+        cursor = cypher_conn.run(cypher, **kwargs)
+    except Exception as e:
+        print("Error running cypher: ", e)
+    
+    return cursor
+                
+def get_urls_for_download(ids):
+    cquery = "MATCH (F:file) WHERE F.id IN {ids} RETURN F"
+    res = execute_safe_query(cquery, ids=ids)
+    urls = []
+    for entry in res:
+        urls.append(extract_url(dict(entry)['F']))
+
+    return urls
+
+# Function to place a list into a string format that Neo4j understands
 def build_neo4j_list(id_list):
+    print("build_neo4j_list!")
 
     ids = ""
     mod_list = []
     
-    ***REMOVED***Surround each value with quotes for Neo4j comparison
+    # Surround each value with quotes for Neo4j comparison
     for id in id_list:
         mod_list.append("'{0}'".format(id))
-    ***REMOVED***Separate by commas to make a Neo4j list
+
+    print("mod_list: ")
+    print( mod_list)
+    
+    # Separate by commas to make a Neo4j list
     if len(mod_list) > 1:
         ids = ",".join(mod_list)
-    else: ***REMOVED***just a single ID
+    else: # just a single ID
         ids = mod_list[0]
 
     return ids
 
 def get_manifest_data(id_list):
-
     ids = build_neo4j_list(id_list)
 
-    ***REMOVED***Surround in brackets to format list syntax
+    # Surround in brackets to format list syntax
     ids = "[{0}]".format(ids)
-    cquery = "MATCH (F:file)-[:derived_from]->(S:sample) WHERE F.id IN {0} RETURN F,S".format(ids)
-    res = process_cquery_http(cquery)
+    # cquery = "MATCH (F:file)-[:derived_from]->(S:sample) WHERE F.id IN {0} RETURN F,S".format(ids)
+    cquery = "UNWIND {0} AS file_id MATCH (file:file{{id:file_id}})-[:derived_from]->(sample:sample) RETURN file, sample".format(ids)
+    res = _process_cquery_http(cquery)
 
-    outlist = []
+    items = [(col['col-name'], []) for col in config['cart']['manifest-download']['cols']] # essentially defaultdict of OrderedDict
+    cols = OrderedDict(items)
 
-    ***REMOVED***Grab the ID, file URL, md5, and size
     for entry in res:
-        md5,size = ("" for i in range(2)) ***REMOVED***private node data won't have these properties
-        file_id = entry['F']['id']
-        urls = extract_manifest_urls(entry['F'])
-        if 'md5' in entry['F']:
-            md5 = entry['F']['md5']
-        if 'size' in entry['F']:
-            size = entry['F']['size']
-        sample_id = entry['S']['id']
-        outlist.append("\n{0}\t{1}\t{2}\t{3}\t{4}".format(file_id,md5,size,urls,sample_id))
+        for col in config['cart']['manifest-download']['cols']:
+            col_name = col['col-name']
+            node_type = col['node-type']
+            prop = col['prop']
 
-    return outlist
+            if node_type == '' or node_type == 'null':
+                if col_name == "urls":
+                    cols["urls"].append(extract_manifest_urls(entry["file"]))
 
-***REMOVED***Load these lists on startup to use for parsing optional metadata. Notice 
-***REMOVED***that subject_ prefix is trimmed while visit_ is not. This is because 
-***REMOVED***subject is a base node while visit is not and so searching on the visit
-***REMOVED***property requires that visit prefix to work properly. 
-def filter_attr_metadata(non_attr_set,md_type):
+                if col_name == "component_files":
+                    urls = extract_manifest_urls(entry["file"])
+                    cols["component_files"].append(determine_component_files(urls, entry["file"]))
+            else:
+                cols[col_name].append(entry[node_type][prop])
 
-    fields = list(gql_map.keys())
-    attr_list = []
+    return build_tsv(cols)
 
-    ***REMOVED***Insert additional sample_attr fields here, since fecalcal is essentially
-    ***REMOVED***on its own as the only sample metadata searchable it is handled here. 
-    if md_type == 'visit':
-        attr_list.append('fecalcal')
-
-    for field in fields:
-        if field.startswith(md_type):
-            if field not in non_attr_set:
-                if md_type == 'subject':
-                    field = field.replace('subject_','')
-                attr_list.append(field)
-
-    return attr_list
-
-subject_metadata = filter_attr_metadata(
-    {
-        'subject_gender',
-        'subject_race',
-        'subject_subtype',
-        'subject_uuid',
-        'subject_id'
-    },
-    'subject')
-visit_metadata = filter_attr_metadata(
-    {
-        'visit_date',
-        'visit_interval',
-        'visit_number',
-        'visit_subtype',
-        'visit_id'
-    },
-    'visit')
 
 def get_metadata(id_list):
 
-    cquery = "MATCH (F:file)-[:derived_from]->(S:sample)-[:extracted_from]->(J:subject) WHERE F.id IN {0} RETURN S,J".format(id_list)
-    res = process_cquery_http(cquery)
+    # If study-level matrices are enabled, add the related file IDs to the id_list
+    if config['cart']['enable-study-level-matrices']:
+        id_list = apply_file_ids_from_study_level_matrix(id_list)
 
-    base_metadata = [
-        'sample_id',
-        'subject_id',
-        'subject_uuid',
-        'sample_body_site',
-        'visit_number',
-        'subject_gender',
-        'subject_race',
-        'study_full_name',
-        'project_name',
-    ]
-
-    items = [(field, []) for field in (base_metadata + subject_metadata + visit_metadata)] ***REMOVED***essentially defaultdict of OrderedDict
+    # cquery = "MATCH (file:file)-[:derived_from]->(sample:sample)-[:extracted_from]->(subject:subject) WHERE file.id IN {0} RETURN sample,subject,file".format(id_list)
+    cquery = "UNWIND {0} AS file_id MATCH (file:file{{id:file_id}})-[:derived_from]->(sample:sample)-[:extracted_from]->(subject:subject) RETURN sample,subject,file".format(id_list)
+    res = _process_cquery_http(cquery)
+    
+    items = [(col['col-name'], []) for col in config['cart']['metadata-download']['cols']] # essentially defaultdict of OrderedDict
     cols = OrderedDict(items)
 
-    ***REMOVED***first process those that are required
     for entry in res:
+        for meta in config['cart']['metadata-download']['cols']:
+            col_name = meta['col-name']
+            node_type = meta['node-type']
+            prop = meta['prop']
+            cols[col_name].append(entry[node_type][prop])
 
-        ***REMOVED***Prevent missing data points in any of these properties as there have
-        ***REMOVED***been cases of missing keys which cause a crash in the metadata download. 
-        ***REMOVED***Those without 'ifs' are guaranteed by cutlass. Also note that any 
-        ***REMOVED***numbers need to be converted to strings in order to join str list. 
-        cols['sample_id'].append(entry['S']['id'])
-        cols['subject_id'].append(entry['J']['rand_subject_id'])
-        cols['subject_uuid'].append(entry['J']['id'])
-        cols['sample_body_site'].append(entry['S']['body_site'])
-        cols['visit_number'].append(str(entry['S']['visit_visit_number']))
-        cols['subject_gender'].append(entry['J']['gender'])
-        ***REMOVED***Match missing 'race' it up with the 'unknown' value already present in some of the data
-        cols['subject_race'].append(str(entry['J']['race'])) if 'race' in entry['J'] else cols['subject_race'].append("unknown") 
-        cols['study_full_name'].append(entry['S']['study_full_name'])
-        cols['project_name'].append(entry['J']['project_name'])
+    return build_tsv(cols)
 
-        ***REMOVED***Subject attrs
-        for attr in subject_metadata:
-            cols[attr].append(str(entry['J'][attr])) if attr in entry['J'] else cols[attr].append("NA")
-
-        ***REMOVED***Visit attrs
-        for attr in visit_metadata:
-            cols[attr].append(str(entry['S'][attr])) if attr in entry['S'] else cols[attr].append("NA")
-
-    ***REMOVED***Now that we've parsed through everything in Neo4j, delete any columns that
-    ***REMOVED***solely contain "NA"s in the optional attribute fields. 
-    for attr in (subject_metadata + visit_metadata):
-        if len(set(cols[attr])) == 1 and cols[attr][0] == "NA":
-            del cols[attr] ***REMOVED***going to exist no matter what
-        else:
-            ***REMOVED***Rename the key so that the metadata file is all-encompassing and
-            ***REMOVED***describes what this metadata is tied to (subject/sample/visit)
-            if attr in subject_metadata:
-                cols["subject_{0}".format(attr)] = cols[attr]
-                del cols[attr]
-            elif not attr.startswith('visit'):
-                cols["sample_{0}".format(attr)] = cols[attr]
-                del cols[attr]                
-
+def build_tsv(download_data):
     rows = []
-    rows.append("\t".join(list(cols.keys()))) ***REMOVED***header
+    rows.append("\t".join(list(download_data.keys()))) # header
 
-    ***REMOVED***Create a string with all the found data to pass to the file
-    for i in range(0,len(cols['sample_id'])):
+    # Create a string with all the found data to pass to the file
+    length_of_first_col = len(list(download_data[download_data.keys()[0]]))
+    
+    for i in range(0, length_of_first_col):
         row = []
-        for key in cols:
-            row.append(cols[key][i])
-        rows.append(("\t").join(row))
+        for key in download_data:
+            try:
+                row.append(download_data[key][i])
+            except:
+                print("'{}' column data was short. skipping... '{}'... skipping".format(key, download_data[list(download_data.keys())[0]][i]))
+                pass
+        rows.append( "\t".join(str(val) for val in row) ) #DOLLEY: ensure each val is string. otherwise ints cause errors
 
     return ("\n").join(rows)
 
-***REMOVED***Makes sure we generate a unique token
+def apply_file_ids_from_study_level_matrix(id_list):
+    # Create an id_list array for better handling
+    id_array = json.loads(id_list)
+    study_level_flag = config['cart']['study-level-matrix-flag']
+    study_name_field = config['cart']['study-name-on-node']
+    
+    # Get the study of the study level matrix
+    study_cquery = "MATCH(subject:subject)<-[:extracted_from]-(sample:sample)<-[:derived_from]-(file:file) WHERE " + study_level_flag + " = true AND file.id IN {id_array} RETURN " + study_name_field + " AS study_name, file.id AS file_id"
+    res = execute_safe_query(study_cquery, id_array=id_array)
+    
+    # For each study, get a list of file_ids associated with that study
+    for study_record in res:
+        study = dict(study_record)['study_name']
+        matrix_file_id = dict(study_record)['file_id']
+
+        # Remove the study-level matrix ID. We don't want metadata on it
+        id_array.remove(matrix_file_id)
+        
+        # Get file IDs that are related to the study in question
+        ids_cquery = "MATCH(subject:subject)<-[:extracted_from]-(sample:sample)<-[:derived_from]-(file:file) WHERE " + study_name_field + " = {study} RETURN COLLECT(file.id) AS file_ids"
+        ids_res = execute_safe_query(ids_cquery, study=study)
+
+        # Add each file ID to id_list if it's not already there
+        for ids_record in ids_res:
+            for file_id in dict(ids_record)['file_ids']:
+                if file_id not in id_array:
+                    id_array.append(file_id)
+
+    return json.dumps(id_array)
+
+
+# Makes sure we generate a unique token
 def check_token(token,ids):
 
     subset_token = ""
 
     for j in range(0,len(token)-6):
         subset_token = token[j:j+6]
-        token_check = process_cquery_http("MATCH (t:token{id:'{0}'}) RETURN t".format(subset_token))
+        token_check = _process_cquery_http("MATCH (t:token{id:'{0}'}) RETURN t".format(subset_token))
         if len(token_check) == 0:
             cquery = "CREATE (t:token{{id:'{0}',id_list:{1}}})".format(subset_token,ids)
-            process_cquery_http(cquery)
+            _process_cquery_http(cquery)
             return subset_token
         else:
             if str(token_check[0]['t']['id_list']) == ids:
@@ -742,11 +922,11 @@ def check_token(token,ids):
 
 def get_manifest_token(id_list):
 
-    id_list.sort() ***REMOVED***ensure ordering doesn't affect the token creation
+    id_list.sort() # ensure ordering doesn't affect the token creation
 
     ids = build_neo4j_list(id_list)
 
-    ***REMOVED***overkill, but should suffice
+    # overkill, but should suffice
     original_token = hashlib.sha256(ids).hexdigest()
     original_token += hashlib.sha224(ids).hexdigest()
     ids = "[{0}]".format(ids)
@@ -756,28 +936,28 @@ def get_manifest_token(id_list):
     if token != "":
         return token
     else:
-        token = check_token(original_token[::-1],ids) ***REMOVED***try the reverse
+        token = check_token(original_token[::-1],ids) # try the reverse
 
     if token != "":
         return token
     else:
         return "ERROR generating token."
 
-***REMOVED***Takes in a token and hits the Neo4j server to create a manifest on the fly
-***REMOVED***using all the IDs noted within the particular token. 
+# Takes in a token and hits the Neo4j server to create a manifest on the fly
+# using all the IDs noted within the particular token.
 def token_to_manifest(token):
 
-    ***REMOVED***Leave early if the token is obviously corrupt
+    # Leave early if the token is obviously corrupt
     if len(token) != 6:
         return 'Error -- Invalid token length.'
     if not re.match(r"^[a-zA-Z0-9]+$",token):
         return 'Error -- Invalid characters detected.'
 
-    ids = process_cquery_http("MATCH (t:token{{id:'{0}'}}) RETURN t.id_list AS id_list".format(token))[0]['id_list']
-    urls = ['http','ftp','fasp','s3']
+    ids = _process_cquery_http("MATCH (t:token{{id:'{0}'}}) RETURN t.id_list AS id_list".format(token))[0]['id_list']
+    urls = ['https','http','ftp','gs','s3']
     manifest = ""
     for id in ids:
-        file = process_cquery_http("MATCH (f:file{{id:'{0}'}}) RETURN f".format(id))[0]['f']
+        file = _process_cquery_http("MATCH (f:file{{id:'{0}'}}) RETURN f".format(id))[0]['f']
         url_list = []
         for url in urls:
             if url in file:
@@ -790,57 +970,13 @@ def token_to_manifest(token):
 
     return manifest
 
-***REMOVED***Function to extract known GDC syntax and convert to OSDF. This is commonly needed for performing
-***REMOVED***cypher queries while still being able to develop the front-end with the cases syntax.
-def convert_gdc_to_osdf(inp_str):
-    ***REMOVED***Errors in Graphene mapping prevent the syntax I want, so ProjectName is converted to 
-    ***REMOVED***Cypher ready Project.name here (as are the other possible query parameters).
-    inp_str = inp_str.replace("cases.ProjectName","PS.project_name")
-    inp_str = inp_str.replace("cases.SampleFmabodysite","VSS.body_site")
-    inp_str = inp_str.replace("cases.sample_body_site","VSS.body_site")
-    inp_str = inp_str.replace("cases.SubjectGender","PS.gender")
-    inp_str = inp_str.replace("project.primary_site","VSS.body_site")
-    inp_str = inp_str.replace("file.category","F.subtype") ***REMOVED***note the conversion
-    inp_str = inp_str.replace("files.file_id","F.id")
-    inp_str = inp_str.replace("cases.","") ***REMOVED***these replaces have to be catch alls to replace all instances throughout
-    inp_str = inp_str.replace("Project_","PS.project_")
-    inp_str = inp_str.replace("Sample_","VSS.")
-    inp_str = inp_str.replace("SampleAttr_","VSS.")
-    inp_str = inp_str.replace("Study_","VSS.study_")
-    inp_str = inp_str.replace("Subject_","PS.")
-    inp_str = inp_str.replace("SubjectAttr_","PS.")
-    inp_str = inp_str.replace("Visit_","VSS.visit_")
-    inp_str = inp_str.replace("VisitAttr_","VSS.visit_")
+# This is a recursive function originally used to traverse and find the depth
+# of nested JSON. Now used to traverse the op/filters query from GDC and
+# ultimately aims to provide input to build the WHERE clause of a Cypher query.
+# Accepts input of json.loads parsed GDC portal query input and an empty array.
+# Note that this is currently only called when facet search is being performed.
+import decimal
 
-    ***REMOVED***Handle facet searches from panel on left side
-    inp_str = inp_str.replace("file_type","F.node_type")
-    inp_str = inp_str.replace("file_format","F.format")
-    inp_str = inp_str.replace("file_annotation_pipeline","F.annotation_pipeline")
-    inp_str = inp_str.replace("file_matrix_type","F.matrix_type")
-
-    ***REMOVED***Next two lines guarantee URL encoding (seeing errors with urllib)
-    inp_str = inp_str.replace('"','|')
-    inp_str = inp_str.replace('\\','')
-    inp_str = inp_str.replace(" ","%20")
-    inp_str = inp_str.replace(": ",":")
-
-    ***REMOVED***While the DB is to be set at read-only, in the case this toggle is 
-    ***REMOVED***forgotten do some checks to make sure nothing fishy is happening.
-    potentially_malicious = set([";"," delete "," create "," detach "," set ",
-                                " return "," match "," merge "," where "," with ",
-                                " import "," remove "," union "])
-    check_str = inp_str.lower()
-    for word in check_str:
-        if word in potentially_malicious:
-            return "Invalid characters."
-
-    return inp_str
-
-***REMOVED***This is a recursive function originally used to traverse and find the depth 
-***REMOVED***of nested JSON. Now used to traverse the op/filters query from GDC and 
-***REMOVED***ultimately aims to provide input to build the WHERE clause of a Cypher query. 
-***REMOVED***Accepts input of json.loads parsed GDC portal query input and an empty array. 
-***REMOVED***Note that this is currently only called when facet search is being performed.
 def get_depth(x, arr):
     if type(x) is dict and x:
         if 'op' in x:
@@ -849,204 +985,461 @@ def get_depth(x, arr):
             left = x['field']
             right = x['value']
             if type(x['value']) is list:
-                l = x['value']
-                l = ["'{0}'".format(element) for element in l] ***REMOVED***need to add quotes around each element to make Cypher happy
+                l = []
+                for element in x['value']:
+                    if isinstance(element,float):
+                        element = decimal.Decimal(element)
+                    l.append("\"{0}\"".format(element)) # need to add quotes around each element to make Cypher happy
                 right = ",".join(l)
             else:
-                right = "'{0}'".format(right) ***REMOVED***again, quotes for Cypher
+                # mschor, this format() was causing a big problem for precise decimals.
+                # E.g. format converts float 20.8307031940412 to 20.830703194 as does the str frunction.
+                # Using decimal now to handle it more precisely
+                if isinstance(element,float):
+                    right = decimal.Decimal(right)
+                right = "\"{0}\"".format(right) # again, quotes for Cypher.
             arr.append(left)
             arr.append(right)
         return max(get_depth(x[a], arr) for a in x)
-    if type(x) is list and x: 
+    if type(x) is list and x:
         return max(get_depth(a, arr) for a in x)
-    return arr ***REMOVED***give the array back after traversal is complete
+    
+    return arr # give the array back after traversal is complete
 
-***REMOVED***Fxn to build Cypher based on facet search, accepts output from get_depth
-def build_facet_where(inp): 
-    facets = [] ***REMOVED***going to build an array of all the facets params present
+# Fxn to build Cypher based on facet search, accepts output from get_depth
+def build_facet_where(inp):
+    
+    facets = OrderedDict() # going to build an array of all the facets params present
+    
     lstr, rstr = ("" for i in range(2))
     for x in reversed(range(0,len(inp))):
-        if "'" in inp[x]: ***REMOVED***found the values to search for
-            rstr = "[{0}]".format(inp[x]) ***REMOVED***add brackets for Cypher
-        elif "." in inp[x]: ***REMOVED***found the fields to search on
+        if "\"" in inp[x]: # found the values to search for
+            value_list = inp[x].replace("\"", "").split(',')
+            clean_vals = list()
+            for val in value_list:
+                try:
+                    val = float(val)
+                    clean_vals.append(val)
+                except:
+                    clean_vals.append(val) 
+            rstr = "{0}".format(str(clean_vals))
+        elif "." in inp[x]: # found the fields to search on
             lstr = inp[x]
-        elif "in" == inp[x]: ***REMOVED***found the comparison op, build the full string
-            facets.append("{0} in {1}".format(lstr, rstr))
-    return " AND ".join(facets) ***REMOVED***send back Cypher-ready WHERE clause
-
-***REMOVED***Function to convert syntax from facet/advanced search pages and move it into 
-***REMOVED***the new Neo4j schema's format. This is a step we likely cannot account for 
-***REMOVED***on the portal itself as we want users to be able to do something like search
-***REMOVED***for Project name as Project.name or something similar instead of PS.project_name.
-def convert_portal_to_neo4j(inp_str):
+        elif "in" == inp[x]: # found the comparison op, build the full string
+            facet_key = lstr.replace(".","_") # Cypher can't have a . in a param name and this will be used to run a parameterized query later
+            # At this point, rstr should be string representation of a list. Need to convert this to an actual list of strings
+            facets[facet_key]= ast.literal_eval(rstr) 
     
-    inp_str = inp_str.replace("cases.","")
-    inp_str = inp_str.replace("files.","")
+    return facets    
 
-    inp_str = inp_str.replace("Project.","project.")
-    inp_str = inp_str.replace("subject.id","subject.rand_subject_id")
-    inp_str = inp_str.replace("subject.uuid","subject.id")
-
-    if 'PS.' not in inp_str:
-        ***REMOVED***Project -> Study -> Subject
-        inp_str = inp_str.replace("project_","project.")
-        inp_str = inp_str.replace("study_","study.")
-        inp_str = inp_str.replace("subject_","subject.")
-        inp_str = inp_str.replace("project."," PS.project_")
-        inp_str = inp_str.replace("study.","VSS.study_")
-        inp_str = inp_str.replace("subject.","PS.")
-        inp_str = inp_str.replace("rand_PS.id","rand_subject_id")
-
-    if 'VSS.' not in inp_str:
-         ***REMOVED***Visit -> Sample
-        inp_str = inp_str.replace("visit_","visit.")
-        inp_str = inp_str.replace("sample_","sample.")  
-        inp_str = inp_str.replace("visit.","VSS.visit_")
-        if 'VSS.visit_number' in inp_str:
-            inp_str = inp_str.replace("VSS.visit_number","VSS.visit_visit_number")
-        inp_str = inp_str.replace("sample.","VSS.")   
-  
-    if "F." not in inp_str:
-        ***REMOVED***File
-        inp_str = inp_str.replace("file.","F.")
-        inp_str = inp_str.replace("File_","F.")
-        inp_str = inp_str.replace("F.type","F.node_type")
-
-    if "T." not in inp_str:
-        ***REMOVED***Tag
-        inp_str = inp_str.replace("tag.","T.")
-
-    inp_str = inp_str.replace("%20"," ")
-
-    if inp_str.startswith('"'):
-        inp_str = inp_str[1:]
-        
-    return inp_str
-
-***REMOVED***Whether or not to traverse to the tag level, only required when a tag is 
-***REMOVED***being searched
-def which_traversal(where):
+# Whether or not to traverse to the tag level, only required when a tag is
+# being searched
+def _which_traversal(where):
     traversal = ""
     if "T.term" in where:
         traversal = tag_traversal
     else:
-        traversal = full_traversal
+        traversal = FULL_TRAVERSAL
     return traversal
 
-***REMOVED***Final function needed to build the entirety of the Cypher query taken from facet search. Accepts the following:
-***REMOVED***match = base MATCH query for Cypher
-***REMOVED***whereFilters = filters string passed from GDC portal
-***REMOVED***order = parameters to order results by (needed for pagination)
-***REMOVED***start = index of sort to start at
-***REMOVED***size = number of results to return
-***REMOVED***rtype = return type, want to be able to hit this for both cases, files, and aggregation counts.
-def build_cypher(whereFilters,order,start,size,rtype):
+
+def _build_where(whereFilters):
+    
     arr = []
 
-    whereFilters = convert_portal_to_neo4j(whereFilters)
-    traversal = which_traversal(whereFilters)
+    q = json.loads(whereFilters) # parse filters input into JSON (yields hashes of arrays) 
+    w1 = get_depth(q, arr) # first step of building where clause is the array of individual comparison elements
+    facet_value_dict = build_facet_where(w1)
 
-    q = json.loads(whereFilters) ***REMOVED***parse filters input into JSON (yields hashes of arrays)
-    w1 = get_depth(q, arr) ***REMOVED***first step of building where clause is the array of individual comparison elements
-    where = build_facet_where(w1)
+    # At this point, facet_value_dict contains entries like:
+    # { "sample_study_name" : "['study1']" }
+    where_clause = " WHERE "
+    
+    for facet in facet_value_dict:
+        where_clause += facet.replace("_",".",1) + " in {" + facet + "} and " # replace . with _ because cypher param placeholder cannot contain a .
+    
+    if where_clause.endswith(" and "):
+        where_clause = where_clause[0:-5] # remove last 'and'
+    return (where_clause, facet_value_dict)
+
+# This advanced Cypher builder expects the string generated by any of the advanced queries.
+
+# Final function needed to build the entirety of the Cypher query taken from facet search. Accepts the following:
+# match = base MATCH query for Cypher
+# whereFilters = filters string passed from GDC portal
+# order = parameters to order results by (needed for pagination)
+# start = index of sort to start at
+# size = number of results to return
+# rtype = return type, want to be able to hit this for both cases, files, and aggregation counts.
+
+def _build_adv_cypher(whereFilters,order,start,size,rtype):
+    returns = get_returns() # Get updated version of returns
     order = order.replace("cases.","")
     order = order.replace("files.","")
+    
+    where = _preprocess_wherefilters(whereFilters)
+    traversal = _which_traversal(where)
+    retval1 = returns[rtype] # actual RETURN portion of statement
+    
+    # At this point, where is something like: 
+    # sample.study_name in ['Jansson_Lamendella_Crohns','RISK'] and subject.race = 'african_american'
+    # where every first word is the cypher field, the second is the operator, and the third field is the value. If there's a 4th word, it's an 'and' or 'or'
 
-    retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
+    # Now convert into a parameterized where statement
+    paramed_where = ""
+    
+    # For shlex to keep bracketed values as one word, put them in escaped quotes
+    where = where.replace("[","\"[").replace("]","\"]") 
+    # Now split into words
+    try:
+        words = shlex.split(where)
+    except:
+        print("Failed to parse query: " + where)
+        words = []
+    
+    param_dict = {}
+    
+    # Potential clauses of advanced search follow the form of:
+    # <field> <operator> <value> (optional [and|or] for additional clauses
+    
+    # More specifically, clauses may be any of these (all of which may be followed by and/or) 
+    # 1) <field> [= | != | < | <= | >= | > | EXCLUDE ] <value>
+    # 2) <field> IN <bracketed value list>
+    # 3) <field> [IS | NOT] MISSING
 
-    ***REMOVED***FIX IN LOADER TO MAKE TYPES CONSISTENT
-    for k,v in strings_to_nums.items():
-        where = where.replace(k,v)
+    # Append an extra word to make query divisible by 4 
+    # as the final clause will only be 3 words instead of 4 (missing and/or) 
+    words.append("") 
+    
+    for i in range(0,len(words)/4):
+        cypher_field = words[i*4]
+        param_field = cypher_field.replace(".","_")
+        op = words[i*4+1]
+        value = words[i*4+2]
+        
+        if op.lower() not in ["=", "<>", "<", "<=", ">", ">=", "is", "not", "in", "exclude"]:
+            raise Exception("Invalid operation. op was: -->" + op + "<--")
+        if value.startswith("["):
+            value = value[1:-1] # chop off enclosing "[ ]"
+            value = value.split(",")
+            value = list(map(_trim_value, value))
+        elif value.lower() == "missing":
+            value = None
+            if op.lower() == "not":
+                op = "IS NOT"
 
-    if rtype.endswith('detailed'): ***REMOVED***sum schema handling
-        if whereFilters != "":
-            return "{0} WHERE {1} {2}".format(traversal,where,retval1)
+        # because params go into a dictionary, see if key already exists so as to not overwrite it
+        while param_field in param_dict:
+            param_field += "_"
+            
+        if op.lower() == "exclude":
+            paramed_where += " NOT " + cypher_field + " IN " + " {" + param_field + "} "
+        elif value is None:
+            paramed_where += " " + cypher_field + " " + op + " NULL "
         else:
-            return "{0} {1}".format(traversal,retval1)
+            paramed_where += " " + cypher_field + " " + op + " {" + param_field + "} "
+        
+        if len(words) > i*4+3:
+            logical_op = words[i*4+3] # AND | OR
+            paramed_where += " " + logical_op
+        
+        if value is None:
+            continue
+        
+        converted_value = _convert_value_to_correct_type(cypher_field, value)
+        param_dict[param_field] = converted_value
+    
+    return ("{0} WHERE {1} {2}".format(traversal,paramed_where,retval1), param_dict)
 
 
-    if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
+def _process_cquery_http(query):
+    res = execute_safe_query(query)
+    results = []
+    for record in res:
+        results.append(dict(record))
+    # results = res.data() #DOLLEY: this is a py2neo function that does the same as above (not tested)
+    
+    try:
+        res.close()
+    except:
+        pass
+    
+    return results
 
-        ***REMOVED***When adding all files to cart, a special case happens where there is
-        ***REMOVED***no order specified so have to return a more basic query.
-        if len(order) < 2:
-            return "{0} WHERE {1} {2}".format(traversal,where,retval1)
+# Removes extra quotes if present and trims whitespace
+def _trim_value(value):
+        if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")): 
+            value = value[1:-1]
+        return value.strip()
 
-        if start != 0:
-            start = start - 1
-        retval2 = "ORDER BY {0} SKIP {1} LIMIT {2}".format(order,start,size) 
-        return "{0} WHERE {1} {2} {3}".format(traversal,where,retval1,retval2)
+# Accepts value as a string or list of strings
+# Returns appropriate type (or list of appropriate type) as defined in metadata mapping
+def _convert_value_to_correct_type(cypher_field, value):
+    
+    metadata_field_name = cypher_field[cypher_field.find(".")+1:]
+    field_type = METADATA_MAPPING[metadata_field_name]['type'].lower()
+    
+    # default to input
+    converted_value = value
+    
+    if field_type == "string":
+        return converted_value
+    
+    if field_type == "number" or field_type == "integer" or field_type == "long" or field_type == "float":
+        if type(value) is list:
+            try:
+                converted_value = list(map(float, value))
+            except ValueError as e:
+                print("Error converting number. Expected numeric values in list: " + str(value), e)
+        else:
+            try:
+                converted_value = float(value)
+            except ValueError as e:
+                print("Error converting number. Expected numeric values in list: " + str(value), e)
     else:
-        return "{0} WHERE {1} {2}".format(traversal,where,retval1)
+        print("Unexpected type found in METADATA MAPPING: " + field_type)
+    
+    return converted_value
 
-***REMOVED***First iteration, handling all regex individually
-regexForNotEqual = re.compile(r"<>\s([0-9]*[a-zA-Z_]+[\-a-zA-Z0-9_]*)\b") ***REMOVED***only want to add quotes to anything that's not solely numbers
-regexForEqual = re.compile(r"=\s([0-9]*[a-zA-Z_]+[\-a-zA-Z0-9_]*)\b") 
-regexForIn = re.compile(r"(\[[\-a-zA-Z\'\"\s\,\(\)]+\])") ***REMOVED***catch anything that should be in a list
 
-***REMOVED***This advanced Cypher builder expects the string generated by any of the advanced queries. 
-***REMOVED***Parameters are described above before build_cypher()
-def build_adv_cypher(whereFilters,order,start,size,rtype):
-
+def _preprocess_wherefilters(whereFilters):
+    
     if '%20' in whereFilters:
         whereFilters = urllib.unquote(whereFilters).decode('utf-8')
 
+    # whereFilters comes in like: {"query": "sample.study_name = \"Jansson_Lamendella_Crohns\""}
+    # remove leading part of string ({"query": ")
     where = whereFilters[10:len(whereFilters)-2]
     where = where.replace("!=","<>")
     where = where.strip()
-
-    ***REMOVED***Add quotes that FE missed
+    
+    # Add quotes that FE missed
     if '=' in where:
         where = regexForEqual.sub(r'= "\1"',where)
     if '<>' in where:
         where = regexForNotEqual.sub(r'<> "\1"',where)
-    if ' in ' in where or ' IN ' in where: ***REMOVED***lists present, parse through and add quotes to all values without them
-        lists = re.findall(regexForIn,where)
-        listDict = {}
-        for extractedList in lists:
-            original = extractedList
-            extractedList = extractedList.replace('[','')
-            extractedList = extractedList.replace(']','')
-            indivItems = extractedList.split(',')
-            newList = []
-            for item in indivItems:
-                if '"' in item:
-                    parts = re.split(r"""("[^"]*"|'[^']*')""", item) ***REMOVED***remove spaces outside quotes
-                    parts[::2] = map(lambda s: "".join(s.split()), parts[::2])
-                    newList.append("".join(parts))
-                else:
-                    item = item.replace(" ","")
-                    newList.append('"{0}"'.format(item))
-            extractedList = ",".join(newList)
-            new = "[{0}]".format(extractedList)
-            listDict[original] = new
 
-        for k,v in listDict.iteritems():
-            where = where.replace(k,v)
+    # Replace \" with just '
+    where = where.replace("\\\"", "'")
+    
+    # some cases where it has a leading quote. Should track down. From original code.
+    if where.startswith("\""):
+        where = where[1:]
+    
+    return where    
 
-    order = order.replace("cases.","")
-    order = order.replace("files.","")
-    where = convert_portal_to_neo4j(where)
-    traversal = which_traversal(where)
-
-    retval1 = returns[rtype] ***REMOVED***actual RETURN portion of statement
-
-    ***REMOVED***FIX IN LOADER TO MAKE TYPES CONSISTENT
-    for k,v in strings_to_nums.items():
-        where = where.replace(k,v)
-
-    if rtype.endswith('detailed'): ***REMOVED***sum schema handling
-        if whereFilters != "":
-            return "{0} WHERE {1} {2}".format(traversal,where,retval1)
-        else:
-            return "{0} {1}".format(traversal,retval1)
-
-    if rtype in ["cases","files"]: ***REMOVED***pagination handling needed for these returns
-        if start != 0:
-            start = start-1
-        retval2 = "ORDER BY {0} SKIP {1} LIMIT {2}".format(order,start,size)
-        if size == 0: ***REMOVED***accounting for inconsistency where front-end asks for a 0 size return
-            retval2 = "ORDER BY {0}".format(order)
-        return "{0} WHERE {1} {2} {3}".format(traversal,where,retval1,retval2)
+def _calc_pages(total, size):
+    if size == 0:
+        return 0
+    
+    if total > 0:
+        pages = int(total / size)
+        if total % size != 0:
+            pages += 1
     else:
-        return "{0} WHERE {1} {2}".format(traversal,where,retval1)
+        pages = 0
+    return pages
+
+# TODO: mschor: Look at combining this function with _build_facet_counts()
+def _build_facet_counts_where(fields, where, param_map):
+    
+    facet_counts = {}
+
+    for field in fields:
+        if field not in METADATA_CY_FIELDS:
+            print("Field: " + field + " was not found in METADATA_MAPPING. Skipping this.")
+            return facet_counts
+    
+    match = "MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[:derived_from]-(file:file) " 
+    exists_and_return =  " and EXISTS({0}.{1}) RETURN {0}.{1} as key, COUNT(DISTINCT({0})) as doc_count"
+    
+    
+    # We don't want to recalculate buckets based on latest facet clicked because 
+    # if users wants to select additional values for that facet, then they can       
+    most_recent_facet_clicked = None
+    start = 0
+    if "." in where:
+        dot_loc = where.rfind(".")
+        start = where.find("WHERE ") + 6
+        stop = where.find(" ", start)
+        most_recent_facet_clicked = where[start:stop]
+        stop = where.find("}", where.find("WHERE ") + 6) + 1
+        if where[stop:].startswith(" and "):
+            stop = stop + 5
+        
+    label_field_map = {}
+    
+    for field in fields:
+        if field == most_recent_facet_clicked:
+            where_without_most_recent = where[0:start] + where[stop:]
+            if where_without_most_recent == " WHERE ":
+                exists_and_return_minus_and = exists_and_return[4:]
+                query = match + where_without_most_recent + exists_and_return_minus_and
+            else:
+                query = match + where_without_most_recent + exists_and_return
+        else:
+            query = match + where + exists_and_return
+            
+            
+        if "." not in field:
+            # somewhat hacky. The '.' comes through in the default facets, but in the added facets, it doesn't.
+            # could A) Figure out how to make the '.' come through in the added facets
+            # or    B) if it doesn't come through, pull it from the METADATA_MAPPING
+            if field in METADATA_MAPPING:
+                field = METADATA_MAPPING[field]['cypher_field']
+            else:
+                # Log instead of print. TOOD: mschor: add logging
+                print("Unexpected field: " + field + " passed in as facet. Not found in mapping")
+                continue
+        
+        (label, property) = field.split(".", 1)
+        if label not in label_field_map:
+            label_field_map[label] = _get_all_property_keys_for_node_type(label)
+            
+        facet_counts[field] = {}
+        buckets = []
+        
+        # avert injection attempt or otherwise bad param 
+        if property not in label_field_map[label]:
+            print("Field: " + property + " was not found to be a valid type, returning blank")
+            facet_counts[field]["buckets"] = []
+            continue
+        
+        if "." in property:
+            property = "`" + property + "`"
+        #results = execute_safe_query(query.format(label, property), param_map)
+        q = query.replace("{0}",label).replace("{1}",property)
+        results = execute_safe_query(q, **param_map)
+        
+        for record in results:
+            # result like: (u'VSS.study_name': u'LSS-PRISM', u'counts': 1)
+            d_record = dict(record)
+            buckets.append(d_record)
+        facet_counts[field]["buckets"] = buckets
+        
+        try:
+            results.close()
+        except:
+            pass
+    
+    return facet_counts
+
+def _build_facet_counts(fields):
+    facet_counts = {}
+
+    for field in fields:
+        if field not in METADATA_CY_FIELDS:
+            print("Field: " + field + " was not found in METADATA_MAPPING. Skipping it.")
+            return facet_counts
+       
+    query = """
+        MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[:derived_from]-(file:file) 
+        WHERE EXISTS({0}.{1}) RETURN {0}.{1} as key, COUNT(DISTINCT({0})) as doc_count
+    """
+    
+    label_field_map = {}
+    
+    for field in fields:
+        if "." not in field:
+            # somewhat hacky. The '.' comes through in the default facets, but in the added facets, it doesn't.
+            # could A) Figure out how to make the '.' come through in the added facets
+            # or    B) if it doesn't come through, pull it from the METADATA_MAPPING
+            if field in METADATA_MAPPING:
+                field = METADATA_MAPPING[field]['cypher_field']
+            else:
+                # Log instead of print. TOOD: mschor: add logging
+                print("Unexpected field: " + field + " passed in as facet. Not found in mapping")
+                continue
+        
+        (label, property) = field.split(".", 1)
+        if label not in label_field_map:
+            label_field_map[label] = _get_all_property_keys_for_node_type(label)
+            
+        facet_counts[field] = {}
+        buckets = []
+        
+        # avert injection attempt or otherwise bad param 
+        if property not in label_field_map[label]:
+            print("Field: " + property + " was not found to be a valid type, returning blank")
+            facet_counts[field]["buckets"] = []
+            continue
+        
+        if "." in property:
+            property = "`" + property + "`"
+        results = execute_safe_query(query.format(label, property))
+        
+        for record in results:
+            # result like: (u'VSS.study_name': u'LSS-PRISM', u'counts': 1)
+            d_record = dict(record)
+            buckets.append(d_record)
+        facet_counts[field]["buckets"] = sorted(buckets, key = lambda d: d["key"])
+        
+        try:
+            results.close()
+        except:
+            pass
+    
+        
+    return facet_counts
+
+def _convert_order(order):
+
+    # garbage in / garbage out
+    if not order or len(order) == 0:
+        return order
+    
+    # replace UI ':' with a ' '
+    order = order.replace(':',' ')
+    order = order.replace('.raw','') # trim more GDC syntax (mschor: not sure what this is, but keep for now)
+
+    # UI has an erroneous ',' appended for files occasionally 
+    if order[-1] == ',':
+        order = order[:-1]
+
+    # At this point, order should be in the form of: <node_type>.<property> <asc|desc>
+    
+    node_type = order[:order.find(".")]
+    property = order[order.find(".")+1:order.find(" ")]
+    sort = order[order.find(" ")+1:]
+    if node_type not in _get_node_labels():
+        return ""
+    if property not in _get_all_property_keys_for_node_type(node_type):
+        return ""
+    if sort != "" and not (sort.lower() == "asc" or sort.lower() == "desc"):
+        return ""
+    
+    # It's valid, return it
+    return " ORDER BY " + order
+
+def _get_all_property_keys_for_node_type(node_type):
+    
+    # Check if prop keys already cached
+    cache_key = "prop_keys_" + node_type
+    if current_app.cache.get(cache_key) is None:
+     
+        #validate node_type
+        if node_type not in _get_node_labels():
+            print("node type was not in: " + str(_get_node_labels()))
+            return
+        
+        keys = cypher_conn.run("MATCH (n:" + node_type + ") UNWIND keys(n) AS key RETURN collect(distinct key) as key_list").data()
+        
+        #keys is something like: [{u'key_list': [u'database', u'sample_accession', u'id', u'study_name', u'sample_accession_db']}]
+        current_app.cache.set(cache_key, keys[0]['key_list'])
+        return keys[0]['key_list']
+    
+    else:
+        return current_app.cache.get(cache_key)
+    
+    
+def _get_node_labels():
+    
+    cache_key = "node_labels"
+    if current_app.cache.get(cache_key) is None:
+        labels = cypher_conn.run("call db.labels()").data()
+        label_list = [ subdict['label'] for subdict in labels ]
+        current_app.cache.set(cache_key, label_list)
+        return label_list
+    else:
+        return current_app.cache.get(cache_key)
+

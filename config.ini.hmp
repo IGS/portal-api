@@ -1,0 +1,545 @@
+
+# site-wide config originally from portal-ui/config.js
+[site-wide]
+project-abbr=HMP
+api=/api
+auth=/api/status
+auth-api=/api/status/api
+tag=https://github.com/NCI-GDC/portal-ui/releases/tag/1.2.4
+fake-auth=False
+#ident = desired length of a random alphanumeric string
+ident=8 
+production=False
+supported-api=1
+version=1.2.4
+build-cache-on-first-request=True
+subject-excluded-fields=node_type,project_project_name
+sample-excluded-fields=node_type,visit_gender
+file-excluded-fields=<private>
+footer-link-text=HMP Hub
+footer-link=http://hmpdacc.org
+google-analytics-enabled=False
+google-analytics-id=INSERT-PORTAL-GA-ID-HERE
+
+[navbar]
+# Custom external link, else leave empty for logo to link to portal home page
+logo-link=
+analysis-display=False
+analysis-link=http://hmpdacc.org/resources/
+documentation-display=False
+documentation-link=
+apps-data-portal-display=False
+apps-data-portal-tooltip-text=Data Portal
+apps-data-portal-link=/
+apps-api-display=True
+apps-api-tooltip-text=HMP API
+apps-api-link=https://github.com/IGS/portal-api
+apps-documentation-display=True
+apps-documentation-tooltip-text=Documentation
+apps-documentation-link=https://github.com/IGS/portal-ui/tree/develop/documentation
+apps-legacy-archive-display=True
+apps-legacy-archive-tooltip-text=Legacy Data Archive
+apps-legacy-archive-link=https://www.hmpdacc.org/hmp/resources/data_browser.php
+apps-website-display=True
+apps-website-tooltip-text=HMP Website
+apps-website-link=https://hmpdacc.org/
+apps-datatransfer-tool-display=False
+apps-datatransfer-tool-tooltip-text=HMP Data Transfer Tool
+apps-datatransfer-tool-link=https://github.com/IGS/hmp_client
+apps-faq-display=False
+apps-faq-tooltip-text=HMP FAQ
+apps-faq-link=http://hmpdacc.org/overview/faq.php
+apps-resources-display=True
+apps-resources-tooltip-text=HMP Resources
+apps-resources-link=https://www.hmpdacc.org/hmp/resources/
+user-login-link=http://portal.ihmpdacc.org/api/login
+
+
+[home]
+page-title=Welcome to The iHMP Data Portal | HMP
+portal-name=Human Microbiome Project Data Portal
+projects-table-title=Go to the HMP Projects Page
+projects-table-title-header=Samples by Primary Site
+project-external-link=
+project-name=
+
+[home-summary-stat-1]
+title=Studies
+icon=<i class="fa fa-flask data-icon"></i>
+data=hc.projectData.pagination.unique_total
+
+[home-summary-stat-2]
+title=Primary Site
+icon=<i class="fa fa-user-circle-o data-icon"></i>
+data=hc.projectData.aggregations.x_labels.buckets.length
+
+[home-summary-stat-3]
+title=Samples
+icon=<i class="fa fa-user-o data-icon"></i>
+data=hc.caseData.pagination.total
+
+[home-summary-stat-4]
+title=Files
+icon=<i class="fa fa-folder-open-o data-icon"></i>
+data=hc.fileData.pagination.total
+
+[home-example-query-1]
+description=Human Microbiome Project samples from buccal mucosa.
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE subject.project_name = "Human Microbiome Project (HMP)" AND sample.body_site = "buccal mucosa" RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"content":[{"op":"in","content":{"field":"subject.project_name","value":["Human Microbiome Project (HMP)"]}},{"op":"in","content":{"field":"sample.body_site","value":["buccal mucosa"]}}],"op":"and"}
+has-files-link=True
+files-link=/search/f?filters={"content":[{"op":"in","content":{"field":"subject.project_name","value":["Human Microbiome Project (HMP)"]}},{"op":"in","content":{"field":"sample.body_site","value":["buccal mucosa"]}}],"op":"and"}
+
+[home-example-query-2]
+description=FASTQ data from female subjects.
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE file.format = "FASTQ" AND subject.gender = "female" RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"content":[{"op":"in","content":{"field":"file.format","value":["FASTQ"]}},{"op":"in","content":{"field":"subject.gender","value":["female"]}}],"op":"and"}
+has-files-link=True
+files-link=/search/f?filters={"content":[{"op":"in","content":{"field":"file.format","value":["FASTQ"]}},{"op":"in","content":{"field":"subject.gender","value":["female"]}}],"op":"and"}
+
+[home-example-query-3]
+description=Human Microbiome Project samples from stool.
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE subject.project_name = "Human Microbiome Project (HMP)" AND sample.body_site = "feces" RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"content":[{"op":"in","content":{"field":"subject.project_name","value":["Human Microbiome Project (HMP)"]}},{"op":"in","content":{"field":"sample.body_site","value":["feces"]}}],"op":"and"}
+has-files-link=True
+files-link=/search/f?filters={"content":[{"op":"in","content":{"field":"subject.project_name","value":["Human Microbiome Project (HMP)"]}},{"op":"in","content":{"field":"sample.body_site","value":["feces"]}}],"op":"and"}
+
+[projects]
+page-title=Projects | HMP
+display-graph-tab=True
+study-data-query=MATCH (subject)<-[:extracted_from]-(sample)<-[D:derived_from]-(file) WITH sample.study_name AS study_name, sample.study_full_name AS study_full_name, subject.project_subtype AS project_subtype, sample.study_description AS study_description, COUNT(DISTINCT(sample)) as _case_count, COUNT(DISTINCT(file)) as _file_count, COLLECT(DISTINCT(file.node_type)) as file_type, SUM(file.size) AS _file_size, COLLECT(DISTINCT(sample.body_site)) AS body_site RETURN study_name, study_full_name, project_subtype, study_description, body_site, SUM(_case_count) as case_count, SUM(_file_count) as file_count, SUM(_file_size) as file_size
+study-sample-count-query=MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[D:derived_from]-(F:file) RETURN VSS.study_name AS study_name, COUNT(DISTINCT(VSS)) AS sample_count
+
+[projects-table]
+title=studies
+row-id=study_name
+linked-fields=case_count,file_count
+default-sort=case_count:desc
+
+[projects-table-heading-1]
+name=ID
+id=study_name
+tooltip-text=study_full_name
+sortable=True
+show=True
+draggable=True
+
+[projects-table-heading-2]
+name=Description
+id=study_description
+sortable=True
+show=True
+draggable=True
+
+[projects-table-heading-3]
+name=Project
+id=project_subtype
+sortable=True
+show=True
+
+[projects-table-heading-4]
+name=Samples
+id=case_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+
+[projects-table-heading-5]
+name=Files
+id=file_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+
+#Default chartconfigs for projects page pie charts
+# hover-count-label - Changes the hover. default is 'Files' <study> - <count> <HOVER_COUNT_LABEL>, <file_size stuff> 
+# field-filter = field applied to URL when adding a filter
+[projects-piechart-config-1]
+default-text=Study
+plural-default-text=Studies
+hover-count-label=Samples
+chart-title=Sample Counts by Study
+grouping-title=Study
+filter-key=study_name
+field-filter=sample.study_name
+display-key=study_name
+sort-key=case_count
+
+[projects-piechart-config-2]
+default-text=Study
+plural-default-text=Studies
+chart-title=File Counts by Study
+grouping-title=File
+filter-key=study_name
+field-filter=sample.study_name
+display-key=study_name
+sort-key=file_count
+
+[search]
+page-title=Search | HMP
+recalculate-facets=True
+#The unique ID property for the sample node
+sample-node-id=sample.id
+facets-panel-samples-tab-name=
+facets-panel-files-tab-name=
+center-panel-samples-tab-name=
+center-panel-files-tab-name=
+	
+#Sets columns for 'samples' table on Search page
+[cases-table]
+api-row-id-node-type=sample
+api-row-id-field=id
+title=Samples
+row-id=id
+linked-field=sample.id
+default-sort=sample.id:asc
+#default-sort=sample.body_site:asc
+
+[cases-table-heading-1]
+name=Sample ID
+id=sample.id
+show=True
+sortable=True
+
+[cases-table-heading-2]
+name=Subject ID
+id=subject.rand_subject_id
+show=True
+sortable=False
+
+[cases-table-heading-3]
+name=Visit Number
+id=sample.visit_visit_number
+show=True
+sortable=False
+
+[cases-table-heading-4]
+name=Body Site
+id=sample.body_site
+show=True
+sortable=True
+
+[cases-table-heading-5]
+name=Study Name
+id=sample.study_name
+show=True
+sortable=False
+# tooptip-text is optional
+tooltip-text=sample.study_full_name
+
+[files-table]
+api-row-id-node-type=file
+api-row-id-field=id
+title=Files
+row-id=file_id
+#show=True Accidently added here? 
+default-sort=file_id:asc
+#False = leaves filename unchanged
+#True = changes filepath to file_url
+rename-filename-absolute-path=True
+#Leave blank for default value: "Private data", otherwise specify the string to display for private data
+private-data-filename=Private data available at dbGaP
+
+
+[files-table-heading-1]
+name=Access
+id=file.private_files
+show=True
+sortable=False
+
+[files-table-heading-2]
+name=File UUID
+id=file_id
+sortable=True
+show=False
+td-classname=id-cell
+
+[files-table-heading-3]
+name=File Name
+id=file.file_name
+sortable=True
+show=True
+td-classname=id-cell
+
+[files-table-heading-4]
+name=Data Category
+id=file.node_type
+sortable=True
+show=True
+
+[files-table-heading-5]
+name=Data Format
+id=file.format
+sortable=True
+show=True
+
+[files-table-heading-6]
+name=Size
+id=file.size
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right 
+td-classname=text-right
+
+[files-table-heading-7]
+name=Data Type
+id=file.subtype
+sortable=True
+show=False
+			
+
+# Default config for front-page barchart
+# Default body_site query - HMP
+[search-barchart-config]
+count-query=RETURN DISTINCT VSS.study_id, VSS.study_name, VSS.body_site, COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count
+x-axis-labels=VSS.body_site
+x-axis-order-by-count=case_count
+data-tooltip-label=VSS.study_name
+data-tooltip-include-project-id=False
+y-axis-scale=linear
+allow-bar-rotation=False
+bar-rotation=
+bar-colorscale-data-property=_key
+allow-darker-bar-colors=True
+use-custom-color=False
+#for the cutsom color scale, use the colors found in colorbrewer.js (ex. OrRd for orange->red)
+custom-color-scale=YlOrBr
+#the number of colors you want in the custom scale
+custom-color-scale-number=4
+# example: reverse OrRd to be red->orange
+reverse-custom-color-scale=True
+
+[search-piechart-api]
+chart-order=project_name,sample_body_site,study_name,subject_gender,file_format,file_type
+
+[search-piechart-count-queries] 
+# name the keys using the fields listed in the above [piechart-api]chart-order
+# {field}={query}
+# {field}_detailed={query_detailed}
+project-name=RETURN subject.project_name AS prop, count(subject.project_name) AS counts
+project-name-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, subject.project_name AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+sample-body-site=RETURN sample.body_site AS prop, count(sample.body_site) AS counts
+sample-body-site-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, sample.body_site AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+study-name=RETURN sample.study_name AS prop, count(sample.study_name) AS counts
+study-name-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, sample.study_name AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+subject-gender=RETURN subject.gender AS prop, count(subject.gender) AS counts
+subject-gender-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, subject.gender AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+file-format=RETURN file.format AS prop, count(file.format) AS counts
+file-format-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, file.format AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+file-type=RETURN file.node_type AS prop, count(file.node_type) AS counts
+file-type-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, file.node_type AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+
+
+#Default chartconfigs for search page pie charts
+[search-piechart-config-1]
+default-text=Project
+plural-default-text=Projects
+chart-title=File Counts by Project
+grouping-title=Project
+filter-key=subject.project_name
+field-filter=subject.project_name
+
+[search-piechart-config-2]
+default-text=Body Site
+plural-default-text=Body Sites
+chart-title=File Counts by Body Site
+grouping-title=Primary Site
+filter-key=sample.body_site
+field-filter=sample.body_site
+
+[search-piechart-config-3]
+default-text=Study
+plural-default-text=Studies
+chart-title=File Counts by Study
+grouping-title=Name
+filter-key=sample.study_name
+field-filter=sample.study_name
+
+[search-piechart-config-4]
+default-text=Gender
+plural-default-text=Gender
+chart-title=File Counts by Gender
+grouping-title=Gender
+filter-key=subject.gender
+field-filter=subject.gender
+
+[search-piechart-config-5]
+default-text=File Forma
+plural-default-text=File Formats
+chart-title=File Counts by File Format
+grouping-title=File Format
+filter-key=file.format
+field-filter=file.format
+
+[search-piechart-config-6]
+default-text=File Type
+plural-default-text=File Types
+chart-title=File Counts by File Type
+grouping-title=File Type
+filter-key=file.node_type
+field-filter=file.node_type
+
+[search-advanced-query-page]
+enable-documentation-link=True
+documentation-link=https://github.com/jmatsumura/ihmp_portal_api#advanced-search
+
+
+# /cases page configuration
+[cases-page]
+page-title=Cases
+# sample.id for HMP. sample.study_full_name for NeMO
+link-filter-field=sample.id
+
+[cases-page-summary-table]
+# property-names should be formatted: <node_label>_<property>
+human-readable=Per-study Subject ID,Subject UUID,Subject Gender,Study Center,Project Name, Primary Site
+property-names=subject_rand_subject_id,subject_id,subject_gender,sample_study_center,subject_project_name,sample_body_site
+
+
+# /files page configuration
+[files-page]
+page-title=File
+# enable download of the actual data file
+enable-download-btn=True
+# property-names should be formatted: <node_label>_<property>
+[files-page-properties-table]
+human-readable=Name,Access,UUID,Submitter ID,Data Format,Size,MD5 Checksum,State,Project ID
+property-names=file_file_name,file_access,file_id,file_submitter_id,file_format,file_size,file_md5,file_state,subject_project_subtype
+
+[files-page-data-information-table]
+human-readable=Data Category,Data Type,Experimental Strategy
+property-names=file_node_type,file_subtype,file_study
+
+
+[cart]
+#list the search-piechart configs to be used for cart page piecharts
+piechart-order=search-piechart-config-3,search-piechart-config-4
+page-title=Cart | HMP
+
+enable-study-level-matrices=False
+# Neo4j node & property that denote whether the node is a study-level matrix
+# For HMBR neo4j: file.study_level = true
+study-level-matrix-flag=
+# Neo4j node and property that contains the study's name
+# For HMBR neo4j: subject.dataset_name = "RISK"
+study-name-on-node=
+
+
+# This requires addition of the multifile_downloader plugin to the api plugins/ directory
+enable-download-cart-btn=False
+download-cart-text=
+
+# If enabling Terra btn, be sure that [cloud-options]service-name=terra
+enable-export-to-terra-btn=False
+
+download-client-link=https://github.com/IGS/hmp_client
+#download-cart-text=Download Files in your Cart directly from the Web Browser.
+notes-metadata-text=Please note that each file in a downloaded manifest can be tied to metadata through the sample_id column.
+#class for Font-Awesome icon found in the 'Download' button
+download-button-icon=fa fa-download
+# Select 'Download' or 'Send to Cloud'
+download-button-text=Download
+# --- For DCPPC ---
+# download-manifest-text=Saves manifest file to Amazon S3 bucket. Use the manifest download utility and DCPPC client on a cloud-based VM to comply with NIH data access policy
+# download-utility-link=https://github.com/dcppc-phosphorous/manifest-downloader 
+#comment to remove/exclude unique to DCPPC
+# manifest-filename=dcppc_manifest
+# metadata-filename=dcppc_manifest_metadata
+# --- End DCPPC ---
+
+download-manifest-text=Downloading and analyzing large files can be very resource intensive and so it is recommended to use the HMP client for this purpose. One can download a manifest file using the button below in order to download their data through the client.
+manifest-filename=hmp_manifest
+metadata-filename=hmp_manifest_metadata
+
+
+[manifest-download-col-1]
+col-name=file_id
+node-type=file
+prop=id
+
+[manifest-download-col-2]
+col-name=md5
+node-type=file
+prop=md5
+
+[manifest-download-col-3]
+col-name=size
+node-type=file
+prop=size
+
+[manifest-download-col-4]
+col-name=urls
+node-type=None
+prop=urls
+
+[manifest-download-col-5]
+col-name=sample_id
+node-type=sample
+prop=id
+
+
+[metadata-download-col-1]
+col-name=sample_id
+node-type=sample
+prop=id
+
+[metadata-download-col-2]
+col-name=subject_id
+node-type=subject
+prop=rand_subject_id
+
+[metadata-download-col-3]
+col-name=subject_uuid
+node-type=subject
+prop=id
+
+[metadata-download-col-4]
+col-name=sample_body_site
+node-type=sample
+prop=body_site
+
+[metadata-download-col-5]
+col-name=visit_number
+node-type=sample
+prop=visit_visit_number
+
+[metadata-download-col-6]
+col-name=subject_gender
+node-type=subject
+prop=gender
+
+[metadata-download-col-7]
+col-name=subject_race
+node-type=subject
+prop=race
+
+[metadata-download-col-8]
+col-name=study_full_name
+node-type=sample
+prop=study_full_name
+
+[metadata-download-col-9]
+col-name=project_name
+node-type=subject
+prop=project_name
+
+
+[cloud-options]
+# 'download', 'aws', 'terra'
+service-name=download
+# --- AWS settings --- These values are NEVER forwarded to UI
+aws-api-key=XXXXXXXXXX
+aws-secret-key=XXXXXXXXXX
+aws-bucket-name=dcppc-portal-manifest
+aws-running-on-ec2=False
+# --- End AWS ---

@@ -1,4 +1,4 @@
-***REMOVED***Human Microbiome Project (HMP) Portal API
+# Human Microbiome Project (HMP) Portal API
 
 * [Overview](https://github.com/jmatsumura/ihmp_portal_api#overview)
   * [Video Tutorials](https://github.com/jmatsumura/ihmp_portal_api#video-tutorials)
@@ -11,18 +11,18 @@
   * [Controlled Vocabulary](https://github.com/jmatsumura/ihmp_portal_api#controlled-vocabulary)
 * [Cart Metadata](https://github.com/jmatsumura/ihmp_portal_api#cart-metadata)
 
-#***REMOVED***Overview
+## Overview
 
 * This API is built to work in conjunction with the [HMP data portal UI]( https://github.com/jmatsumura/portal-ui). 
 * The API is a Flask app which uses [GraphQL](http://graphql.org/) to communicate with a [Neo4j](https://neo4j.com/) database in order to efficiently retrieve and transfer the data in a RESTful manner.
 
-##***REMOVED***Video Tutorials
+### Video Tutorials
 * [General Walkthrough](https://www.youtube.com/watch?v=hbSUBr8yWNY)
 * [Facet Search](https://www.youtube.com/watch?v=_mvbP9MKtvQ&feature=youtu.be)
 * [Advanced Search](https://www.youtube.com/watch?v=YDmrpYVMQwc&feature=youtu.be)
 * [HMP Client](https://www.youtube.com/watch?v=b35UpeZ8UgM&feature=youtu.be)
 
-##***REMOVED***Setup
+### Setup
 1. First, make sure all dependencies are installed and start Neo4j
 2. Request an account to access [OSDF](http://osdf.igs.umaryland.edu/)
 3. Use the [loader](https://github.com/jmatsumura/iHMPDCC_new_fxns/blob/master/OSDF_to_Neo4j/couchdb2neo4j_with_tags.py) to move the data from CouchDB to Neo4j
@@ -59,7 +59,7 @@
  * `/indiv_files_schema`
  * `/indiv_sample_schema`
 
-##***REMOVED***Dependencies
+### Dependencies
 * [Neo4j 3.0.0](https://neo4j.com/release-notes/neo4j-3-0-0/)
 * [Python 2.7.10](https://www.python.org/downloads/release/python-2710/)
   * [Flask](http://flask.pocoo.org/docs/0.12/installation/)
@@ -68,15 +68,15 @@
   * [py2neo](http://py2neo.org/v3/)
   * [MySQL connector](https://dev.mysql.com/doc/connector-python/en/connector-python-installation.html)
 
-#***REMOVED***Searching
+## Searching
 
 The HMP portal offers two methods for searching the data: [facet search](https://github.com/jmatsumura/ihmp_portal_api#facet-search) and [advanced search](https://github.com/jmatsumura/ihmp_portal_api#advanced-search).
 
-##***REMOVED***Facet Search
+### Facet Search
 
 `Facet Search` enables one to search for data entirely through clicking. Clicking a slice of a pie chart or a checkbox within the panel on the left will subset the data by the selected property+value combination. Additional properties can be added to subset by via the "Add a filter" option towards the top-right of the panel on the left. Selecting a new property here will add a new set of values to the panel on the left that one can interact with to filter the data by. Facet search builds by inclusion of a particular property+value combination, in order to efficiently perform an exclusive search (e.g. looking for all data **not** associated with a particular property+value combination) it is recommended to use `Advanced Search`.
 
-##***REMOVED***Advanced Search
+### Advanced Search
 
 `Advanced Search` is meant to be similar to how one would query a database directly. Each query requires the following general format:
 ```
@@ -92,7 +92,7 @@ The results of this query will be only those samples and files that are associat
 
 Try type this query in the interface and observe how auto-complete helps along the way. Auto-complete should be used for every query as it pulls directly from the database and makes sure you are searching by a valid `property`, `comparison operator`, and `value`. Thus, if you use auto-complete and find no results in your query, you know you have entered combinations of `property`+`comparison operator`+`value` which do not exist. It is also helpful to navigate through the `value`s found as this consists of all the values that currently exist in the database for that particular `property`. 
 
-##***REMOVED***Available Properties
+### Available Properties
 
 The list of properties available to search on is actively growing. Below you can find the name+description for those which will eventually be searchable.
 
@@ -321,7 +321,7 @@ bicycling at a regular pace, or doubles tennis? Do not include walking.
 * **visit_work_missed** - If patient has been physically ill, how many days of work were missed?
 * **visit_yogurt** - Do you eat yogurt or other foods containing active bacterial cultures?
 
-##***REMOVED***Controlled Vocabulary
+### Controlled Vocabulary
 
 The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) document data store of the HMP data into a graph representation. During this process certain data values are harmonized to facilitate searching. Thus, multiple OSDF values may map to a single HMP representation (e.g. both body sites 'FMA:64183' and 'stool' in OSDF become solely 'feces' in the HMP portal). Below is a table which maps the HMP portal representation of a data point to the data point(s) it originates from in OSDF. 
 
@@ -417,7 +417,7 @@ The HMP portal converts the [OSDF](https://github.com/ihmpdcc/osdf-schemas) docu
 | vagina | mid_vagina,Vagina [FMA:19949],vaginal |
 | wall of vagina | wall_of_vagina |
 
-#***REMOVED***Cart Metadata
+## Cart Metadata
 
 On the cart page of the UI, one can download both a manifest of their samples+files of interest as well as metadata for these same entities. The manifest is to be used in conjunction with the [HMP client](https://github.com/IGS/hmp_client) to efficiently download all the files. The metadata serves as an additional source of input for analysis. The metadata, which is tab-separated, will always consist of a minimum set of (in this order):
  * **sample_id**

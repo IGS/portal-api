@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-***REMOVED***Script to generate content for three files:
-***REMOVED***README - Available Properties section
-***REMOVED***ac_schema.py - Content for both preloading and dynamic aggregations
-***REMOVED***Also can be toggled to generate models of the Aggregations GQL object. 
-***REMOVED***Generates content in a file can then be migrated over to one of those two locs.
+# Script to generate content for three files:
+# README - Available Properties section
+# ac_schema.py - Content for both preloading and dynamic aggregations
+# Also can be toggled to generate models of the Aggregations GQL object. 
+# Generates content in a file can then be migrated over to one of those two locs.
 
 from autocomplete_map import gql_map
 import argparse
@@ -30,7 +30,7 @@ def main():
 
         elif args.which_file == 'ac':
 
-            ***REMOVED***first generate the top content
+            # first generate the top content
             rename_us = {
                 'project': ['project_','PS.project_'],
                 'sample': ['sample_','VSS.'],
@@ -42,7 +42,7 @@ def main():
 
             for k in sorted(gql_map):
                 renamed_vals = k
-                if not k.startswith('file') and not k.startswith('tag'): ***REMOVED***outside of file
+                if not k.startswith('file') and not k.startswith('tag'): # outside of file
                     eles = k.split('_')
                     renamed_vals = k.split('_')[0][:3]+'_'+('_').join(k.split('_')[1:])  
 
@@ -68,14 +68,14 @@ def main():
 
             out.write('\n\nBREAK\n\n')
 
-            ***REMOVED***now print out the content to go in the resolve_aggregations
+            # now print out the content to go in the resolve_aggregations
             for k in sorted(gql_map):
                 renamed_vals = k
-                if not k.startswith('file') and not k.startswith('tag'): ***REMOVED***outside of file
+                if not k.startswith('file') and not k.startswith('tag'): # outside of file
                     eles = k.split('_')
                     renamed_vals = k.split('_')[0][:3]+'_'+('_').join(k.split('_')[1:]) 
                 
-                ***REMOVED***subject is a bit of an exception and uses these for ID/UUID
+                # subject is a bit of an exception and uses these for ID/UUID
                 if k == 'tag':
                     k,renamed_vals = ('tag_term' for i in range(2))
 

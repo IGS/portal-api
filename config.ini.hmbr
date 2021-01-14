@@ -1,0 +1,702 @@
+
+# site-wide config originally from portal-ui/config.js
+[site-wide]
+project-abbr=HMBR
+api=/api
+auth=/api/status
+auth-api=/api/status/api
+tag=https://github.com/NCI-GDC/portal-ui/releases/tag/1.2.4
+fake-auth=False
+#ident = desired length of a random alphanumeric string
+ident=8 
+production=False
+supported-api=1
+version=1.2.4
+build-cache-on-first-request=True
+subject-excluded-fields=age,age_at_diagnosis
+sample-excluded-fields=
+file-excluded-fields=
+footer-link-text=HMBR Site
+footer-link=https://www.microbiome-bioactives.org/
+google-analytics-enabled=False
+google-analytics-id=INSERT-PORTAL-GA-ID-HERE
+
+[navbar]
+# Custom external link, else leave empty for logo to link to portal home page
+logo-link=https://www.microbiome-bioactives.org/
+analysis-display=False
+analysis-link=
+documentation-display=True
+documentation-link=https://www.microbiome-bioactives.org/documentation/
+apps-data-portal-display=True
+apps-data-portal-tooltip-text=Data Portal
+apps-data-portal-link=/
+apps-api-display=True
+apps-api-tooltip-text=HMBR API
+apps-api-link=https://github.com/IGS/portal-api
+apps-documentation-display=True
+apps-documentation-tooltip-text=Documentation
+apps-documentation-link=https://www.microbiome-bioactives.org/documentation/
+apps-legacy-archive-display=False
+apps-legacy-archive-tooltip-text=
+apps-legacy-archive-link=
+apps-website-display=True
+apps-website-tooltip-text=HMBR Website
+apps-website-link=https://www.microbiome-bioactives.org/
+apps-datatransfer-tool-display=True
+apps-datatransfer-tool-tooltip-text=Data Transfer Tool
+apps-datatransfer-tool-link=https://github.com/IGS/portal_client
+apps-faq-display=False
+apps-faq-tooltip-text=
+apps-faq-link=
+apps-resources-display=False
+apps-resources-tooltip-text=
+apps-resources-link=
+user-login-link=
+
+[home]
+page-title=Welcome to The HMBR Data Portal | HMBR
+portal-name=Human Microbiome Bioactives Resource Portal
+projects-table-title=Go to the HMBR Projects Page
+projects-table-title-header=Samples by Study
+project-external-link=https://www.microbiome-bioactives.org
+project-name=The Human Microbiome Bioactives Resource
+
+[home-summary-stat-1]
+title=Studies
+icon=<i class="fa fa-flask data-icon"></i>
+data=hc.projectData.pagination.unique_total
+
+[home-summary-stat-2]
+title=Samples
+icon=<i class="fa fa-user-o data-icon"></i>
+data=hc.caseData.pagination.total
+
+[home-summary-stat-3]
+title=Files
+icon=<i class="fa fa-folder-open-o data-icon"></i>
+data=hc.fileData.pagination.total
+
+[home-example-query-1]
+description=PROTECT Samples from Male Subjects.
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE sample.study_name in ['PROTECT'] AND subject.gender in ['Male']  RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"op":"and","content":[{"op":"in","content":{"field":"subject.gender","value":["Male"]}},{"op":"in","content":{"field":"sample.study_name","value":["PROTECT"]}}]}
+has-files-link=True
+files-link=/search/f?filters={"op":"and","content":[{"op":"in","content":{"field":"subject.gender","value":["Male"]}},{"op":"in","content":{"field":"sample.study_name","value":["PROTECT"]}}]}
+
+
+[home-example-query-2]
+description=Subject is current smoker and Disease is UC.
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE subject.smoking_history in ['Current'] AND subject.disease in ['UC']  RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"op":"and","content":[{"op":"in","content":{"field":"subject.smoking_history","value":["Current"]}},{"op":"in","content":{"field":"subject.disease","value":["UC"]}}]}
+has-files-link=True
+files-link=/search/f?filters={"op":"and","content":[{"op":"in","content":{"field":"subject.smoking_history","value":["Current"]}},{"op":"in","content":{"field":"subject.disease","value":["UC"]}}]}
+
+
+[home-example-query-3]
+description=All 16s taxonomy files from the RISK study.
+count-query=MATCH (subject:subject)<-[:extracted_from]-(sample:sample)<-[D:derived_from]-(file:file) WHERE sample.study_name in ['RISK'] AND file.matrix_type in ['16s Taxonomy']  RETURN COUNT(DISTINCT(sample)) as case_count, COUNT(DISTINCT(file)) as file_count
+has-cases-link=True
+cases-link=/search/c?filters={"op":"and","content":[{"op":"in","content":{"field":"sample.study_name","value":["RISK"]}},{"op":"in","content":{"field":"file.matrix_type","value":["16s Taxonomy"]}}]}
+has-files-link=True
+files-link=/search/f?filters={"op":"and","content":[{"op":"in","content":{"field":"sample.study_name","value":["RISK"]}},{"op":"in","content":{"field":"file.matrix_type","value":["16s Taxonomy"]}}]}
+
+
+[projects]
+page-title=Projects | HMBR
+display-graph-tab=False
+study-data-query=MATCH (subject)<-[:extracted_from]-(sample)<-[D:derived_from]-(file) WITH sample.study_name AS study_name, sample.study_description AS study_description, COUNT(DISTINCT(sample)) as _case_count, COUNT(DISTINCT(file)) as _file_count, COLLECT(DISTINCT(file.node_type)) as file_type, SUM(file.size) AS _file_size, COUNT(file.study_level) AS study_level_matrix_count RETURN study_name, study_description, SUM(_case_count) as case_count, SUM(_file_count) as file_count, SUM(_file_size) as file_size, study_level_matrix_count
+study-sample-count-query=MATCH (PS:subject)<-[:extracted_from]-(VSS:sample)<-[D:derived_from]-(F:file) RETURN VSS.study_name AS study_name, COUNT(DISTINCT(VSS)) AS sample_count
+
+[projects-table]
+title=studies
+row-id=study_name
+linked-fields=case_count,file_count,study_level_matrix_count
+default-sort=case_count:desc
+
+[projects-table-heading-1]
+name=ID
+id=study_name
+tooltip-text=study_full_name
+sortable=True
+show=True
+draggable=True
+
+[projects-table-heading-2]
+name=Description
+id=study_description
+sortable=True
+show=True
+draggable=True
+
+
+[projects-table-heading-3]
+name=Samples
+id=case_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+
+[projects-table-heading-4]
+name=Files
+id=file_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+
+[projects-table-heading-5]
+name=Study-level matrices
+id=study_level_matrix_count
+sortable=True
+show=True
+#th-classname is optional
+#th-classname=text-right
+td-classname=text-right
+link-filter-field=sample.study_name
+# additional-link-filters: These fields need their value included. The given value is not dynamic.
+#    Field=Value pairs must be comma separated
+#    Example of 2 filters: file.category:study-level abundance matrix,file.format:TSV
+additional-link-filters=file.category:study-level abundance matrix
+
+#Default chartconfigs for projects page pie charts
+# To display set:  [projects]display-graph-tab=True
+# 
+# hover-count-label - Changes the hover. default is 'Files' <study> - <count> <HOVER_COUNT_LABEL>, <file_size stuff> 
+# field-filter = field applied to URL when adding a filter
+[projects-piechart-config-1]
+#default-text=Study
+#plural-default-text=Studies
+#hover-count-label=Samples
+#chart-title=Sample Counts by Study
+#grouping-title=Study
+#filter-key=study_name
+#field-filter=sample.study_name
+#display-key=study_name
+#sort-key=case_count
+
+[projects-piechart-config-2]
+#default-text=Study
+#plural-default-text=Studies
+#chart-title=File Counts by Study
+#grouping-title=File
+#filter-key=study_name
+#field-filter=sample.study_name
+#display-key=study_name
+#sort-key=file_count
+
+[search]
+page-title=Search | HMBR
+recalculate-facets=True
+# The unique ID property for the sample node
+sample-node-id=sample.id
+# The following 4 properties allow you to rename the tabs.
+# Default values are used if the field is left empty or the line missing entirely
+facets-panel-samples-tab-name=Sample Types
+facets-panel-files-tab-name=Data Types
+center-panel-samples-tab-name=
+center-panel-files-tab-name=Downloads
+	
+#Sets columns for 'samples' table on Search page
+[cases-table]
+api-row-id-node-type=sample
+api-row-id-field=id
+title=Samples
+row-id=id
+linked-field=sample.id
+default-sort=sample.id:asc
+#default-sort=sample.body_site:asc
+
+[cases-table-heading-1]
+name=Sample ID
+id=sample.id
+show=True
+sortable=True
+
+[cases-table-heading-2]
+name=Study
+id=sample.study_name
+show=True
+sortable=True
+
+[cases-table-heading-3]
+name=Subject ID
+id=subject.subject_accession
+show=True
+sortable=True
+
+[cases-table-heading-4]
+name=Time Point
+id=subject.timepoint
+show=True
+sortable=False
+
+[cases-table-heading-5]
+name=Accession No.
+id=sample.sample_accession
+show=True
+sortable=True
+
+
+[files-table]
+api-row-id-node-type=file
+api-row-id-field=id
+title=Files
+row-id=file_id
+#show=True Accidently added here? 
+default-sort=file_id:asc
+#False = leaves filename unchanged
+#True = changes filepath to file_url
+rename-filename-absolute-path=True
+#Leave blank for default value: "Private data", otherwise specify the string to display for private data
+private-data-filename=
+
+[files-table-heading-1]
+name=File Name
+id=file.filename
+sortable=True
+show=True
+td-classname=id-cell
+
+[files-table-heading-2]
+name=Data Category
+id=file.category
+sortable=True
+show=True
+
+[files-table-heading-3]
+name=Data Format
+id=file.format
+sortable=True
+show=True
+
+[files-table-heading-4]
+name=Size
+id=file.size
+sortable=True
+show=True
+#th-classname is optional
+th-classname=text-right 
+td-classname=text-right
+			
+
+# Default config for front-page barchart
+# Default body_site query - HMP
+[search-barchart-config]
+count-query=RETURN DISTINCT VSS.study_id, VSS.study_name, COUNT(DISTINCT(VSS)) as case_count, COUNT(DISTINCT(F)) as file_count
+x-axis-labels=VSS.study_name
+x-axis-order-by-count=case_count
+data-tooltip-label=VSS.study_name
+data-tooltip-include-project-id=False
+y-axis-scale=linear
+allow-bar-rotation=False
+bar-rotation=
+bar-colorscale-data-property=_key
+allow-darker-bar-colors=True
+use-custom-color=False
+#for the cutsom color scale, use the colors found in colorbrewer.js (ex. OrRd for orange->red)
+custom-color-scale=YlOrBr
+#the number of colors you want in the custom scale
+custom-color-scale-number=4
+# example: reverse OrRd to be red->orange
+reverse-custom-color-scale=True
+
+[search-piechart-api]
+chart-order=study_chart,race_chart,smoker_chart,gender_chart,format_chart,category_chart
+
+[search-piechart-count-queries] 
+# name the keys using the fields listed in the above [piechart-api]chart-order
+# {field}={query}
+# {field}_detailed={query_detailed}
+study-chart=RETURN sample.study_name AS prop, count(sample.study_name) AS counts
+study-chart-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, sample.study_name AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+race-chart=RETURN subject.race AS prop, count(subject.race) AS counts
+race-chart-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, subject.race AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+smoker-chart=RETURN subject.smoking_history AS prop, count(subject.smoking_history) AS counts
+smoker-chart-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, subject.smoking_history AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+gender-chart=RETURN subject.gender AS prop, count(subject.gender) AS counts
+gender-chart-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, subject.gender AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+format-chart=RETURN file.format AS prop, count(file.format) AS counts
+format-chart-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, file.format AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+category-chart=RETURN file.category AS prop, count(file.category) AS counts
+category-chart-detailed=WITH COUNT(DISTINCT(sample)) as scount, COUNT(DISTINCT(file)) AS fcount, file.category AS prop, SUM(file.size) as tot RETURN prop,scount,fcount,tot
+
+
+#Default chartconfigs for search page pie charts
+[search-piechart-config-1]
+default-text=Study
+plural-default-text=Studies
+chart-title=File Counts by Study
+grouping-title=Name
+filter-key=sample.study_name
+field-filter=sample.study_name
+
+[search-piechart-config-2]
+default-text=Race
+plural-default-text=Race
+chart-title=File Counts by Race
+grouping-title=Race
+filter-key=subject.race
+field-filter=subject.race
+
+[search-piechart-config-3]
+default-text=Smoking History
+plural-default-text=Smoking History
+chart-title=File Counts by Smoking History
+grouping-title=Smoking History
+filter-key=subject.smoking_history
+field-filter=subject.smoking_history
+
+[search-piechart-config-4]
+default-text=Gender
+plural-default-text=Gender
+chart-title=File Counts by Gender
+grouping-title=Gender
+filter-key=subject.gender
+field-filter=subject.gender
+
+[search-piechart-config-5]
+default-text=File Format
+plural-default-text=File Formats
+chart-title=File Counts by File Format
+grouping-title=File Format
+filter-key=file.format
+field-filter=file.format
+
+[search-piechart-config-6]
+default-text=File Category
+plural-default-text=File Category
+chart-title=File Counts by File Category
+grouping-title=File Type
+filter-key=file.category
+field-filter=file.category
+
+[search-advanced-query-page]
+enable-documentation-link=False
+documentation-link=
+
+
+
+# /cases page configuration
+[cases-page]
+page-title=Cases
+# sample.id for HMP. sample.study_full_name for NeMO
+link-filter-field=sample.id
+
+[cases-page-summary-table]
+# property-names should be formatted: <node_label>_<property>
+human-readable=Study Name,Assay Prep,Subject Accession,PMID,Study Accession Database,Subject Gender,Disease,Race,BMI,Age Category,Age at Diagnosis Category,Family ID,Family ID (original encoding),Montreal B Classification,Montreal L Classification,Montreal E Classification,Montreal A Classification,Smoking History,Alcohol,Calprotectin,Immunosuppressants,Immunosuppressants (original encoding),Steroids,Steroids (original encoding),Antibiotics,Antibiotics (original encoding),Control,Sample Database,Sample Accession Database,Sample Type,Body Site,Body Site (original encoding),Perianal,PCDAI,5ASA,5ASA (original encoding),Batch,Time Point,Time Point (original encoding)
+property-names=sample_study_name,sample_assay_prep,subject_subject_accession,subject_pmid,study_accession_database,subject_gender,subject_disease,subject_race,subject_bmi,subject_age_category,subject_age_at_diagnosis_category,subject_family_id,family_id_original_encoding,subject_montreal_b_classification,subject_montreal_l_classification,subject_montreal_e_classification,subject_montreal_a_classification,subject_smoking_history,subject_alcohol,subject_calprotectin,subject_immunosuppressants,subject_immunosuppressants_original_encoding,subject_steroids,subject_steroids_original_encoding,subject_antibiotics,subject_antibiotics_original_encoding,subject_control,sample_database,sample_sample_accession_database,sample_sample_type,sample_body_site,sample_body_site_original_encoding,subject_perianal,subject_pcdai,subject_fiveASA,subject_fiveASA_original_encoding,sample_batch,subject_timepoint,subject_timepoint_original_encoding
+
+
+# /files page configuration
+[files-page]
+page-title=File
+# modify the text of add to cart btn. Use 'no-text' = For no text, just the btn. Leave value empty or remove the whole line for default value "Add to Cart"
+add-to-cart-btn-text=no-text
+# enable download of the actual data file
+enable-download-btn=True
+download-btn-text=Download Data
+# enable download of the metadata file
+enable-download-metadata-btn=True
+download-metadata-btn-text=Download Metadata
+# property-names should be formatted: <node_label>_<property>
+[files-page-properties-table]
+human-readable=Name,URL,Study,Sample Accession,Size,MD5 Checksum
+property-names=file_filename,file_file_name,sample_study_name,sample_sample_accession,file_size,file_md5
+
+[files-page-data-information-table]
+human-readable=Data Category,Format,Matrix Type
+property-names=file_category,file_format,file_matrix_type
+
+
+[cart]
+#list the search-piechart configs to be used for cart page piecharts
+piechart-order=search-piechart-config-1,search-piechart-config-6
+page-title=Cart | HMBR
+
+enable-study-level-matrices=True
+# Neo4j node & property that denote whether the node is a study-level matrix
+# For HMBR: file.study_level = true
+study-level-matrix-flag=file.study_level
+# Neo4j node and property that contains the study's name
+# For HMBR: subject.dataset_name = "RISK"
+study-name-on-node=subject.dataset_name
+max-file-size-allowed=5e+9
+
+# This requires addition of the multifile_downloader plugin to the api plugins/ directory
+enable-download-cart-btn=True
+download-cart-text=Download Files in your Cart directly from the Web Browser.
+
+
+# If enabling Terra btn, be sure that [cloud-options]service-name=terra
+enable-export-to-terra-btn=False
+download-client-link=https://github.com/IGS/hmp_client
+notes-metadata-text=Please note that each file in a downloaded manifest can be tied to metadata through the sample_id column.
+#class for Font-Awesome icon found in the 'Download' button
+download-button-icon=fa fa-download
+# Select 'Download' or 'Send to Cloud'
+download-button-text=Download
+# --- For DCPPC ---
+# download-manifest-text=Saves manifest file to Amazon S3 bucket. Use the manifest download utility and DCPPC client on a cloud-based VM to comply with NIH data access policy
+# download-utility-link=https://github.com/dcppc-phosphorous/manifest-downloader 
+#comment to remove/exclude unique to DCPPC
+# manifest-filename=dcppc_manifest
+# metadata-filename=dcppc_manifest_metadata
+# --- End DCPPC ---
+
+download-manifest-text=Downloading and analyzing large files can be very resource intensive and so it is recommended to use the HMP client for this purpose. One can download a manifest file using the button below in order to download their data through the client.
+manifest-filename=hmbr_manifest
+metadata-filename=hmbr_manifest_metadata
+
+
+[manifest-download-col-1]
+col-name=file_id
+node-type=file
+prop=id
+
+[manifest-download-col-2]
+col-name=md5
+node-type=file
+prop=md5
+
+[manifest-download-col-3]
+col-name=size
+node-type=file
+prop=size
+
+[manifest-download-col-4]
+col-name=urls
+node-type=None
+prop=urls
+
+[manifest-download-col-5]
+col-name=sample_id
+node-type=sample
+prop=id
+
+
+
+
+[metadata-download-col-1]
+col-name=sample_id
+node-type=sample
+prop=id
+
+[metadata-download-col-2]
+col-name=study_name	
+node-type=sample
+prop=study_name
+
+[metadata-download-col-3]
+col-name=assay_prep	
+node-type=sample
+prop=assay_prep
+
+[metadata-download-col-4]
+col-name=subject_accession	
+node-type=subject
+prop=subject_accession
+
+[metadata-download-col-5]
+col-name=pmid	
+node-type=subject
+prop=pmid
+
+[metadata-download-col-6]
+col-name=sample_accession	
+node-type=sample
+prop=sample_accession
+
+[metadata-download-col-7]
+col-name=gender	
+node-type=subject
+prop=gender
+
+[metadata-download-col-8]
+col-name=disease	
+node-type=subject
+prop=disease
+
+[metadata-download-col-9]
+col-name=race	
+node-type=subject
+prop=race
+
+[metadata-download-col-10]
+col-name=bmi	
+node-type=subject
+prop=bmi
+
+[metadata-download-col-11]
+col-name=age_category	
+node-type=subject
+prop=age_category
+
+[metadata-download-col-12]
+col-name=age_at_diagnosis_category	
+node-type=subject
+prop=age_at_diagnosis_category
+
+[metadata-download-col-13]
+col-name=family_id	
+node-type=subject
+prop=family_id
+
+[metadata-download-col-14]
+col-name=family_id_original_encoding	
+node-type=subject
+prop=family_id_original_encoding
+
+[metadata-download-col-15]
+col-name=montreal_b_classification	
+node-type=subject
+prop=montreal_b_classification
+
+[metadata-download-col-16]
+col-name=montreal_l_classification	
+node-type=subject
+prop=montreal_l_classification
+
+[metadata-download-col-17]
+col-name=montreal_e_classification	
+node-type=subject
+prop=montreal_e_classification
+
+[metadata-download-col-18]
+col-name=montreal_a_classification	
+node-type=subject
+prop=montreal_a_classification
+
+[metadata-download-col-19]
+col-name=smoking_history
+node-type=subject
+prop=smoking_history
+
+[metadata-download-col-20]	
+col-name=alcohol	
+node-type=subject
+prop=alcohol
+
+[metadata-download-col-21]
+col-name=calprotectin	
+node-type=subject
+prop=calprotectin
+
+[metadata-download-col-22]
+col-name=immunosuppressants	
+node-type=subject
+prop=immunosuppressants
+
+[metadata-download-col-23]
+col-name=immunosuppressants_original_encoding	
+node-type=subject
+prop=immunosuppressants_original_encoding
+
+[metadata-download-col-24]
+col-name=steroids	
+node-type=subject
+prop=steroids
+
+[metadata-download-col-25]
+col-name=steroids_original_encoding	
+node-type=subject
+prop=steroids_original_encoding
+
+[metadata-download-col-26]
+col-name=antibiotics	
+node-type=subject
+prop=antibiotics
+
+[metadata-download-col-27]
+col-name=antibiotics_original_encoding	
+node-type=subject
+prop=antibiotics_(original_encoding)
+
+[metadata-download-col-28]
+col-name=control	
+node-type=subject
+prop=control
+
+[metadata-download-col-29]
+col-name=database	
+node-type=sample
+prop=database
+
+[metadata-download-col-30]
+col-name=sample_accession_database	
+node-type=sample
+prop=sample_accession_database
+
+[metadata-download-col-31]
+col-name=sample_type	
+node-type=sample
+prop=sample_type
+
+[metadata-download-col-32]
+col-name=body_site	
+node-type=sample
+prop=body_site
+
+[metadata-download-col-33]
+col-name=body_site_original_encoding	
+node-type=sample
+prop=body_site_(original_encoding)
+
+[metadata-download-col-34]
+col-name=perianal	
+node-type=subject
+prop=perianal
+
+[metadata-download-col-35]
+col-name=pcdai	
+node-type=subject
+prop=pcdai
+
+[metadata-download-col-36]
+col-name=5ASA	
+node-type=subject
+prop=fiveasa
+
+[metadata-download-col-37]
+col-name=5ASA_original_encoding	
+node-type=subject
+prop=5asa_(original_encoding)
+
+[metadata-download-col-38]
+col-name=batch	
+node-type=sample
+prop=batch
+
+[metadata-download-col-39]
+col-name=timepoint	
+node-type=subject
+prop=timepoint
+
+[metadata-download-col-40]
+col-name=timepoint_original_encoding	
+node-type=subject
+prop=timepoint_original_encoding
+
+[metadata-download-col-41]
+col-name=study_accession_database
+node-type=subject
+prop=study_accession_database
+
+
+[cloud-options]
+# 'download', 'aws', 'terra'
+service-name=download
+# --- AWS settings --- These values are NEVER forwarded to UI
+aws-api-key=
+aws-secret-key=
+aws-bucket-name=
+aws-running-on-ec2=False
+# --- End AWS ---

@@ -6,7 +6,7 @@ from conf import mysql_h,mysql_db,mysql_un,mysql_pw
 from conf import mysql_h_2,mysql_db_2,mysql_un_2,mysql_pw_2
 
 ##########################################
-***REMOVED***FUNCTIONS FOR BASE MySQL FUNCTIONALITY #
+# FUNCTIONS FOR BASE MySQL FUNCTIONALITY #
 ##########################################
 
 def connect_mysql(user,password,host,database):
@@ -19,7 +19,7 @@ def connect_mysql(user,password,host,database):
     }
 
     try:
-        cnx = mysql.connector.connect(**config) ***REMOVED***open connection/cursor
+        cnx = mysql.connector.connect(**config) # open connection/cursor
         cnx.autocommit = True
         cursor = cnx.cursor(buffered=True)
         return cnx,cursor
@@ -91,7 +91,7 @@ def execute_mysql(cursor,statement,values):
         return 'error'
 
 ########################################
-***REMOVED***FUNCTIONS FOR LOGGING IN / SESSIONS #
+# FUNCTIONS FOR LOGGING IN / SESSIONS #
 ########################################
 
 def login(username):
@@ -103,7 +103,7 @@ def login(username):
         pw = cursor.fetchone()
 
         if pw:
-            pw = str(pw[0]) ***REMOVED***convert from tuple/unicode to plain string if we got a record
+            pw = str(pw[0]) # convert from tuple/unicode to plain string if we got a record
 
         disconnect_mysql(cnx,cursor)
 
@@ -124,7 +124,7 @@ def establish_session(username):
             user_id = user_id[0]
 
         session_key = hashlib.sha256(username+str(time.time())).hexdigest()
-        unique_session = True ***REMOVED***loop until we get a unique session_id regardless of user
+        unique_session = True # loop until we get a unique session_id regardless of user
         while unique_session:
             execute_mysql(cursor,'get_session_id',(session_key,))
             session_id = cursor.fetchone()
@@ -149,7 +149,7 @@ def disconnect_session(session_key):
         return
 
 ###############################
-***REMOVED***FUNCTIONS FOR QUERY HISTORY #
+# FUNCTIONS FOR QUERY HISTORY #
 ################################
 
 def save_query_comment_data(session_key,query,comment):
@@ -160,7 +160,7 @@ def save_query_comment_data(session_key,query,comment):
         execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
         user_id = cursor.fetchone()   
 
-        if user_id: ***REMOVED***rare case where a session has expired
+        if user_id: # rare case where a session has expired
             user_id = user_id[0]
         else:
             return
@@ -184,12 +184,12 @@ def save_query_sample_data(session_key,reference_url,query,sample_count):
         execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
         user_id = cursor.fetchone()   
 
-        if user_id: ***REMOVED***rare case where a session has expired
+        if user_id: # rare case where a session has expired
             user_id = user_id[0]
         else:
             return
 
-        ***REMOVED***if this query is already saved, only update sample count
+        # if this query is already saved, only update sample count
         execute_mysql(cursor,'get_single_saved_query',(query,user_id))
         existing_query = cursor.fetchone()
 
@@ -197,7 +197,7 @@ def save_query_sample_data(session_key,reference_url,query,sample_count):
             execute_mysql(cursor,'update_saved_query_sample_data',(sample_count,user_id,query))
 
         else:
-            ***REMOVED***note dummy values for comment/file_count
+            # note dummy values for comment/file_count
             execute_mysql(cursor,
                 'add_saved_query_sample_data',
                     (user_id,
@@ -220,7 +220,7 @@ def save_query_file_data(session_key,reference_url,file_count):
         execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
         user_id = cursor.fetchone()   
 
-        if user_id: ***REMOVED***rare case where a session has expired
+        if user_id: # rare case where a session has expired
             user_id = user_id[0]
         else:
             return
@@ -251,7 +251,7 @@ def get_user_info(session_key):
         execute_mysql(cursor,'get_username_from_session_key',(session_key,))
         username = cursor.fetchone()   
 
-        if username: ***REMOVED***rare case where a session has expired
+        if username: # rare case where a session has expired
             username = username[0]
         else:
             return
@@ -269,7 +269,7 @@ def get_user_info(session_key):
         execute_mysql(cursor,'get_user_id_from_session_key',(session_key,))
         user_id = cursor.fetchone()   
 
-        if user_id: ***REMOVED***rare case where a session has expired
+        if user_id: # rare case where a session has expired
             user_id = user_id[0]
         else:
             return
@@ -278,7 +278,7 @@ def get_user_info(session_key):
 
         for (query,href,scount,fcount,comment,timestamp) in cursor:
 
-                ***REMOVED***check if any history is present
+                # check if any history is present
                 user_info['queries'].append(str(query))
                 user_info['hrefs'].append(str(href))
                 user_info['scounts'].append(scount)

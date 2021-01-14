@@ -1,0 +1,106 @@
+#
+# Search page default facets for 'cases' and 'files'
+#
+# Be sure to have *-fields and *-facets in the same order 
+#
+
+#Default facets for Cases Tab 
+cases-fields:
+    - project_name
+    - sample_body_site
+    - study_name
+    - subject_gender
+
+cases-facets:
+    - name: subject.project_name
+      title: Projects
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: sample.body_site
+      title: Body Site
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: sample.study_name
+      title: Studies
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: subject.gender
+      title: Gender
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+    
+#Default facets for Files Tab
+files-fields:
+    - file_format
+    - file_type
+    - file_annotation_pipeline
+    - file_matrix_type
+
+files-facets:
+    - name: file.format
+      title: Format
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: file.node_type
+      title: Type
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: file.annotation_pipeline
+      title: Annotation Pipeline
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: file.matrix_type
+      title: Matrix Type
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+
+# Projects page facets. 
+projects-fields:
+    - disease_type
+    - state
+    - primary_site
+    - project_id
+    - name
+    - program.name
+    - summary.case_count
+    - summary.file_count
+    - summary.file_size
+    - summary.data_categories.data_category
+    - summary.data_categories.case_count
+
+projects-facets:
+    - name: project_id
+      facet-type: free-text
+    - name: disease_type
+      facet-type: terms
+    - name: program.name
+      facet-type: terms
+    - name: primary_site
+      facet-type: terms
+    - name: summary.experimental_strategies.experimental_strategy
+      facet-type: terms
+    - name: summary.data_categories.data_category
+      facet-type: terms

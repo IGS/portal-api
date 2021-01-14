@@ -1,0 +1,108 @@
+#
+# Search page default facets for 'cases' and 'files'
+#
+# Be sure to have *-fields and *-facets in the same order 
+#
+
+#Default facets for Cases Tab 
+cases-fields:
+    - study_name
+    - assay_prep
+    - race
+    - smoking_history
+    - gender
+    - age_category
+
+cases-facets:
+    - name: sample.study_name
+      title: Studies
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: sample.assay_prep
+      title: Assay Prep
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: subject.race
+      title: Race
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: subject.smoking_history
+      title: Smoking history
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: subject.gender
+      title: Gender
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+      
+    - name: subject.age_category
+      title: Age Category
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+      
+    - name: subject.disease
+      title: Disease
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+    
+#Default facets for Files Tab
+files-fields:
+    - file_format
+    - file_category
+
+files-facets:
+    - name: file.format
+      title: Format
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+    - name: file.category
+      title: Category
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+      
+    - name: file.matrix_type
+      title: Matrix Type
+      collapsed: False
+      facet-type: terms
+      removable: False
+      sort: count
+
+# Projects page facets. 
+projects-fields:
+    - study_name
+    - summary.case_count
+    - summary.file_count
+    - summary.file_size
+    - summary.data_categories.data_category
+    - summary.data_categories.case_count
+
+projects-facets:
+    - name: study_name
+      facet-type: terms
+    - name: summary.experimental_strategies.experimental_strategy
+      facet-type: terms
+    - name: summary.data_categories.data_category
+      facet-type: terms
